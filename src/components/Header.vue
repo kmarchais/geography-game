@@ -13,12 +13,6 @@
     </v-btn>
     <v-btn
       text
-      @click="goToMapView"
-    >
-      Map View
-    </v-btn>
-    <v-btn
-      text
       @click="toggleTheme"
     >
       <v-icon>mdi-theme-light-dark</v-icon>
