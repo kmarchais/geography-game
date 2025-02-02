@@ -12,6 +12,9 @@
           <div class="attempts-display">
             Attempts: {{ currentAttempts }}/3
           </div>
+          <div class="timer-display">
+            Time: {{ formattedTime }}
+          </div>
         </div>
         <div class="target-country">
           Find: {{ targetCountry }}
@@ -27,6 +30,7 @@
         <div class="game-end">
           <div class="final-score">
             Final Score: {{ score }}/{{ totalRounds }}
+            <div class="final-time">Time: {{ formattedTime }}</div>
           </div>
           <button
             class="new-game-btn"
@@ -43,13 +47,66 @@
     />
   </div>
 </template>
- 
-<script setup lang="ts">
-import type { Feature, Geometry } from 'geojson';
-import L from 'leaflet';
-import { onMounted, ref, type Ref } from 'vue';
 
-// Define props for customizable game settings
+<script setup lang="ts">
+import type { Feature, FeatureCollection, GeoJsonObject, Geometry } from 'geojson';
+import L from 'leaflet';
+import { computed, onMounted, ref, watch, type Ref } from 'vue';
+import { useTheme } from 'vuetify';
+
+// Extended type definitions
+interface GeoJSONFeature extends Feature {
+  properties: {
+    name: string;
+    [key: string]: any;
+  };
+}
+
+interface GeoJSONLayer extends L.Layer {
+  feature: GeoJSONFeature;
+}
+
+// Type guard for FeatureCollection
+function isFeatureCollection(value: unknown): value is FeatureCollection {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    value.type === 'FeatureCollection' &&
+    'features' in value &&
+    Array.isArray((value as FeatureCollection).features)
+  );
+}
+
+// Theme setup
+const theme = useTheme();
+const tileLayer = ref<L.TileLayer | null>(null);
+const leafletMap = ref<L.Map | null>(null);
+
+// Watch theme changes
+watch(() => theme.global.name.value, (newTheme) => {
+  document.documentElement.setAttribute('data-theme', newTheme);
+  
+  if (tileLayer.value) {
+    tileLayer.value.setUrl(
+      `https://{s}.basemaps.cartocdn.com/${newTheme}_nolabels/{z}/{x}/{y}{r}.png`
+    );
+  }
+
+  if (geojsonLayer.value) {
+    geojsonLayer.value.eachLayer((layer) => {
+      const geoLayer = layer as GeoJSONLayer;
+      const countryName = geoLayer.feature?.properties?.name;
+      if (foundCountries.value.has(countryName)) {
+        (layer as L.Path).setStyle(getStyleForAttempts(foundCountries.value.get(countryName)));
+      } else {
+        (layer as L.Path).setStyle(defaultStyle);
+      }
+    });
+  }
+});
+
+// Props definition
 const props = defineProps({
   totalRounds: {
     type: Number,
@@ -57,6 +114,17 @@ const props = defineProps({
   }
 });
 
+// Timer state
+const timer = ref(0);
+const timerInterval = ref<number | null>(null);
+
+const formattedTime = computed(() => {
+  const minutes = Math.floor(timer.value / 60);
+  const seconds = timer.value % 60;
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+});
+
+// Game state
 const map = ref<HTMLElement | null>(null);
 const geojsonLayer: Ref<L.GeoJSON | null> = ref(null);
 const targetCountry = ref('');
@@ -69,43 +137,45 @@ const currentAttempts = ref(0);
 
 const availableCountries = ref<string[]>([]);
 const usedCountries = ref<string[]>([]);
+const foundCountries = ref(new Map<string, number>());
 
+// Styles
 const defaultStyle = {
-  fillColor: '#333333',
+  fillColor: 'var(--map-default-fill)',
   fillOpacity: 1,
-  color: '#666666',
+  color: 'var(--map-border-color)',
   weight: 1,
   opacity: 1
 };
 
 const firstAttemptStyle = {
-  fillColor: '#2ecc71',  // Green
+  fillColor: '#2ecc71',
   fillOpacity: 1,
-  color: '#666666',
+  color: 'var(--map-border-color)',
   weight: 1,
   opacity: 1
 };
 
 const secondAttemptStyle = {
-  fillColor: '#FFFF00',  // Yellow
+  fillColor: '#FFFF00',
   fillOpacity: 1,
-  color: '#666666',
+  color: 'var(--map-border-color)',
   weight: 1,
   opacity: 1
 };
 
 const thirdAttemptStyle = {
-  fillColor: '#FFA500',  // Orange
+  fillColor: '#FFA500',
   fillOpacity: 1,
-  color: '#666666',
+  color: 'var(--map-border-color)',
   weight: 1,
   opacity: 1
 };
 
 const failedStyle = {
-  fillColor: '#FF0000',  // Red
+  fillColor: '#FF0000',
   fillOpacity: 1,
-  color: '#666666',
+  color: 'var(--map-border-color)',
   weight: 1,
   opacity: 1
 };
@@ -116,8 +186,28 @@ const selectedStyle = {
   opacity: 1
 };
 
-const foundCountries = ref(new Map());
-
+// Function to create shifted GeoJSON
+const createShiftedGeoJSON = (originalData: FeatureCollection, longitudeShift: number): FeatureCollection => {
+  const shiftedData = JSON.parse(JSON.stringify(originalData)) as FeatureCollection;
+  shiftedData.features.forEach((feature) => {
+    if (feature.geometry.type === 'Polygon') {
+      feature.geometry.coordinates.forEach((ring: number[][]) => {
+        ring.forEach((coord: number[]) => {
+          coord[0] += longitudeShift;
+        });
+      });
+    } else if (feature.geometry.type === 'MultiPolygon') {
+      feature.geometry.coordinates.forEach((polygon: number[][][]) => {
+        polygon.forEach((ring: number[][]) => {
+          ring.forEach((coord: number[]) => {
+            coord[0] += longitudeShift;
+          });
+        });
+      });
+    }
+  });
+  return shiftedData;
+};
 
 const selectNewTargetCountry = () => {
   const remainingCountries = availableCountries.value.filter(country => 
@@ -140,7 +230,7 @@ const selectNewTargetCountry = () => {
   currentAttempts.value = 0;
 };
 
-const getStyleForAttempts = (attempts: number) => {
+const getStyleForAttempts = (attempts: number | undefined) => {
   switch (attempts) {
     case 1:
       return firstAttemptStyle;
@@ -175,6 +265,24 @@ const showFeedback = (isCorrect: boolean) => {
 
 const endGame = () => {
   gameEnded.value = true;
+  stopTimer();
+};
+
+const startTimer = () => {
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value);
+  }
+  timer.value = 0;
+  timerInterval.value = setInterval(() => {
+    timer.value++;
+  }, 1000);
+};
+
+const stopTimer = () => {
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value);
+    timerInterval.value = null;
+  }
 };
 
 const startNewGame = () => {
@@ -185,12 +293,11 @@ const startNewGame = () => {
   usedCountries.value = [];
   foundCountries.value.clear();
   selectNewTargetCountry();
+  startTimer();
   
   if (geojsonLayer.value) {
-    geojsonLayer.value.eachLayer((layer: L.Layer) => {
-      if (layer instanceof L.Path) {
-        layer.setStyle(defaultStyle)
-      }
+    geojsonLayer.value.eachLayer((layer) => {
+      (layer as L.Path).setStyle(defaultStyle);
     });
   }
 };
@@ -198,22 +305,28 @@ const startNewGame = () => {
 const onCountryClick = (e: L.LeafletMouseEvent) => {
   if (gameEnded.value) return;
   
-  const layer = e.target;
+  const layer = e.target as GeoJSONLayer;
   const clickedCountry = layer.feature.properties.name;
   
   if (clickedCountry === targetCountry.value) {
     currentAttempts.value++;
     
-    // Only increment score on first attempt
     if (currentAttempts.value === 1) {
       score.value++;
     }
     
     showFeedback(true);
     
-    // Store country with number of attempts and apply appropriate style
+    if (geojsonLayer.value) {
+      geojsonLayer.value.eachLayer((l) => {
+        const geoL = l as GeoJSONLayer;
+        if (geoL.feature?.properties?.name === clickedCountry) {
+          (l as L.Path).setStyle(getStyleForAttempts(currentAttempts.value));
+        }
+      });
+    }
+    
     foundCountries.value.set(clickedCountry, currentAttempts.value);
-    layer.setStyle(getStyleForAttempts(currentAttempts.value));
     
     if (currentRound.value === props.totalRounds) {
       setTimeout(endGame, 1000);
@@ -227,22 +340,14 @@ const onCountryClick = (e: L.LeafletMouseEvent) => {
     currentAttempts.value++;
     
     if (currentAttempts.value >= 3 && geojsonLayer.value) {
-      // Mark target country as failed after 3 attempts
-      geojsonLayer.value.eachLayer((l: L.Layer) => {
-        // First, ensure it's a GeoJSON layer
-        if (l instanceof L.GeoJSON) {
-          // Type assertion for the feature
-          const feature = (l.feature as Feature<Geometry>);
-          if (feature?.properties?.name === targetCountry.value) {
-            // Check if layer is a Path (for styling)
-            if (l instanceof L.Path) {
-              l.setStyle(failedStyle);
-              foundCountries.value.set(targetCountry.value, 4);
-            }
-          }
+      geojsonLayer.value.eachLayer((l) => {
+        const geoL = l as GeoJSONLayer;
+        if (geoL.feature?.properties?.name === targetCountry.value) {
+          (l as L.Path).setStyle(failedStyle);
         }
       });
       
+      foundCountries.value.set(targetCountry.value, 4);
       showFeedback(false);
       
       if (currentRound.value === props.totalRounds) {
@@ -255,11 +360,22 @@ const onCountryClick = (e: L.LeafletMouseEvent) => {
       }
     } else {
       showFeedback(false);
-      // Temporarily highlight wrong selection
-      layer.setStyle(selectedStyle);
+      if (geojsonLayer.value) {
+        geojsonLayer.value.eachLayer((l) => {
+          const geoL = l as GeoJSONLayer;
+          if (geoL.feature?.properties?.name === clickedCountry) {
+            (l as L.Path).setStyle(selectedStyle);
+          }
+        });
+      }
       setTimeout(() => {
-        if (!foundCountries.value.has(clickedCountry)) {
-          layer.setStyle(defaultStyle);
+        if (!foundCountries.value.has(clickedCountry) && geojsonLayer.value) {
+          geojsonLayer.value.eachLayer((l) => {
+            const geoL = l as GeoJSONLayer;
+            if (geoL.feature?.properties?.name === clickedCountry) {
+              (l as L.Path).setStyle(defaultStyle);
+            }
+          });
         }
       }, 1000);
     }
@@ -267,50 +383,136 @@ const onCountryClick = (e: L.LeafletMouseEvent) => {
 };
 
 onMounted(() => {
-  const leafletMap = L.map(map.value!, {
+  document.documentElement.setAttribute('data-theme', theme.global.name.value);
+  startTimer();
+  
+  if (!map.value) return;
+  
+  const leafletMapInstance = L.map(map.value, {
     minZoom: 2,
+    maxZoom: 6,
     worldCopyJump: true,
-  }).setView([20, 0], 2);
+    center: [20, 0],
+    zoom: 2,
+    maxBounds: [[-90, -540], [90, 540]],
+    maxBoundsViscosity: 1.0
+  });
+
+  const tileLayerInstance = L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/{themeName}_nolabels/{z}/{x}/{y}{r}.png'.replace(
+      '{themeName}',
+      theme.global.name.value === 'dark' ? 'dark' : 'light'
+    ),
+    {
+      attribution: '',
+      noWrap: false,
+    }
+  ).addTo(leafletMapInstance);
+  
+  tileLayer.value = tileLayerInstance;
 
   fetch('https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson')
     .then(response => response.json())
-    .then(data => {
-      availableCountries.value = data.features
-        .map((feature: Feature) => feature.properties?.name)
-        .filter((name: string | undefined):name is string => name !== undefined);
-      
-      selectNewTargetCountry();
-      
-      geojsonLayer.value = L.geoJSON(data, {
-        style: defaultStyle,
-        onEachFeature: (feature, layer) => {
-          layer.on({
-            click: onCountryClick,
-            mouseover: (e) => {
-              const layer = e.target;
-              const countryName = layer.feature.properties.name;
-              if (!foundCountries.value.has(countryName)) {
-                layer.setStyle({
-                  ...defaultStyle,
-                  fillOpacity: 0.7
-                });
+    .then((data: unknown) => {
+      if (isFeatureCollection(data)) {
+        availableCountries.value = data.features
+          .map(feature => feature.properties?.name)
+          .filter((name): name is string => name !== undefined);
+        
+        selectNewTargetCountry();
+
+        const leftWorldData = createShiftedGeoJSON(data, -360);
+        const rightWorldData = createShiftedGeoJSON(data, 360);
+        
+        const combinedData: FeatureCollection = {
+          type: 'FeatureCollection',
+          features: [
+            ...leftWorldData.features,
+            ...data.features,
+            ...rightWorldData.features
+          ]
+        };
+
+        geojsonLayer.value = L.geoJSON(combinedData, {
+          style: defaultStyle,
+          onEachFeature: (feature, layer) => {
+            layer.on({
+              click: onCountryClick,
+              mouseover: (e) => {
+                const geoLayer = e.target as GeoJSONLayer;
+                const countryName = geoLayer.feature.properties.name;
+                if (!foundCountries.value.has(countryName)) {
+                  geojsonLayer.value?.eachLayer((l) => {
+                    const geoL = l as GeoJSONLayer;
+                    if (geoL.feature?.properties?.name === countryName) {
+                      (l as L.Path).setStyle({
+                        ...defaultStyle,
+                        fillOpacity: 0.7
+                      });
+                    }
+                  });
+                }
+              },
+              mouseout: (e) => {
+                const geoLayer = e.target as GeoJSONLayer;
+                const countryName = geoLayer.feature.properties.name;
+                if (!foundCountries.value.has(countryName)) {
+                  geojsonLayer.value?.eachLayer((l) => {
+                    const geoL = l as GeoJSONLayer;
+                    if (geoL.feature?.properties?.name === countryName) {
+                      (l as L.Path).setStyle(defaultStyle);
+                    }
+                  });
+                }
               }
-            },
-            mouseout: (e) => {
-              const layer = e.target;
-              const countryName = layer.feature.properties.name;
-              if (!foundCountries.value.has(countryName)) {
-                layer.setStyle(defaultStyle);
-              }
-            }
-          });
-        }
-      }).addTo(leafletMap);
+            });
+          }
+        }).addTo(leafletMapInstance);
+      }
     });
 });
 </script>
 
 <style>
+:root {
+  color-scheme: light dark;
+  
+  /* Light theme variables */
+  --header-bg: rgba(255, 255, 255, 0.9);
+  --text-color: #333333;
+  --map-default-fill: #f0f0f0;
+  --map-border-color: #cccccc;
+  --map-bg: #ffffff;
+}
+
+/* Dark theme */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --header-bg: rgba(51, 51, 51, 0.9);
+    --text-color: #ffffff;
+    --map-default-fill: #333333;
+    --map-border-color: #666666;
+    --map-bg: #2f343a;
+  }
+}
+
+/* Manual theme overrides */
+[data-theme="light"] {
+  --header-bg: rgba(255, 255, 255, 0.9);
+  --text-color: #333333;
+  --map-default-fill: #f0f0f0;
+  --map-border-color: #cccccc;
+  --map-bg: #ffffff;
+}
+
+[data-theme="dark"] {
+  --header-bg: rgba(51, 51, 51, 0.9);
+  --text-color: #ffffff;
+  --map-default-fill: #333333;
+  --map-border-color: #666666;
+  --map-bg: #2f343a;
+}
+
 .map-container {
   position: relative;
 }
@@ -325,7 +527,7 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  background-color: rgba(51, 51, 51, 0.9);
+  background-color: var(--header-bg);
   padding: 15px;
   border-radius: 8px;
   min-width: 200px;
@@ -334,12 +536,12 @@ onMounted(() => {
 .game-info {
   display: flex;
   gap: 20px;
-  color: white;
+  color: var(--text-color);
   font-size: 18px;
 }
 
 .target-country {
-  color: white;
+  color: var(--text-color);
   font-size: 20px;
   font-weight: bold;
 }
@@ -365,10 +567,22 @@ onMounted(() => {
 }
 
 .final-score {
-  color: white;
+  color: var(--text-color);
   font-size: 24px;
   font-weight: bold;
   margin-bottom: 15px;
+}
+
+.final-time {
+  font-size: 18px;
+  margin-top: 5px;
+  color: var(--text-color);
+}
+
+.timer-display {
+  color: var(--text-color);
+  font-size: 18px;
+  font-weight: bold;
 }
 
 .new-game-btn {
@@ -387,17 +601,16 @@ onMounted(() => {
 }
 
 .leaflet-container {
-  background-color: #2f343a !important;
-  overflow: hidden;
+  background-color: var(--map-bg) !important;
 }
 
 .leaflet-popup-content {
-  background-color: #333333;
-  color: #ffffff;
+  background-color: var(--header-bg);
+  color: var(--text-color);
 }
 
 .leaflet-popup-tip {
-  background-color: #333333;
+  background-color: var(--header-bg);
 }
 
 /* Hide all Leaflet controls */
