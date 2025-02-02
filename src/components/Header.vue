@@ -6,13 +6,13 @@
     <v-app-bar-title>Geography Game</v-app-bar-title>
     <v-spacer />
     <v-btn
-      text
+      variant="text"
       @click="goToHome"
     >
       Home
     </v-btn>
     <v-btn
-      text
+      variant="text"
       @click="toggleTheme"
     >
       <v-icon>mdi-theme-light-dark</v-icon>
@@ -29,10 +29,6 @@ const theme = useTheme();
  
 const goToHome = () => {
   router.push('/');
-};
-
-const goToMapView = () => {
-  router.push('/map-view');
 };
 
 const toggleTheme = () => {

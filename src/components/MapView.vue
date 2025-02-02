@@ -45,8 +45,9 @@
 </template>
  
 <script setup lang="ts">
+import type { Feature, Geometry } from 'geojson';
 import L from 'leaflet';
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, type Ref } from 'vue';
 
 // Define props for customizable game settings
 const props = defineProps({
@@ -56,9 +57,8 @@ const props = defineProps({
   }
 });
 
-const map = ref(null);
-const selectedCountry = ref(null);
-const geojsonLayer = ref(null);
+const map = ref<HTMLElement | null>(null);
+const geojsonLayer: Ref<L.GeoJSON | null> = ref(null);
 const targetCountry = ref('');
 const score = ref(0);
 const currentRound = ref(1);
@@ -118,11 +118,6 @@ const selectedStyle = {
 
 const foundCountries = ref(new Map());
 
-const resetStyle = () => {
-  if (selectedCountry.value && geojsonLayer.value) {
-    geojsonLayer.value.resetStyle(selectedCountry.value);
-  }
-};
 
 const selectNewTargetCountry = () => {
   const remainingCountries = availableCountries.value.filter(country => 
@@ -192,13 +187,15 @@ const startNewGame = () => {
   selectNewTargetCountry();
   
   if (geojsonLayer.value) {
-    geojsonLayer.value.eachLayer((layer) => {
-      layer.setStyle(defaultStyle);
+    geojsonLayer.value.eachLayer((layer: L.Layer) => {
+      if (layer instanceof L.Path) {
+        layer.setStyle(defaultStyle)
+      }
     });
   }
 };
 
-const onCountryClick = (e) => {
+const onCountryClick = (e: L.LeafletMouseEvent) => {
   if (gameEnded.value) return;
   
   const layer = e.target;
@@ -229,12 +226,20 @@ const onCountryClick = (e) => {
   } else {
     currentAttempts.value++;
     
-    if (currentAttempts.value >= 3) {
+    if (currentAttempts.value >= 3 && geojsonLayer.value) {
       // Mark target country as failed after 3 attempts
-      geojsonLayer.value.eachLayer((l) => {
-        if (l.feature.properties.name === targetCountry.value) {
-          l.setStyle(failedStyle);
-          foundCountries.value.set(targetCountry.value, 4); // 4 indicates failure
+      geojsonLayer.value.eachLayer((l: L.Layer) => {
+        // First, ensure it's a GeoJSON layer
+        if (l instanceof L.GeoJSON) {
+          // Type assertion for the feature
+          const feature = (l.feature as Feature<Geometry>);
+          if (feature?.properties?.name === targetCountry.value) {
+            // Check if layer is a Path (for styling)
+            if (l instanceof L.Path) {
+              l.setStyle(failedStyle);
+              foundCountries.value.set(targetCountry.value, 4);
+            }
+          }
         }
       });
       
@@ -262,7 +267,7 @@ const onCountryClick = (e) => {
 };
 
 onMounted(() => {
-  const leafletMap = L.map(map.value, {
+  const leafletMap = L.map(map.value!, {
     minZoom: 2,
     worldCopyJump: true,
   }).setView([20, 0], 2);
@@ -271,8 +276,8 @@ onMounted(() => {
     .then(response => response.json())
     .then(data => {
       availableCountries.value = data.features
-        .map(feature => feature.properties.name)
-        .filter(name => name && name.trim() !== ''); // Filter out any empty names
+        .map((feature: Feature) => feature.properties?.name)
+        .filter((name: string | undefined):name is string => name !== undefined);
       
       selectNewTargetCountry();
       

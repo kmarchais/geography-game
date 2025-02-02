@@ -7,7 +7,6 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    GeographyGame: typeof import('./src/components/GeographyGame.vue')['default']
     Header: typeof import('./src/components/Header.vue')['default']
     MapView: typeof import('./src/components/MapView.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
