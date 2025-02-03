@@ -390,7 +390,7 @@ onMounted(() => {
   
   const leafletMapInstance = L.map(map.value, {
     minZoom: 2,
-    maxZoom: 6,
+    maxZoom: 10,
     worldCopyJump: true,
     center: [20, 0],
     zoom: 2,
