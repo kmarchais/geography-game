@@ -7,9 +7,12 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    GameEnd: typeof import('./src/components/GameEnd.vue')['default']
+    GameStatus: typeof import('./src/components/GameStatus.vue')['default']
     Header: typeof import('./src/components/Header.vue')['default']
     MapView: typeof import('./src/components/MapView.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    UsStates: typeof import('./src/components/UsStates.vue')['default']
   }
 }

@@ -94,7 +94,6 @@ const props = defineProps({
     default: 241,
   },
 });
-
 // Timer state
 const timer = ref(0);
 const timerInterval = ref<number | null>(null);
@@ -449,7 +448,7 @@ onMounted(() => {
   if (!map.value) return;
   const leafletMapInstance = L.map(map.value, {
     minZoom: 2,
-    maxZoom: 8,
+    maxZoom: 12,
     worldCopyJump: true,
     center: [20, 0],
     zoom: 2,

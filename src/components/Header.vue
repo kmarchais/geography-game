@@ -13,6 +13,12 @@
     </v-btn>
     <v-btn
       variant="text"
+      @click="goToUsStates"
+    >
+      US States
+    </v-btn>
+    <v-btn
+      variant="text"
       @click="toggleTheme"
     >
       <v-icon>mdi-theme-light-dark</v-icon>
@@ -29,6 +35,10 @@ const theme = useTheme();
  
 const goToHome = () => {
   router.push('/');
+};
+
+const goToUsStates = () => {
+  router.push('/us-states');
 };
 
 const toggleTheme = () => {
