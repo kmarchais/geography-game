@@ -7,6 +7,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    FrenchDepartments: typeof import('./src/components/FrenchDepartments.vue')['default']
     GameEnd: typeof import('./src/components/GameEnd.vue')['default']
     GameStatus: typeof import('./src/components/GameStatus.vue')['default']
     Header: typeof import('./src/components/Header.vue')['default']

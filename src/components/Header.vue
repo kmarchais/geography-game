@@ -19,6 +19,12 @@
     </v-btn>
     <v-btn
       variant="text"
+      @click="goToFrenchDepartments"
+    >
+      French Departments
+    </v-btn>    
+    <v-btn
+      variant="text"
       @click="toggleTheme"
     >
       <v-icon>mdi-theme-light-dark</v-icon>
@@ -39,6 +45,10 @@ const goToHome = () => {
 
 const goToUsStates = () => {
   router.push('/us-states');
+};
+
+const goToFrenchDepartments = () => {
+  router.push('/french-departments');
 };
 
 const toggleTheme = () => {
