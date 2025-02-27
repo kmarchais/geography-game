@@ -3,14 +3,31 @@
     <div class="game-header">
       <template v-if="!gameEnded">
         <div class="game-info">
-          <div class="score-display">Score: {{ score }}/{{ totalRoundsLocal }}</div>
-          <div class="round-display">Round: {{ currentRound }}/{{ totalRoundsLocal }}</div>
-          <div class="attempts-display">Attempts: {{ currentAttempts }}/3</div>
-          <div class="timer-display">Time: {{ formattedTime }}</div>
+          <div class="score-display">
+            Score: {{ score }}/{{ totalRoundsLocal }}
+          </div>
+          <div class="round-display">
+            Round: {{ currentRound }}/{{ totalRoundsLocal }}
+          </div>
+          <div class="attempts-display">
+            Attempts: {{ currentAttempts }}/3
+          </div>
+          <div class="timer-display">
+            Time: {{ formattedTime }}
+          </div>
         </div>
-        <div class="target-department">Find: {{ targetDepartment }}</div>
-        <button class="skip-btn" @click="skipDepartment">Skip</button>
-        <div v-if="feedback" :class="['feedback', feedbackType]">
+        <div class="target-department">
+          Find: {{ targetDepartment }}</div>
+        <button 
+          class="skip-btn" 
+          @click="skipDepartment"
+        >
+          Skip
+        </button>
+        <div
+          v-if="feedback"
+          :class="['feedback', feedbackType]"
+        >
           {{ feedback }}
         </div>
       </template>
@@ -18,15 +35,23 @@
         <div class="game-end">
           <div class="final-score">
             Final Score: {{ score }}/{{ totalRoundsLocal }}
-            <div class="final-time">Time: {{ formattedTime }}</div>
+            <div class="final-time">
+              Time: {{ formattedTime }}
+            </div>
           </div>
-          <button class="new-game-btn" @click="startNewGame">
+          <button
+            class="new-game-btn"
+            @click="startNewGame"
+          >
             Play Again
           </button>
         </div>
       </template>
     </div>
-    <div ref="map" style="height: calc(100vh - 64px); width: 100%" />
+    <div
+      ref="map"
+      style="height: calc(100vh - 64px); width: 100%"
+    />
   </div>
 </template>
 
@@ -516,6 +541,7 @@ onMounted(() => {
         <button class="overseas-btn" data-region="polynesia">Polynesia</button>
         <button class="overseas-btn" data-region="newcaledonia">New Caledonia</button>
         <button class="overseas-btn" data-region="antarctic">Antarctic</button>
+        <button class="overseas-btn" data-region="clipperton">Clipperton</button>
         <button class="overseas-btn" data-region="all">World View</button>
       </div>
     `;
@@ -605,7 +631,7 @@ onMounted(() => {
     if (isFeatureCollection(data)) {
       // Process GeoJSON data to extract department/territory names
       const numberOfTerritories = data.features.length;
-      totalRoundsLocal.value = Math.min(numberOfTerritories, props.totalRounds || numberOfTerritories);
+      totalRoundsLocal.value = 109; // Math.min(numberOfTerritories, props.totalRounds || numberOfTerritories);
       
       // Log the available territories for debugging
       console.log(`Loaded ${numberOfTerritories} French territories, including overseas territories`);
@@ -675,7 +701,8 @@ onMounted(() => {
       { name: "Wallis et Futuna", lat: -13.77, lng: -177.15, code: "986" },
       { name: "Terres Australes et Antarctiques Françaises", lat: -49.35, lng: 70.22, code: "984" },
       { name: "Saint-Martin", lat: 18.08, lng: -63.05, code: "978" },
-      { name: "Saint-Barthélemy", lat: 17.9, lng: -62.83, code: "977" }
+      { name: "Saint-Barthélemy", lat: 17.9, lng: -62.83, code: "977" },
+      { name: "Île de Clipperton", lat: 10.28, lng: -109.22, code: "000" }
     ];
     
     const markers: Record<string, L.Marker> = {};
