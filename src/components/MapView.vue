@@ -31,33 +31,18 @@
 </template>
 
 <script setup lang="ts">
-import type { Feature, FeatureCollection } from "geojson";
+import type { FeatureCollection } from "geojson";
 import L from "leaflet";
 import { computed, onMounted, ref, watch, type Ref } from "vue";
 import { useTheme } from "vuetify";
-
-// Extended type definitions
-interface GeoJSONFeature extends Feature {
-  properties: {
-    name: string;
-    [key: string]: any;
-  };
-}
-interface GeoJSONLayer extends L.Layer {
-  feature: GeoJSONFeature;
-}
-
-// Type guard for FeatureCollection
-function isFeatureCollection(value: unknown): value is FeatureCollection {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "type" in value &&
-    value.type === "FeatureCollection" &&
-    "features" in value &&
-    Array.isArray((value as FeatureCollection).features)
-  );
-}
+import type { GeoJSONFeature, GeoJSONLayer } from "../utils/geojsonUtils";
+import {
+  defaultStyle,
+  failedStyle,
+  getStyleForAttempts,
+  isFeatureCollection,
+  selectedStyle,
+} from "../utils/geojsonUtils";
 
 const theme = useTheme();
 const tileLayer = ref<L.TileLayer | null>(null);
@@ -119,48 +104,6 @@ const availableCountries = ref<string[]>([]);
 const usedCountries = ref<string[]>([]);
 const foundCountries = ref(new Map<string, number>());
 
-// Pre-defined styles
-const defaultStyle = {
-  fillColor: "var(--map-default-fill)",
-  fillOpacity: 1,
-  color: "var(--map-border-color)",
-  weight: 1,
-  opacity: 1,
-};
-const firstAttemptStyle = {
-  fillColor: "#2ecc71",
-  fillOpacity: 1,
-  color: "var(--map-border-color)",
-  weight: 1,
-  opacity: 1,
-};
-const secondAttemptStyle = {
-  fillColor: "#FFFF00",
-  fillOpacity: 1,
-  color: "var(--map-border-color)",
-  weight: 1,
-  opacity: 1,
-};
-const thirdAttemptStyle = {
-  fillColor: "#FFA500",
-  fillOpacity: 1,
-  color: "var(--map-border-color)",
-  weight: 1,
-  opacity: 1,
-};
-const failedStyle = {
-  fillColor: "#FF0000",
-  fillOpacity: 1,
-  color: "var(--map-border-color)",
-  weight: 1,
-  opacity: 1,
-};
-const selectedStyle = {
-  fillOpacity: 0.7,
-  weight: 2,
-  opacity: 1,
-};
-
 const createShiftedGeoJSON = (
   originalData: FeatureCollection,
   longitudeShift: number
@@ -207,19 +150,6 @@ const selectNewTargetCountry = () => {
     targetCountry.value = newTarget;
   }
   currentAttempts.value = 0;
-};
-
-const getStyleForAttempts = (attempts: number | undefined) => {
-  switch (attempts) {
-    case 1:
-      return firstAttemptStyle;
-    case 2:
-      return secondAttemptStyle;
-    case 3:
-      return thirdAttemptStyle;
-    default:
-      return failedStyle;
-  }
 };
 
 const showFeedback = (isCorrect: boolean, customMsg?: string) => {

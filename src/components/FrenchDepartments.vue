@@ -56,34 +56,17 @@
 </template>
 
 <script setup lang="ts">
-import type { Feature, FeatureCollection } from "geojson";
 import L from "leaflet";
 import { computed, onMounted, ref, watch, type Ref } from "vue";
 import { useTheme } from "vuetify";
-
-// Extended type definitions
-interface GeoJSONFeature extends Feature {
-  properties: {
-    name: string;
-    code: string;
-    [key: string]: any;
-  };
-}
-interface GeoJSONLayer extends L.Layer {
-  feature: GeoJSONFeature;
-}
-
-// Type guard for FeatureCollection
-function isFeatureCollection(value: unknown): value is FeatureCollection {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "type" in value &&
-    value.type === "FeatureCollection" &&
-    "features" in value &&
-    Array.isArray((value as FeatureCollection).features)
-  );
-}
+import type { GeoJSONFeature, GeoJSONLayer } from "../utils/geojsonUtils";
+import {
+  defaultStyle,
+  failedStyle,
+  getStyleForAttempts,
+  isFeatureCollection,
+  selectedStyle,
+} from "../utils/geojsonUtils";
 
 const theme = useTheme();
 const tileLayer = ref<L.TileLayer | null>(null);
@@ -147,48 +130,6 @@ const availableDepartments = ref<string[]>([]);
 const usedDepartments = ref<string[]>([]);
 const foundDepartments = ref(new Map<string, number>());
 
-// Pre-defined styles
-const defaultStyle = {
-  fillColor: "var(--map-default-fill)",
-  fillOpacity: 1,
-  color: "var(--map-border-color)",
-  weight: 1,
-  opacity: 1,
-};
-const firstAttemptStyle = {
-  fillColor: "#2ecc71",
-  fillOpacity: 1,
-  color: "var(--map-border-color)",
-  weight: 1,
-  opacity: 1,
-};
-const secondAttemptStyle = {
-  fillColor: "#FFFF00",
-  fillOpacity: 1,
-  color: "var(--map-border-color)",
-  weight: 1,
-  opacity: 1,
-};
-const thirdAttemptStyle = {
-  fillColor: "#FFA500",
-  fillOpacity: 1,
-  color: "var(--map-border-color)",
-  weight: 1,
-  opacity: 1,
-};
-const failedStyle = {
-  fillColor: "#FF0000",
-  fillOpacity: 1,
-  color: "var(--map-border-color)",
-  weight: 1,
-  opacity: 1,
-};
-const selectedStyle = {
-  fillOpacity: 0.7,
-  weight: 2,
-  opacity: 1,
-};
-
 const selectNewTargetDepartment = () => {
   const remainingDepartments = availableDepartments.value.filter(
     (department) => !usedDepartments.value.includes(department)
@@ -215,19 +156,6 @@ const selectNewTargetDepartment = () => {
   setTimeout(() => {
     navigateToTargetDepartment(targetDepartment.value);
   }, 300);
-};
-
-const getStyleForAttempts = (attempts: number | undefined) => {
-  switch (attempts) {
-    case 1:
-      return firstAttemptStyle;
-    case 2:
-      return secondAttemptStyle;
-    case 3:
-      return thirdAttemptStyle;
-    default:
-      return failedStyle;
-  }
 };
 
 const showFeedback = (isCorrect: boolean, customMsg?: string) => {
@@ -467,7 +395,7 @@ const onDepartmentClick = (e: L.LeafletMouseEvent) => {
         geojsonLayer.value.eachLayer((l) => {
           const geoL = l as GeoJSONLayer;
           if (geoL.feature?.properties?.name === clickedDepartment) {
-            (l as L.Path).setStyle(selectedStyle);
+            (l as L.Path).setStyle(defaultStyle);
           }
         });
       }
@@ -606,7 +534,7 @@ onMounted(() => {
           // Add manual entries for the non-department territories to display in the UI
           addManualTerritories();
         }
-      } catch (error) {
+      } catch {
         // If additional territories fetch fails, just use departments
         processGeoJSONData(deptData);
         console.warn("Could not load additional territories GeoJSON, using departments only");
