@@ -120,13 +120,6 @@ type NavigateToDepFn = (departmentName: string) => void;
 // This will be our actual implementation function, correctly typed
 let navigateToTargetDepartment: NavigateToDepFn = () => {}; // Empty placeholder initially
 
-const props = defineProps({
-  totalRounds: {
-    type: Number,
-    default: 0,
-  },
-});
-
 const totalRoundsLocal = ref(0);
 
 // Timer state

@@ -88,13 +88,6 @@ import { useTheme } from "vuetify";
     }
   );
   
-  const props = defineProps({
-    totalRounds: {
-      type: Number,
-      default: 0,
-    },
-  });
-  
   const totalRoundsLocal = ref(0);
   
   // Timer state
@@ -163,32 +156,7 @@ import { useTheme } from "vuetify";
     weight: 2,
     opacity: 1,
   };
-  
-  const createShiftedGeoJSON = (
-    originalData: FeatureCollection,
-    longitudeShift: number
-  ): FeatureCollection => {
-    const shiftedData = JSON.parse(JSON.stringify(originalData)) as FeatureCollection;
-    shiftedData.features.forEach((feature) => {
-      if (feature.geometry.type === "Polygon") {
-        feature.geometry.coordinates.forEach((ring: number[][]) => {
-          ring.forEach((coord: number[]) => {
-            coord[0] += longitudeShift;
-          });
-        });
-      } else if (feature.geometry.type === "MultiPolygon") {
-        feature.geometry.coordinates.forEach((polygon: number[][][]) => {
-          polygon.forEach((ring: number[][]) => {
-            ring.forEach((coord: number[]) => {
-              coord[0] += longitudeShift;
-            });
-          });
-        });
-      }
-    });
-    return shiftedData;
-  };
-  
+    
   const selectNewTargetState = () => {
     const remainingStates = availableStates.value.filter(
       (state) => !usedStates.value.includes(state)
