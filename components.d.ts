@@ -8,11 +8,12 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AfricanCountries: typeof import('./src/components/AfricanCountries.vue')['default']
+    AppBar: typeof import('./src/components/AppBar.vue')['default']
     FrenchDepartments: typeof import('./src/components/FrenchDepartments.vue')['default']
-    Header: typeof import('./src/components/Header.vue')['default']
-    MapView: typeof import('./src/components/MapView.vue')['default']
+    MapGame: typeof import('./src/components/MapGame.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     UsStates: typeof import('./src/components/UsStates.vue')['default']
+    WorldCountries: typeof import('./src/components/WorldCountries.vue')['default']
   }
 }
