@@ -7,10 +7,12 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    AppBar: typeof import('./src/components/AppBar.vue')['default']
-    GeoGame: typeof import('./src/components/GeoGame.vue')['default']
-    HomeGameSelection: typeof import('./src/components/HomeGameSelection.vue')['default']
+    AfricanCountries: typeof import('./src/components/AfricanCountries.vue')['default']
+    FrenchDepartments: typeof import('./src/components/FrenchDepartments.vue')['default']
+    Header: typeof import('./src/components/Header.vue')['default']
+    MapView: typeof import('./src/components/MapView.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    UsStates: typeof import('./src/components/UsStates.vue')['default']
   }
 }
