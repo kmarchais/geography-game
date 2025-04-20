@@ -3,6 +3,7 @@
     <v-app-bar-title>Geography Game</v-app-bar-title>
     <v-spacer />
     <v-btn variant="text" @click="goToHome"> Home </v-btn>
+    <v-btn variant="text" @click="goToWorld"> World </v-btn>
     <v-btn variant="text" @click="goToUsStates"> US States </v-btn>
     <v-btn variant="text" @click="goToFrenchDepartments">
       French Departments
@@ -25,6 +26,10 @@ const theme = useTheme();
 
 const goToHome = () => {
   router.push("/");
+};
+
+const goToWorld = () => {
+  router.push("/world");
 };
 
 const goToUsStates = () => {
