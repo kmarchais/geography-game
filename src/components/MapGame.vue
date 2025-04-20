@@ -1,6 +1,5 @@
 <template>
   <div class="map-container">
-    <!-- Game Header -->
     <div class="game-header">
       <template v-if="!gameEnded">
         <div class="game-info">
@@ -52,13 +51,11 @@
       </template>
     </div>
 
-    <!-- Map Div -->
     <div
       ref="mapElement"
       class="map-render-area"
     />
 
-    <!-- Slot for additional controls like France's overseas nav -->
     <div class="extra-controls-container">
       <slot
         name="extra-controls"
@@ -71,28 +68,27 @@
 <script setup lang="ts">
   import type { FeatureCollection, Geometry, Feature } from "geojson";
   import L from "leaflet";
-  import "leaflet/dist/leaflet.css"; // Import Leaflet CSS
+  import "leaflet/dist/leaflet.css";
   import {
     onMounted,
-    onUnmounted, // Ensure onUnmounted is imported
+    onUnmounted,
     ref,
     watch,
     type Ref,
     shallowRef,
   } from "vue";
   import { useTheme } from "vuetify";
-  import { useMapGameLogic } from "../composables/useMapGameLogic"; // Adjust path if needed
+  import { useMapGameLogic } from "../composables/useMapGameLogic";
   import {
     animateLayer,
-    defaultStyle, // Make sure defaultStyle is imported
+    defaultStyle,
     getStyleForAttempts,
     isFeatureCollection,
     selectedStyle,
-    type GeoJSONFeature, // Keep this type for assertions
+    type GeoJSONFeature,
     type GeoJSONProperties,
-  } from "../utils/geojsonUtils"; // Adjust path if needed
+  } from "../utils/geojsonUtils";
 
-  // --- Props ---
 
   interface MapOptions extends L.MapOptions {
     initialCenter: L.LatLngExpression;
@@ -121,7 +117,6 @@
     mapOptions: MapOptions;
   }>();
 
-  // --- Refs ---
   const mapElement = ref<HTMLElement | null>(null);
   const leafletMap = shallowRef<L.Map | null>(null);
   const tileLayer = shallowRef<L.TileLayer | null>(null);
@@ -129,7 +124,6 @@
   const availableEntities = ref<string[]>([]);
   const totalRoundsComputed = ref(0);
 
-  // --- Composables ---
   const theme = useTheme();
   const gameLogic = useMapGameLogic({
     entityNameSingular: props.entityNameSingular,
@@ -147,13 +141,12 @@
     formattedTime,
     feedback,
     feedbackType,
-    startNewGame, // Correct function name exposed
+    startNewGame,
     skipEntity,
     handleCorrectGuess,
     handleIncorrectGuess,
   } = gameLogic;
 
-  // --- Map and Layer Styling ---
 
   const setLayerStyle = (layer: L.Layer, style: L.PathOptions) => {
     if (layer && typeof (layer as L.Path).setStyle === 'function') {
@@ -165,9 +158,7 @@
     if (!geojsonLayer.value) return;
 
     geojsonLayer.value.eachLayer((layer) => {
-      // Check if the layer has the 'feature' property before accessing it
       if ('feature' in layer && layer.feature) {
-          // Assert the type of feature after confirming its existence
           const feature = layer.feature as GeoJSONFeature;
           const entityName = feature.properties?.name;
 
@@ -176,14 +167,10 @@
             const styleToApply = getStyleForAttempts(attempts);
             setLayerStyle(layer, styleToApply);
           } else {
-            // Feature exists but name is missing/invalid
             setLayerStyle(layer, defaultStyle);
           }
       } else {
-          // Layer doesn't have a feature property (might be a marker or other layer type)
-          // Apply default style or handle differently if needed
-          // For GeoJSON layers, this case shouldn't ideally happen if filtered correctly
-          if (layer instanceof L.Path) { // Apply default only to vector layers
+          if (layer instanceof L.Path) {
                setLayerStyle(layer, defaultStyle);
           }
       }
@@ -191,14 +178,11 @@
   };
 
 
-  // --- Event Handlers ---
 
   const onEntityClick = (e: L.LeafletMouseEvent) => {
     if (gameEnded.value || feedback.value) return;
 
-    // Target should be a GeoJSON layer in this context
     const layer = e.target as L.GeoJSON;
-    // Assert the type of feature
     const feature = layer.feature as GeoJSONFeature | undefined;
 
     if (!feature?.properties) {
@@ -291,9 +275,7 @@
     if (!geojsonLayer.value || !entityNameToHighlight) return;
     let layerFound = false;
     geojsonLayer.value.eachLayer((layer) => {
-      // Check if the layer has the 'feature' property before accessing it
       if ('feature' in layer && layer.feature) {
-          // Assert the type of feature after confirming its existence
           const feature = layer.feature as GeoJSONFeature;
           if (feature.properties?.name === entityNameToHighlight) {
             animateLayer(layer);
@@ -306,7 +288,6 @@
     }
   };
 
-  // --- Lifecycle Hooks ---
 
   onMounted(async () => {
     if (!mapElement.value) {
@@ -369,7 +350,6 @@
           geojsonLayer.value = L.geoJSON(processedData, {
             style: defaultStyle,
             onEachFeature: (feature, layer) => {
-              // Assert feature type here for safety within the closure
               const feat = feature as GeoJSONFeature | undefined;
               if (feat?.properties?.name && feat.properties.name !== 'Unknown') {
                   layer.on({
@@ -406,7 +386,7 @@
             totalRoundsComputed.value = props.totalRoundsOverride ?? availableEntities.value.length;
           }
 
-          startNewGame(); // Corrected typo here
+          startNewGame();
 
         } else {
            console.error("Processed data is not a valid FeatureCollection.");
@@ -434,7 +414,6 @@
     }
   });
 
-  // --- Watchers ---
 
   watch(() => theme.global.name.value, (newTheme) => {
       document.documentElement.setAttribute("data-theme", newTheme);
@@ -639,11 +618,6 @@
     border-right: 1px solid var(--popup-border);
     border-bottom: 1px solid var(--popup-border);
     box-shadow: none;
-  }
-
-  .leaflet-control-container .leaflet-top,
-  .leaflet-control-container .leaflet-bottom {
-    /* display: none; */
   }
 
   .entity-reveal-animation {

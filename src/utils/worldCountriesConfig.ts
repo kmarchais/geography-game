@@ -1,4 +1,4 @@
-import type { GameConfig } from "../types/game";
+import type { GameConfig } from "../types/game.d";
 import type { FeatureCollection, Feature, Geometry, GeoJsonObject } from "geojson";
 
 interface GeoJSONProperties {
@@ -8,7 +8,6 @@ interface GeoJSONProperties {
 type GeoJSONFeatureCollection = FeatureCollection<Geometry, GeoJSONProperties>;
 type GeoJSONFeature = Feature<Geometry, GeoJSONProperties>;
 
-// World Countries Configuration
 export const worldCountriesConfig: GameConfig = {
   name: "World Countries",
   dataUrl: "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson",
@@ -21,16 +20,13 @@ export const worldCountriesConfig: GameConfig = {
   propertyName: "name",
   targetLabel: "Country",
 
-  // For world map, create wrapped duplicates for better user experience
   processData: (data: GeoJsonObject): GeoJsonObject => {
-    // First check if data is a FeatureCollection
     if (!isFeatureCollection(data)) {
-      return data; // Return as is if not a FeatureCollection
+      return data;
     }
 
     const featureCollection = data as GeoJSONFeatureCollection;
 
-    // Create shifted versions of the world for continuous scrolling
     const leftWorldData = createShiftedGeoJSON(featureCollection, -360);
     const rightWorldData = createShiftedGeoJSON(featureCollection, 360);
 

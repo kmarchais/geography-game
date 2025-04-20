@@ -1,4 +1,3 @@
-<!-- WorldCountries.vue -->
 <template>
   <MapGame
     entity-name-singular="Country"
@@ -17,7 +16,6 @@ import L from 'leaflet';
 import type { FeatureCollection, Geometry } from 'geojson';
 import type { GeoJSONProperties } from '../utils/geojsonUtils';
 
-// Define map options
 const mapOptions = {
   initialCenter: [20, 0] as L.LatLngExpression,
   initialZoom: 2,
@@ -25,25 +23,17 @@ const mapOptions = {
   maxZoom: 8,
   worldCopyJump: true,
   maxBounds: [
-    [-90, -540], // Southwest corner
-    [90, 540], // Northeast corner
+    [-90, -540],
+    [90, 540],
   ] as L.LatLngBoundsExpression,
   maxBoundsViscosity: 1.0
 };
 
-// If you need to use a variable totalRounds, define it:
-// const totalRounds = 54;
-
-// Function to process world map data with wrapping
 const processWorldData = (data: FeatureCollection<Geometry, GeoJSONProperties>) => {
   return createWorldWrapping(data);
 };
 
-// Helper function to create wrapped world copies for continuous scrolling
 function createWorldWrapping(featureCollection: FeatureCollection<Geometry, GeoJSONProperties>) {
-  // Implementation details...
-  // This would contain your coordinate shifting logic for world wrapping
-
-  return featureCollection; // This is a placeholder; your actual implementation would return the processed data
+  return featureCollection;
 }
 </script>
