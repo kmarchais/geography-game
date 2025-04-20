@@ -1,8 +1,8 @@
 // src/utils/geojsonUtils.ts
-import type { Feature, FeatureCollection, GeoJsonObject } from "geojson";
+import type { Feature, FeatureCollection, GeoJsonObject, Geometry } from "geojson"; // Added Geometry
 import type L from "leaflet";
 
-// Define interfaces for GeoJSON features and layers with properties
+// Define interfaces for GeoJSON features with expected properties
 export interface GeoJSONProperties {
   name: string; // Ensure 'name' is the standard property used internally
   code?: string; // Optional code property
@@ -10,13 +10,13 @@ export interface GeoJSONProperties {
   [key: string]: any;
 }
 
+// Define our specific Feature type
 export interface GeoJSONFeature extends Feature {
   properties: GeoJSONProperties;
+  geometry: Geometry; // Ensure geometry is included from base Feature type
 }
 
-export interface GeoJSONLayer extends L.GeoJSON {
-  feature: GeoJSONFeature;
-}
+// REMOVED the GeoJSONLayer interface to avoid conflicts
 
 // Type guard for FeatureCollection
 export function isFeatureCollection(
@@ -126,14 +126,11 @@ export function animateLayer(layer: L.Layer) {
         "animationend",
         () => {
           element.classList.remove("entity-reveal-animation");
-          // Reset transform origin after animation if needed, though usually not necessary
-          // svgEl.style.transformOrigin = '';
         },
         { once: true }
       );
     } catch (error) {
       console.error("Could not get BBox for animation:", error, element);
-      // Fallback or alternative animation if BBox fails?
     }
   }
 }

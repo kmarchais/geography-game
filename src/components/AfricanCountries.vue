@@ -14,7 +14,7 @@
 import type { FeatureCollection } from "geojson";
 import L from "leaflet";
 import MapGame from "./MapGame.vue"; // Adjust path
-import type { GeoJSONFeature, GeoJSONProperties } from "../utils/geojsonUtils"; // Adjust path
+import type { GeoJSONProperties } from "../utils/geojsonUtils"; // Adjust path
 
 const mapOptions = {
   initialCenter: [5, 20] as L.LatLngExpression, // Center on Africa

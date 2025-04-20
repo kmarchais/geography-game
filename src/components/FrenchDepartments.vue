@@ -19,7 +19,12 @@
            <button class="overseas-btn" @click="navigateTo(map, 'guiana')">Guiana</button>
            <button class="overseas-btn" @click="navigateTo(map, 'reunion')">Réunion</button>
            <button class="overseas-btn" @click="navigateTo(map, 'mayotte')">Mayotte</button>
-           <!-- Add buttons for other territories as needed -->
+           <button class="overseas-btn" @click="navigateTo(map, 'stpierre')">St Pierre</button>
+           <button class="overseas-btn" @click="navigateTo(map, 'polynesia')">Polynesia</button>
+           <button class="overseas-btn" @click="navigateTo(map, 'newcaledonia')">New Caledonia</button>
+           <button class="overseas-btn" @click="navigateTo(map, 'wallis')">Wallis</button>
+           <button class="overseas-btn" @click="navigateTo(map, 'taaf')">TAAF</button>
+           <button class="overseas-btn" @click="navigateTo(map, 'clipperton')">Clipperton</button>
            <button class="overseas-btn" @click="navigateTo(map, 'world')">World</button>
         </div>
       </div>
@@ -29,7 +34,7 @@
 
 <script setup lang="ts">
 import L from "leaflet";
-import { ref, watch, type Ref } from "vue";
+import { ref, watch, type Ref } from "vue"; // Import Ref
 import MapGame from "./MapGame.vue"; // Adjust path
 import { getStyleForAttempts } from "../utils/geojsonUtils"; // Adjust path
 
@@ -39,7 +44,6 @@ const mapOptions = {
   minZoom: 2,
   maxZoom: 12, // Allow closer zoom for small territories
   worldCopyJump: true, // Needed to see all territories easily
-  // No maxBounds initially, allow free panning
   maxBounds: undefined, // Explicitly undefined
   maxBoundsViscosity: 0.0, // Allow panning outside initial view easily
 };
@@ -48,43 +52,18 @@ const mapOptions = {
 const navigateTo = (mapInstance: L.Map | null, region: string) => {
   if (!mapInstance) return;
   switch (region) {
-    case "mainland":
-      mapInstance.setView([46.603354, 1.888334], 5);
-      break;
-    case "caribbean": // Guadeloupe/Martinique/St Martin/St Barts area
-      mapInstance.setView([16.5, -62.0], 7);
-      break;
-    case "guiana":
-      mapInstance.setView([4.0, -53.0], 7);
-      break;
-    case "reunion":
-      mapInstance.setView([-21.1, 55.5], 9);
-      break;
-    case "mayotte":
-      mapInstance.setView([-12.8, 45.2], 10);
-      break;
-    // Add cases for St Pierre, Polynesia, New Caledonia, Wallis, TAAF, Clipperton
-    case "stpierre":
-       mapInstance.setView([46.8, -56.2], 9);
-       break;
-    case "polynesia":
-       mapInstance.setView([-17.7, -149.4], 6);
-       break;
-    case "newcaledonia":
-       mapInstance.setView([-21.5, 165.8], 7);
-       break;
-    case "wallis":
-       mapInstance.setView([-13.7, -177.1], 9);
-       break;
-    case "taaf": // Kerguelen approximate center
-       mapInstance.setView([-49.3, 69.3], 6);
-       break;
-    case "clipperton":
-       mapInstance.setView([10.3, -109.2], 10);
-       break;
-    case "world":
-      mapInstance.setView([20, 0], 2); // Zoom out to world view
-      break;
+    case "mainland": mapInstance.setView([46.6, 1.9], 5); break;
+    case "caribbean": mapInstance.setView([16.5, -62.0], 7); break;
+    case "guiana": mapInstance.setView([4.0, -53.0], 7); break;
+    case "reunion": mapInstance.setView([-21.1, 55.5], 9); break;
+    case "mayotte": mapInstance.setView([-12.8, 45.2], 10); break;
+    case "stpierre": mapInstance.setView([46.8, -56.2], 9); break;
+    case "polynesia": mapInstance.setView([-17.7, -149.4], 6); break;
+    case "newcaledonia": mapInstance.setView([-21.5, 165.8], 7); break;
+    case "wallis": mapInstance.setView([-13.7, -177.1], 9); break;
+    case "taaf": mapInstance.setView([-49.3, 69.3], 6); break; // Kerguelen approx
+    case "clipperton": mapInstance.setView([10.3, -109.2], 10); break;
+    case "world": mapInstance.setView([20, 0], 2); break;
   }
 };
 
@@ -107,7 +86,16 @@ const additionalTerritories: Territory[] = [
     { name: "Île de Clipperton", lat: 10.28, lng: -109.22, code: "989" } // Often unofficial code
 ];
 
-const addFrenchTerritoryMarkers: typeof props.addManualMarkersFn = (
+// Define the type for the function explicitly
+type AddManualMarkersFnType = (
+  map: L.Map,
+  available: Ref<string[]>,
+  found: Ref<Map<string, number>>,
+  clickHandler: (name: string, latlng: L.LatLng) => void
+) => void;
+
+// Assign the function to the explicitly typed variable
+const addFrenchTerritoryMarkers: AddManualMarkersFnType = (
   map,
   available,
   found,
@@ -124,34 +112,30 @@ const addFrenchTerritoryMarkers: typeof props.addManualMarkersFn = (
 
     if (attempts) {
         const style = getStyleForAttempts(attempts);
-        borderColor = style.fillColor; // Use fill color for border
-        // Make background match for found items, keep default otherwise?
+        borderColor = style.fillColor;
         if (attempts > 0 && attempts < 4) {
              bgColor = style.fillColor;
-             // Adjust text color for better contrast on colored backgrounds
-             // This is a simple heuristic, might need refinement
              const hex = style.fillColor.replace('#', '');
              const r = parseInt(hex.substring(0, 2), 16);
              const g = parseInt(hex.substring(2, 4), 16);
              const b = parseInt(hex.substring(4, 6), 16);
              const brightness = (r * 299 + g * 587 + b * 114) / 1000;
              textColor = brightness > 128 ? '#000000' : '#ffffff';
-        } else if (attempts === 4) { // Failed/Skipped
-             bgColor = style.fillColor; // Red background
+        } else if (attempts === 4) {
+             bgColor = style.fillColor;
              textColor = '#ffffff';
         }
     }
 
     return L.divIcon({
-      className: 'territory-marker', // Use this class for base styling
+      className: 'territory-marker',
       html: `<div class="territory-icon" title="${territory.name}" style="border-color:${borderColor}; background-color:${bgColor}; color:${textColor};">${territory.code || territory.name.substring(0, 3)}</div>`,
-      iconSize: [30, 30], // Adjust size as needed
-      iconAnchor: [15, 15] // Center the icon
+      iconSize: [30, 30],
+      iconAnchor: [15, 15]
     });
   };
 
   additionalTerritories.forEach(territory => {
-    // Add to available list if not already present from GeoJSON
     if (!available.value.includes(territory.name)) {
       available.value.push(territory.name);
     }
@@ -160,15 +144,13 @@ const addFrenchTerritoryMarkers: typeof props.addManualMarkersFn = (
       icon: createMarkerIcon(territory, found.value.get(territory.name)),
     }).addTo(markerLayer);
 
-    markers[territory.name] = marker; // Store marker
+    markers[territory.name] = marker;
 
     marker.on('click', (e) => {
-      // Call the generic click handler passed from MapGame
       clickHandler(territory.name, e.latlng);
     });
   });
 
-  // Watch for changes in 'found' map to update marker styles
   watch(found, (newFound) => {
       additionalTerritories.forEach(territory => {
           const marker = markers[territory.name];
