@@ -10,6 +10,9 @@
     <v-btn variant="text" @click="goToAfricanCountries">
       African Countries
     </v-btn>
+    <v-btn variant="text" @click="goToWorldCountries">
+      World Countries
+    </v-btn>
     <v-btn variant="text" @click="toggleTheme">
       <v-icon>mdi-theme-light-dark</v-icon>
     </v-btn>
@@ -23,21 +26,11 @@ import { useTheme } from "vuetify";
 const router = useRouter();
 const theme = useTheme();
 
-const goToHome = () => {
-  router.push("/");
-};
-
-const goToUsStates = () => {
-  router.push("/us-states");
-};
-
-const goToFrenchDepartments = () => {
-  router.push("/french-departments");
-};
-
-const goToAfricanCountries = () => {
-  router.push("/african-countries");
-};
+const goToHome = () => router.push("/");
+const goToUsStates = () => router.push("/us-states");
+const goToFrenchDepartments = () => router.push("/french-departments");
+const goToAfricanCountries = () => router.push("/african-countries");
+const goToWorldCountries = () => router.push("/world-countries"); // Added World
 
 const toggleTheme = () => {
   theme.global.name.value =
