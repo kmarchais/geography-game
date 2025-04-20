@@ -87,4 +87,4 @@ export function getStyleForAttempts(attempts: number | undefined) {
     default:
       return failedStyle;
   }
-} 
+}

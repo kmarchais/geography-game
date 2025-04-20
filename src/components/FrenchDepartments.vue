@@ -18,8 +18,8 @@
         </div>
         <div class="target-department">
           Find: {{ targetDepartment }}</div>
-        <button 
-          class="skip-btn" 
+        <button
+          class="skip-btn"
           @click="skipDepartment"
         >
           Skip
@@ -151,7 +151,7 @@ const selectNewTargetDepartment = () => {
     targetDepartment.value = newTarget;
   }
   currentAttempts.value = 0;
-  
+
   // Navigate to the department after a short delay
   setTimeout(() => {
     navigateToTargetDepartment(targetDepartment.value);
@@ -207,16 +207,16 @@ const startNewGame = () => {
   usedDepartments.value = [];
   foundDepartments.value.clear();
   selectNewTargetDepartment();
-  
+
 // Implement the navigation function
 navigateToTargetDepartment = (departmentName: string) => {
   if (!geojsonLayer.value || !leafletMap.value) return;
-  
+
   // Find the target department's coordinates
   let targetLat = 0;
   let targetLng = 0;
   let foundTarget = false;
-  
+
   geojsonLayer.value.eachLayer((l) => {
     const geoL = l as GeoJSONLayer;
     if (geoL.feature?.properties?.name === departmentName) {
@@ -230,7 +230,7 @@ navigateToTargetDepartment = (departmentName: string) => {
       }
     }
   });
-  
+
   if (foundTarget) {
     // Special case for overseas departments - zoom in more and center map
     if (targetLng < -20 || targetLng > 10 || targetLat < 40 || targetLat > 52) { // Outside mainland France
@@ -332,9 +332,9 @@ const onDepartmentClick = (e: L.LeafletMouseEvent) => {
   if (gameEnded.value) return;
   const layer = e.target as GeoJSONLayer;
   const clickedDepartment = layer.feature.properties.name;
-  const departmentCode = layer.feature.properties.code ? 
+  const departmentCode = layer.feature.properties.code ?
     `(${layer.feature.properties.code})` : '';
-  
+
   if (leafletMap.value) {
     L.popup({
       autoClose: true,
@@ -345,7 +345,7 @@ const onDepartmentClick = (e: L.LeafletMouseEvent) => {
       .setContent(`${clickedDepartment} ${departmentCode}`)
       .openOn(leafletMap.value as L.Map);
   }
-  
+
   if (clickedDepartment === targetDepartment.value) {
     currentAttempts.value++;
     if (currentAttempts.value === 1) {
@@ -420,7 +420,7 @@ onMounted(() => {
   );
   startTimer();
   if (!map.value) return;
-  
+
   // Center the map on France, without navigation constraints
   const leafletMapInstance = L.map(map.value, {
     minZoom: 2,
@@ -430,7 +430,7 @@ onMounted(() => {
     zoom: 5,
     // Removed maxBounds entirely to allow unlimited panning
   });
-  
+
   leafletMap.value = leafletMapInstance;
   const tileLayerInstance = L.tileLayer(
     "https://{s}.basemaps.cartocdn.com/{themeName}_nolabels/{z}/{x}/{y}{r}.png"
@@ -444,7 +444,7 @@ onMounted(() => {
     }
   ).addTo(leafletMapInstance);
   tileLayer.value = tileLayerInstance;
-  
+
   // Add UI controls for easy navigation to overseas territories
   // Need to use a different approach to create a control that's TypeScript-friendly
   const overseasControl = new L.Control({ position: 'bottomright' });
@@ -466,7 +466,7 @@ onMounted(() => {
         <button class="overseas-btn" data-region="all">World View</button>
       </div>
     `;
-    
+
     // Add click handlers for the navigation buttons
     div.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
@@ -491,7 +491,7 @@ onMounted(() => {
         }
       }
     });
-    
+
     return div;
   };
   overseasControl.addTo(leafletMapInstance);
@@ -504,7 +504,7 @@ onMounted(() => {
         "https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements-avec-outre-mer.geojson"
       );
       const deptData = await deptResponse.json();
-      
+
       // Try to fetch additional territories - note: we'll use a custom URL or fallback to departments if not available
       try {
         // This will need to be replaced with the actual URL to your additional territories GeoJSON
@@ -512,10 +512,10 @@ onMounted(() => {
         const additionalResponse = await fetch(
           "https://raw.githubusercontent.com/your-repo/french-additional-territories.geojson"
         );
-        
+
         if (additionalResponse.ok) {
           const additionalData = await additionalResponse.json();
-          
+
           // Combine both datasets if additional data was successfully fetched
           if (isFeatureCollection(deptData) && isFeatureCollection(additionalData)) {
             const combinedData = {
@@ -530,7 +530,7 @@ onMounted(() => {
           // If additional territories fetch fails, just use departments
           processGeoJSONData(deptData);
           console.warn("Could not load additional territories GeoJSON, using departments only");
-          
+
           // Add manual entries for the non-department territories to display in the UI
           addManualTerritories();
         }
@@ -538,7 +538,7 @@ onMounted(() => {
         // If additional territories fetch fails, just use departments
         processGeoJSONData(deptData);
         console.warn("Could not load additional territories GeoJSON, using departments only");
-        
+
         // Add manual entries for the non-department territories to display in the UI
         addManualTerritories();
       }
@@ -546,17 +546,17 @@ onMounted(() => {
       console.error("Error loading French territories GeoJSON:", error);
     }
   };
-  
+
   // Function to process the GeoJSON data once obtained
   const processGeoJSONData = (data: unknown) => {
     if (isFeatureCollection(data)) {
       // Process GeoJSON data to extract department/territory names
       const numberOfTerritories = data.features.length;
       totalRoundsLocal.value = 109; // Math.min(numberOfTerritories, props.totalRounds || numberOfTerritories);
-      
+
       // Log the available territories for debugging
       console.log(`Loaded ${numberOfTerritories} French territories, including overseas territories`);
-      
+
       // Extract territory names from GeoJSON
       availableDepartments.value = data.features
         .map((feature) => {
@@ -564,10 +564,10 @@ onMounted(() => {
           return properties.nom;
         })
         .filter((name): name is string => name !== undefined);
-      
+
       // Start with a random department
       selectNewTargetDepartment();
-      
+
       // Create the GeoJSON layer
       geojsonLayer.value = L.geoJSON(data, {
         style: defaultStyle,
@@ -576,7 +576,7 @@ onMounted(() => {
           const properties = feature.properties as { nom: string; code: string };
           (feature.properties as GeoJSONFeature['properties']).name = properties.nom;
           (feature.properties as GeoJSONFeature['properties']).code = properties.code || '';
-          
+
           layer.on({
             click: onDepartmentClick,
             mouseover: (e) => {
@@ -611,7 +611,7 @@ onMounted(() => {
       }).addTo(leafletMapInstance);
     }
   };
-  
+
   // Function to add manual territory markers when we don't have precise GeoJSON data
   const addManualTerritories = () => {
     // Add additional territories as markers with clickable popups
@@ -625,18 +625,18 @@ onMounted(() => {
       { name: "Saint-Barthélemy", lat: 17.9, lng: -62.83, code: "977" },
       { name: "Île de Clipperton", lat: 10.28, lng: -109.22, code: "000" }
     ];
-    
+
     const markers: Record<string, L.Marker> = {};
     const markerLayer = L.layerGroup().addTo(leafletMapInstance);
-    
+
     // Function to update marker appearance based on game state
     const updateMarkerStyle = (territoryName: string) => {
       if (!markers[territoryName]) return;
-      
+
       const marker = markers[territoryName];
       let color = '#d35400'; // Default border color
       let bgColor = 'var(--header-bg)';
-      
+
       // If this territory has been found or attempted, change its color
       if (foundDepartments.value.has(territoryName)) {
         const attempts = foundDepartments.value.get(territoryName);
@@ -658,23 +658,23 @@ onMounted(() => {
             bgColor = '#FF0000';
         }
       }
-      
+
       // Create new icon with updated style
       const newIcon = L.divIcon({
         className: 'territory-marker',
         html: `<div class="territory-icon" style="border-color:${color}; background-color:${bgColor};">${territoryName.slice(0, 3)}</div>`,
         iconSize: [40, 40]
       });
-      
+
       marker.setIcon(newIcon);
     };
-    
+
     additionalTerritories.forEach(territory => {
       // Add the territory to the available departments list
       if (!availableDepartments.value.includes(territory.name)) {
         availableDepartments.value.push(territory.name);
       }
-      
+
       // Create a marker with a clickable popup - now showing territory code
       const marker = L.marker([territory.lat, territory.lng], {
         icon: L.divIcon({
@@ -683,14 +683,14 @@ onMounted(() => {
           iconSize: [40, 40]
         })
       }).addTo(markerLayer);
-      
+
       // Store marker reference for later style updates
       markers[territory.name] = marker;
-      
+
       // Add click handler to the marker
       marker.on('click', (e) => {
         if (gameEnded.value) return;
-        
+
         const clickedName = territory.name;
         if (leafletMap.value) {
           L.popup({
@@ -702,18 +702,18 @@ onMounted(() => {
             .setContent(`${clickedName} (${territory.code})`)
             .openOn(leafletMap.value as L.Map);
         }
-        
+
         if (clickedName === targetDepartment.value) {
           currentAttempts.value++;
           if (currentAttempts.value === 1) {
             score.value++;
           }
           showFeedback(true);
-          
+
           // Update marker style to match the attempt count
           foundDepartments.value.set(clickedName, currentAttempts.value);
           updateMarkerStyle(clickedName);
-          
+
           if (currentRound.value === totalRoundsLocal.value) {
             setTimeout(endGame, 1000);
           } else {
@@ -727,14 +727,14 @@ onMounted(() => {
           if (currentAttempts.value >= 3) {
             // Show where the correct target was
             foundDepartments.value.set(targetDepartment.value, 4);
-            
+
             // If the target department was a marker, update its style
             if (markers[targetDepartment.value]) {
               updateMarkerStyle(targetDepartment.value);
             }
-            
+
             showFeedback(false);
-            
+
             if (currentRound.value === totalRoundsLocal.value) {
               setTimeout(endGame, 1000);
             } else {
@@ -749,7 +749,7 @@ onMounted(() => {
         }
       });
     });
-    
+
     // Watch for changes to foundDepartments to update marker styles
     watch(foundDepartments, () => {
       for (const territory of additionalTerritories) {
@@ -759,7 +759,7 @@ onMounted(() => {
       }
     });
   };
-  
+
   // Execute data loading
   fetchData();
 });
