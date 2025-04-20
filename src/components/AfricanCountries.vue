@@ -12,8 +12,8 @@
           <div class="attempts-display">Attempts: {{ currentAttempts }}/3</div>
           <div class="timer-display">Time: {{ formattedTime }}</div>
         </div>
-        <div class="target-state">Find: {{ targetState }}</div>
-        <button class="skip-btn" @click="skipState">Skip</button>
+        <div class="target-country">Find: {{ targetCountry }}</div>
+        <button class="skip-btn" @click="skipCountry">Skip</button>
         <div v-if="feedback" :class="['feedback', feedbackType]">
           {{ feedback }}
         </div>
@@ -61,10 +61,10 @@ watch(
     if (geojsonLayer.value) {
       geojsonLayer.value.eachLayer((layer) => {
         const geoLayer = layer as GeoJSONLayer;
-        const stateName = geoLayer.feature?.properties?.name;
-        if (foundStates.value.has(stateName)) {
+        const countryName = geoLayer.feature?.properties?.name;
+        if (foundCountries.value.has(countryName)) {
           (layer as L.Path).setStyle(
-            getStyleForAttempts(foundStates.value.get(stateName))
+            getStyleForAttempts(foundCountries.value.get(countryName))
           );
         } else {
           (layer as L.Path).setStyle(defaultStyle);
@@ -90,34 +90,34 @@ const formattedTime = computed(() => {
 // Game state
 const map = ref<HTMLElement | null>(null);
 const geojsonLayer: Ref<L.GeoJSON | null> = ref(null);
-const targetState = ref("");
+const targetCountry = ref("");
 const score = ref(0);
 const currentRound = ref(1);
 const feedback = ref("");
 const feedbackType = ref("");
 const gameEnded = ref(false);
 const currentAttempts = ref(0);
-const availableStates = ref<string[]>([]);
-const usedStates = ref<string[]>([]);
-const foundStates = ref(new Map<string, number>());
+const availableCountries = ref<string[]>([]);
+const usedCountries = ref<string[]>([]);
+const foundCountries = ref(new Map<string, number>());
 
-const selectNewTargetState = () => {
-  const remainingStates = availableStates.value.filter(
-    (state) => !usedStates.value.includes(state)
+const selectNewTargetCountry = () => {
+  const remainingCountries = availableCountries.value.filter(
+    (country) => !usedCountries.value.includes(country)
   );
-  if (remainingStates.length === 0) {
-    usedStates.value = [];
+  if (remainingCountries.length === 0) {
+    usedCountries.value = [];
     const randomIndex = Math.floor(
-      Math.random() * availableStates.value.length
+      Math.random() * availableCountries.value.length
     );
-    const newTarget = availableStates.value[randomIndex];
-    usedStates.value.push(newTarget);
-    targetState.value = newTarget;
+    const newTarget = availableCountries.value[randomIndex];
+    usedCountries.value.push(newTarget);
+    targetCountry.value = newTarget;
   } else {
-    const randomIndex = Math.floor(Math.random() * remainingStates.length);
-    const newTarget = remainingStates[randomIndex];
-    usedStates.value.push(newTarget);
-    targetState.value = newTarget;
+    const randomIndex = Math.floor(Math.random() * remainingCountries.length);
+    const newTarget = remainingCountries[randomIndex];
+    usedCountries.value.push(newTarget);
+    targetCountry.value = newTarget;
   }
   currentAttempts.value = 0;
 };
@@ -132,8 +132,8 @@ const showFeedback = (isCorrect: boolean, customMsg?: string) => {
   } else {
     feedback.value =
       currentAttempts.value === 3
-        ? `Out of attempts! The correct state was ${targetState.value}`
-        : `Wrong! Try again to find ${targetState.value}`;
+        ? `Out of attempts! The correct country was ${targetCountry.value}`
+        : `Wrong! Try again to find ${targetCountry.value}`;
   }
   setTimeout(() => {
     feedback.value = "";
@@ -168,9 +168,9 @@ const startNewGame = () => {
   currentRound.value = 1;
   currentAttempts.value = 0;
   gameEnded.value = false;
-  usedStates.value = [];
-  foundStates.value.clear();
-  selectNewTargetState();
+  usedCountries.value = [];
+  foundCountries.value.clear();
+  selectNewTargetCountry();
   startTimer();
   if (geojsonLayer.value) {
     geojsonLayer.value.eachLayer((layer) => {
@@ -181,7 +181,7 @@ const startNewGame = () => {
 
 /**
  * Computes the scale factor based on the element's minimum dimension.
- * - Very small countries (minDim < 50) will now scale much more (up to a factor of 10).
+ * - Very small countries (minDim < 50) will scale much more (up to a factor of 10).
  * - Medium countries (minDim between 50 and 150) get a moderate enlargement.
  * - Large countries (minDim >= 150) are scaled only slightly.
  */
@@ -222,56 +222,59 @@ function animateLayer(layer: L.Layer) {
     svgEl.style.transformOrigin = `${centerX}px ${centerY}px`;
 
     // Apply the animation.
-    element.classList.add("state-reveal-animation");
+    element.classList.add("country-reveal-animation");
     element.addEventListener(
       "animationend",
       () => {
-        element.classList.remove("state-reveal-animation");
+        element.classList.remove("country-reveal-animation");
       },
       { once: true }
     );
   }
 }
 
-const skipState = () => {
+const skipCountry = () => {
   if (gameEnded.value) return;
   currentAttempts.value = 3;
   if (geojsonLayer.value) {
     geojsonLayer.value.eachLayer((l) => {
       const geoL = l as GeoJSONLayer;
-      if (geoL.feature?.properties?.name === targetState.value) {
+      if (geoL.feature?.properties?.name === targetCountry.value) {
         (l as L.Path).setStyle(failedStyle);
         animateLayer(l);
       }
     });
   }
-  foundStates.value.set(targetState.value, 4);
-  showFeedback(false, `Skipped! The correct state was ${targetState.value}`);
+  foundCountries.value.set(targetCountry.value, 4);
+  showFeedback(
+    false,
+    `Skipped! The correct country was ${targetCountry.value}`
+  );
   if (currentRound.value === totalRoundsLocal.value) {
     setTimeout(endGame, 1000);
   } else {
     currentRound.value++;
     setTimeout(() => {
-      selectNewTargetState();
+      selectNewTargetCountry();
     }, 1000);
   }
 };
 
-const onStateClick = (e: L.LeafletMouseEvent) => {
+const onCountryClick = (e: L.LeafletMouseEvent) => {
   if (gameEnded.value) return;
   const layer = e.target as GeoJSONLayer;
-  const clickedState = layer.feature.properties.name;
+  const clickedCountry = layer.feature.properties.name;
   if (leafletMap.value) {
     L.popup({
       autoClose: true,
       closeButton: false,
-      className: "wrong-state-popup",
+      className: "wrong-country-popup",
     })
       .setLatLng(e.latlng)
-      .setContent(clickedState)
+      .setContent(clickedCountry)
       .openOn(leafletMap.value as L.Map);
   }
-  if (clickedState === targetState.value) {
+  if (clickedCountry === targetCountry.value) {
     currentAttempts.value++;
     if (currentAttempts.value === 1) {
       score.value++;
@@ -280,18 +283,18 @@ const onStateClick = (e: L.LeafletMouseEvent) => {
     if (geojsonLayer.value) {
       geojsonLayer.value.eachLayer((l) => {
         const geoL = l as GeoJSONLayer;
-        if (geoL.feature?.properties?.name === clickedState) {
+        if (geoL.feature?.properties?.name === clickedCountry) {
           (l as L.Path).setStyle(getStyleForAttempts(currentAttempts.value));
         }
       });
     }
-    foundStates.value.set(clickedState, currentAttempts.value);
+    foundCountries.value.set(clickedCountry, currentAttempts.value);
     if (currentRound.value === totalRoundsLocal.value) {
       setTimeout(endGame, 1000);
     } else {
       currentRound.value++;
       setTimeout(() => {
-        selectNewTargetState();
+        selectNewTargetCountry();
       }, 1000);
     }
   } else {
@@ -299,19 +302,19 @@ const onStateClick = (e: L.LeafletMouseEvent) => {
     if (currentAttempts.value >= 3 && geojsonLayer.value) {
       geojsonLayer.value.eachLayer((l) => {
         const geoL = l as GeoJSONLayer;
-        if (geoL.feature?.properties?.name === targetState.value) {
+        if (geoL.feature?.properties?.name === targetCountry.value) {
           (l as L.Path).setStyle(failedStyle);
           animateLayer(l);
         }
       });
-      foundStates.value.set(targetState.value, 4);
+      foundCountries.value.set(targetCountry.value, 4);
       showFeedback(false);
       if (currentRound.value === totalRoundsLocal.value) {
         setTimeout(endGame, 1000);
       } else {
         currentRound.value++;
         setTimeout(() => {
-          selectNewTargetState();
+          selectNewTargetCountry();
         }, 1000);
       }
     } else {
@@ -319,16 +322,16 @@ const onStateClick = (e: L.LeafletMouseEvent) => {
       if (geojsonLayer.value) {
         geojsonLayer.value.eachLayer((l) => {
           const geoL = l as GeoJSONLayer;
-          if (geoL.feature?.properties?.name === clickedState) {
-            (l as L.Path).setStyle(defaultStyle);
+          if (geoL.feature?.properties?.name === clickedCountry) {
+            (l as L.Path).setStyle(selectedStyle);
           }
         });
       }
       setTimeout(() => {
-        if (!foundStates.value.has(clickedState) && geojsonLayer.value) {
+        if (!foundCountries.value.has(clickedCountry) && geojsonLayer.value) {
           geojsonLayer.value.eachLayer((l) => {
             const geoL = l as GeoJSONLayer;
-            if (geoL.feature?.properties?.name === clickedState) {
+            if (geoL.feature?.properties?.name === clickedCountry) {
               (l as L.Path).setStyle(defaultStyle);
             }
           });
@@ -346,11 +349,11 @@ onMounted(() => {
     minZoom: 2,
     maxZoom: 12,
     worldCopyJump: true,
-    center: [37.0902, -95.7129],
-    zoom: 4,
+    center: [5, 20], // Center on Africa
+    zoom: 3,
     maxBounds: [
-      [15, -125],
-      [50, -60],
+      [-40, -30], // Southwest corner
+      [40, 60], // Northeast corner
     ],
     maxBoundsViscosity: 1.0,
   });
@@ -366,30 +369,111 @@ onMounted(() => {
     }
   ).addTo(leafletMapInstance);
   tileLayer.value = tileLayerInstance;
+
+  // Get the GeoJSON data for countries
   fetch(
-    "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_admin_1_states_provinces_shp.geojson"
+    "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson"
   )
     .then((response) => response.json())
     .then((data: unknown) => {
       if (isFeatureCollection(data)) {
-        const numberOfStates = data.features.length;
-        totalRoundsLocal.value = Math.min(numberOfStates, 52);
-        availableStates.value = data.features
+        // Filter to only include African countries
+        const africaData = {
+          type: "FeatureCollection" as const,
+          features: data.features.filter((feature) => {
+            const properties = feature.properties as { continent: string };
+            return properties.continent === "Africa";
+          }),
+        };
+
+        // If the continent property doesn't exist or filter returns no countries,
+        // use a list of African country names to filter
+        if (africaData.features.length === 0) {
+          const africanCountries = [
+            "Algeria",
+            "Angola",
+            "Benin",
+            "Botswana",
+            "Burkina Faso",
+            "Burundi",
+            "Cabo Verde",
+            "Cameroon",
+            "Central African Republic",
+            "Chad",
+            "Comoros",
+            "Congo",
+            "Congo, DRC",
+            "Djibouti",
+            "Egypt",
+            "Equatorial Guinea",
+            "Eritrea",
+            "Eswatini",
+            "Ethiopia",
+            "Gabon",
+            "Gambia",
+            "Ghana",
+            "Guinea",
+            "Guinea-Bissau",
+            "Ivory Coast",
+            "Kenya",
+            "Lesotho",
+            "Liberia",
+            "Libya",
+            "Madagascar",
+            "Malawi",
+            "Mali",
+            "Mauritania",
+            "Mauritius",
+            "Morocco",
+            "Mozambique",
+            "Namibia",
+            "Niger",
+            "Nigeria",
+            "Rwanda",
+            "São Tomé and Príncipe",
+            "Senegal",
+            "Seychelles",
+            "Sierra Leone",
+            "Somalia",
+            "South Africa",
+            "South Sudan",
+            "Sudan",
+            "Tanzania",
+            "Togo",
+            "Tunisia",
+            "Uganda",
+            "Zambia",
+            "Zimbabwe",
+            "Western Sahara",
+          ];
+
+          africaData.features = data.features.filter((feature) => {
+            const properties = feature.properties as { name: string };
+            return africanCountries.includes(properties.name);
+          });
+        }
+
+        const numberOfCountries = africaData.features.length;
+        totalRoundsLocal.value = Math.min(numberOfCountries, 54); // 54 African countries
+
+        availableCountries.value = africaData.features
           .map((feature) => feature.properties?.name)
           .filter((name): name is string => name !== undefined);
-        selectNewTargetState();
-        geojsonLayer.value = L.geoJSON(data, {
+
+        selectNewTargetCountry();
+
+        geojsonLayer.value = L.geoJSON(africaData, {
           style: defaultStyle,
           onEachFeature: (feature, layer) => {
             layer.on({
-              click: onStateClick,
+              click: onCountryClick,
               mouseover: (e) => {
                 const geoLayer = e.target as GeoJSONLayer;
-                const stateName = geoLayer.feature.properties.name;
-                if (!foundStates.value.has(stateName)) {
+                const countryName = geoLayer.feature.properties.name;
+                if (!foundCountries.value.has(countryName)) {
                   geojsonLayer.value?.eachLayer((l) => {
                     const geoL = l as GeoJSONLayer;
-                    if (geoL.feature?.properties?.name === stateName) {
+                    if (geoL.feature?.properties?.name === countryName) {
                       (l as L.Path).setStyle({
                         ...defaultStyle,
                         fillOpacity: 0.7,
@@ -400,11 +484,11 @@ onMounted(() => {
               },
               mouseout: (e) => {
                 const geoLayer = e.target as GeoJSONLayer;
-                const stateName = geoLayer.feature.properties.name;
-                if (!foundStates.value.has(stateName)) {
+                const countryName = geoLayer.feature.properties.name;
+                if (!foundCountries.value.has(countryName)) {
                   geojsonLayer.value?.eachLayer((l) => {
                     const geoL = l as GeoJSONLayer;
-                    if (geoL.feature?.properties?.name === stateName) {
+                    if (geoL.feature?.properties?.name === countryName) {
                       (l as L.Path).setStyle(defaultStyle);
                     }
                   });
@@ -474,7 +558,7 @@ onMounted(() => {
   color: var(--text-color);
   font-size: 18px;
 }
-.target-state {
+.target-country {
   color: var(--text-color);
   font-size: 20px;
   font-weight: bold;
@@ -554,7 +638,7 @@ onMounted(() => {
 }
 
 /* Exaggerated animation using the computed --target-scale */
-.state-reveal-animation {
+.country-reveal-animation {
   animation: highlight-pulse 2s ease-in-out;
 }
 @keyframes highlight-pulse {
@@ -571,7 +655,7 @@ onMounted(() => {
     filter: drop-shadow(0 0 0px red);
   }
 }
-.wrong-state-popup {
+.wrong-country-popup {
   font-weight: bold;
   color: var(--text-color);
   background: var(--header-bg);

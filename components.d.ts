@@ -7,6 +7,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AfricanCountries: typeof import('./src/components/AfricanCountries.vue')['default']
     FrenchDepartments: typeof import('./src/components/FrenchDepartments.vue')['default']
     Header: typeof import('./src/components/Header.vue')['default']
     MapView: typeof import('./src/components/MapView.vue')['default']
