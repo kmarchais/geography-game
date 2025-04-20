@@ -13,16 +13,16 @@ export const worldCountriesConfig: GameConfig = {
   ],
   propertyName: "name",
   targetLabel: "Country",
-  
+
   // For world map, create wrapped duplicates for better user experience
   processData: (data: any) => {
     const featureCollection = data;
     if (!featureCollection.features) return data;
-    
+
     // Create shifted versions of the world for continuous scrolling
     const leftWorldData = createShiftedGeoJSON(featureCollection, -360);
     const rightWorldData = createShiftedGeoJSON(featureCollection, 360);
-    
+
     return {
       type: "FeatureCollection",
       features: [
@@ -39,7 +39,7 @@ export const worldCountriesConfig: GameConfig = {
  */
 function createShiftedGeoJSON(originalData: any, longitudeShift: number): any {
   const shiftedData = JSON.parse(JSON.stringify(originalData));
-  
+
   shiftedData.features.forEach((feature: any) => {
     if (feature.geometry.type === "Polygon") {
       feature.geometry.coordinates.forEach((ring: number[][]) => {
@@ -57,6 +57,6 @@ function createShiftedGeoJSON(originalData: any, longitudeShift: number): any {
       });
     }
   });
-  
+
   return shiftedData;
 }
