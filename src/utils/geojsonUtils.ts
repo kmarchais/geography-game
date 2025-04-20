@@ -1,87 +1,90 @@
+import type { Feature, FeatureCollection } from "geojson";
 import L from "leaflet";
-import type { GeoJSON, Feature, FeatureCollection } from "geojson";
 
-export interface GeoJSONFeature {
-  type: string;
-  properties: {
-    name: string;
-    [key: string]: any;
-  };
-  geometry: {
-    type: string;
-    coordinates: any[];
-  };
+// Define a more specific type for properties
+interface GeoJSONProperties {
+  name: string;
+  code?: string;
+  // Add other specific properties if needed
+}
+
+export interface GeoJSONFeature extends Feature {
+  properties: GeoJSONProperties;
 }
 
 export interface GeoJSONLayer extends L.Layer {
   feature: GeoJSONFeature;
 }
 
-export function isFeatureCollection(data: any): data is FeatureCollection {
+// Type guard for FeatureCollection
+export function isFeatureCollection(value: unknown): value is FeatureCollection {
   return (
-    data &&
-    typeof data === "object" &&
-    data.type === "FeatureCollection" &&
-    Array.isArray(data.features)
+    typeof value === "object" &&
+    value !== null &&
+    "type" in value &&
+    value.type === "FeatureCollection" &&
+    "features" in value &&
+    Array.isArray((value as FeatureCollection).features)
   );
 }
 
-// Style definitions
-export const defaultStyle: L.PathOptions = {
+// Common styles
+export const defaultStyle = {
+  fillColor: "var(--map-default-fill)",
+  fillOpacity: 1,
+  color: "var(--map-border-color)",
   weight: 1,
   opacity: 1,
+};
+
+export const firstAttemptStyle = {
+  fillColor: "#2ecc71",
+  fillOpacity: 1,
   color: "var(--map-border-color)",
-  fillOpacity: 0.3,
-  fillColor: "var(--map-default-fill)",
+  weight: 1,
+  opacity: 1,
 };
 
-export const selectedStyle: L.PathOptions = {
+export const secondAttemptStyle = {
+  fillColor: "#FFFF00",
+  fillOpacity: 1,
+  color: "var(--map-border-color)",
+  weight: 1,
+  opacity: 1,
+};
+
+export const thirdAttemptStyle = {
+  fillColor: "#FFA500",
+  fillOpacity: 1,
+  color: "var(--map-border-color)",
+  weight: 1,
+  opacity: 1,
+};
+
+export const failedStyle = {
+  fillColor: "#FF0000",
+  fillOpacity: 1,
+  color: "var(--map-border-color)",
+  weight: 1,
+  opacity: 1,
+};
+
+export const selectedStyle = {
+  fillOpacity: 0.7,
   weight: 2,
-  color: "#ff7800",
-  fillOpacity: 0.5,
-  fillColor: "#ff7800",
+  opacity: 1,
 };
 
-export const failedStyle: L.PathOptions = {
-  weight: 2,
-  color: "#ff0000",
-  fillOpacity: 0.5,
-  fillColor: "#ff0000",
-};
-
-/**
- * Get style based on number of attempts
- * @param attempts Number of attempts (1-3, or 4 for failed)
- */
-export function getStyleForAttempts(attempts: number): L.PathOptions {
+// Function to get style based on attempts
+export function getStyleForAttempts(attempts: number | undefined) {
   switch (attempts) {
     case 1:
-      // First attempt - Green
-      return {
-        weight: 2,
-        color: "#2ecc71",
-        fillOpacity: 0.5,
-        fillColor: "#2ecc71",
-      };
+      return firstAttemptStyle;
     case 2:
-      // Second attempt - Yellow
-      return {
-        weight: 2,
-        color: "#FFFF00",
-        fillOpacity: 0.5,
-        fillColor: "#FFFF00",
-      };
+      return secondAttemptStyle;
     case 3:
-      // Third attempt - Orange
-      return {
-        weight: 2,
-        color: "#FFA500",
-        fillOpacity: 0.5,
-        fillColor: "#FFA500",
-      };
-    case 4:
+      return thirdAttemptStyle;
     default:
-      // Failed - Red
       return failedStyle;
   }
-}
+} 
