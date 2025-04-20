@@ -18,3 +18,15 @@ repos:
     hooks:
     -   id: eslint
         args: [--config eslint.config.js]
+
+  - repo: https://github.com/thibaudcolas/pre-commit-stylelint
+    rev: v16.18.0
+    hooks:
+      - id: stylelint
+        files: \.(scss|vue)$
+        additional_dependencies:
+          - stylelint@16.18.0
+          - stylelint-config-standard-scss@14.0.0
+          - stylelint-config-recommended-vue@1.6.0
+          - postcss@8.5.3
+          - postcss-html@1.8.0

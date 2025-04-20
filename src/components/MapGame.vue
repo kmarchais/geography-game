@@ -68,7 +68,7 @@
   </div>
 </template>
 
-  <script setup lang="ts">
+<script setup lang="ts">
   import type { FeatureCollection, Geometry, Feature } from "geojson";
   import L from "leaflet";
   import "leaflet/dist/leaflet.css"; // Import Leaflet CSS
@@ -449,17 +449,17 @@
   watch(foundEntities, () => {
       updateAllLayerStyles();
   }, { deep: true });
-  </script>
+</script>
 
-  <style>
-  /* Styles remain the same */
+<style>
   :root {
     color-scheme: light dark;
-    --header-bg: rgba(255, 255, 255, 0.9);
-    --text-color: #333333;
+
+    --header-bg: rgba(255 255 255 / 90%);
+    --text-color: #333;
     --map-default-fill: #f0f0f0;
-    --map-border-color: #cccccc;
-    --map-bg: #ffffff;
+    --map-border-color: #ccc;
+    --map-bg: #fff;
     --popup-bg: var(--header-bg);
     --popup-text: var(--text-color);
     --popup-border: var(--map-border-color);
@@ -467,27 +467,27 @@
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --header-bg: rgba(51, 51, 51, 0.9);
-      --text-color: #ffffff;
-      --map-default-fill: #333333;
-      --map-border-color: #666666;
+      --header-bg: rgba(51 51 51 / 90%);
+      --text-color: #fff;
+      --map-default-fill: #333;
+      --map-border-color: #666;
       --map-bg: #2f343a;
     }
   }
 
   [data-theme="light"] {
-    --header-bg: rgba(255, 255, 255, 0.9);
-    --text-color: #333333;
+    --header-bg: rgba(255 255 255 / 90%);
+    --text-color: #333;
     --map-default-fill: #f0f0f0;
-    --map-border-color: #cccccc;
-    --map-bg: #ffffff;
+    --map-border-color: #ccc;
+    --map-bg: #fff;
   }
 
   [data-theme="dark"] {
-    --header-bg: rgba(51, 51, 51, 0.9);
-    --text-color: #ffffff;
-    --map-default-fill: #333333;
-    --map-border-color: #666666;
+    --header-bg: rgba(51 51 51 / 90%);
+    --text-color: #fff;
+    --map-default-fill: #333;
+    --map-border-color: #666;
     --map-bg: #2f343a;
   }
 
@@ -521,7 +521,7 @@
     border-radius: 8px;
     min-width: 250px;
     max-width: 90%;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 5px rgba(0 0 0 / 20%);
   }
 
   .game-info {
@@ -530,13 +530,13 @@
     justify-content: center;
     gap: 15px;
     color: var(--text-color);
-    font-size: clamp(0.8rem, 2.5vw, 1rem);
+    font-size: clamp(.8rem, 2.5vw, 1rem);
   }
 
   .target-entity {
     color: var(--text-color);
     font-size: clamp(1rem, 3vw, 1.25rem);
-    font-weight: bold;
+    font-weight: 700;
     text-align: center;
   }
 
@@ -546,19 +546,21 @@
     border: none;
     padding: 6px 12px;
     border-radius: 4px;
-    font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+    font-size: clamp(.8rem, 2.5vw, .9rem);
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color .2s;
     margin-top: 5px;
-  }
-  .skip-btn:disabled {
-    background-color: #aaa;
-    cursor: not-allowed;
   }
 
   .skip-btn {
     background-color: #e67e22;
   }
+
+  .skip-btn:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+  }
+
   .skip-btn:not(:disabled):hover {
     background-color: #d35400;
   }
@@ -566,6 +568,7 @@
   .new-game-btn {
     background-color: #4a90e2;
   }
+
   .new-game-btn:hover {
     background-color: #357abd;
   }
@@ -573,18 +576,18 @@
   .feedback {
     padding: 5px 10px;
     border-radius: 4px;
-    font-weight: bold;
+    font-weight: 700;
     color: white;
     text-align: center;
-    font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+    font-size: clamp(.8rem, 2.5vw, .9rem);
   }
 
   .feedback.correct {
-    background-color: rgba(75, 181, 67, 0.9);
+    background-color: rgb(75 181 67 / 90%);
   }
 
   .feedback.incorrect {
-    background-color: rgba(181, 67, 67, 0.9);
+    background-color: rgb(181 67 67 / 90%);
   }
 
   .game-end {
@@ -594,12 +597,12 @@
   .final-score {
     color: var(--text-color);
     font-size: clamp(1.2rem, 4vw, 1.5rem);
-    font-weight: bold;
+    font-weight: 700;
     margin-bottom: 10px;
   }
 
   .final-time {
-    font-size: clamp(0.9rem, 3vw, 1.1rem);
+    font-size: clamp(.9rem, 3vw, 1.1rem);
     margin-top: 5px;
     color: var(--text-color);
   }
@@ -619,8 +622,8 @@
 
   .entity-popup .leaflet-popup-content {
     margin: 8px 10px;
-    font-size: 0.9rem;
-    font-weight: bold;
+    font-size: .9rem;
+    font-weight: 700;
     text-align: center;
     min-width: 50px;
   }
@@ -650,15 +653,17 @@
   @keyframes highlight-pulse {
     0% {
       transform: scale(1);
-      filter: drop-shadow(0 0 0px rgba(255, 0, 0, 0.7));
+      filter: drop-shadow(0 0 0 rgb(255 0 0 / 70%));
     }
+
     50% {
       transform: scale(var(--target-scale, 1.5));
-      filter: drop-shadow(0 0 25px rgba(255, 0, 0, 0.9));
+      filter: drop-shadow(0 0 25px rgb(255 0 0 / 90%));
     }
+
     100% {
       transform: scale(1);
-      filter: drop-shadow(0 0 0px rgba(255, 0, 0, 0.7));
+      filter: drop-shadow(0 0 0 rgb(255 0 0 / 70%));
     }
   }
 
@@ -673,27 +678,31 @@
     background-color: var(--header-bg);
     padding: 8px;
     border-radius: 6px;
-    box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+    box-shadow: 0 1px 5px rgb(0 0 0 / 20%);
     max-width: 180px;
-    opacity: 0.9;
-    transition: opacity 0.3s;
+    opacity: .9;
+    transition: opacity .3s;
   }
+
   .overseas-navigation:hover {
     opacity: 1;
   }
+
   .overseas-title {
     color: var(--text-color);
-    font-weight: bold;
+    font-weight: 700;
     font-size: 13px;
     margin-bottom: 6px;
     text-align: center;
   }
+
   .overseas-buttons {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
     justify-content: center;
   }
+
   .overseas-btn {
     flex: 1 0 calc(50% - 4px);
     background-color: #4a90e2;
@@ -703,9 +712,10 @@
     border-radius: 4px;
     font-size: 11px;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color .2s;
     text-align: center;
   }
+
   .overseas-btn:hover {
     background-color: #357abd;
   }
@@ -720,10 +730,10 @@
     border: 2px solid #d35400;
     background-color: var(--header-bg);
     color: var(--text-color);
-    font-weight: bold;
+    font-weight: 700;
     font-size: 10px;
     text-align: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
     cursor: pointer;
   }
 
