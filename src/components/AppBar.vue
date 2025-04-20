@@ -1,19 +1,44 @@
 <template>
-  <v-app-bar color="primary" dark>
+  <v-app-bar
+    color="primary"
+    dark
+  >
     <v-app-bar-title>Geography Game</v-app-bar-title>
     <v-spacer />
-    <v-btn variant="text" @click="goToHome">Home</v-btn>
-    <v-btn variant="text" @click="goToUsStates">US States</v-btn>
-    <v-btn variant="text" @click="goToFrenchDepartments">
+    <v-btn
+      variant="text"
+      @click="goToHome"
+    >
+      Home
+    </v-btn>
+    <v-btn
+      variant="text"
+      @click="goToUsStates"
+    >
+      US States
+    </v-btn>
+    <v-btn
+      variant="text"
+      @click="goToFrenchDepartments"
+    >
       French Departments
     </v-btn>
-    <v-btn variant="text" @click="goToAfricanCountries">
+    <v-btn
+      variant="text"
+      @click="goToAfricanCountries"
+    >
       African Countries
     </v-btn>
-    <v-btn variant="text" @click="goToWorldCountries">
+    <v-btn
+      variant="text"
+      @click="goToWorldCountries"
+    >
       World Countries
     </v-btn>
-    <v-btn variant="text" @click="toggleTheme">
+    <v-btn
+      variant="text"
+      @click="toggleTheme"
+    >
       <v-icon>mdi-theme-light-dark</v-icon>
     </v-btn>
   </v-app-bar>

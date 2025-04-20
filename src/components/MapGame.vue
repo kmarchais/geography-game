@@ -1,76 +1,78 @@
 <template>
-    <div class="map-container">
-      <!-- Game Header -->
-      <div class="game-header">
-        <template v-if="!gameEnded">
-          <div class="game-info">
-            <div class="score-display">
-              Score: {{ score }}/{{ totalRoundsComputed }}
-            </div>
-            <div class="round-display">
-              Round: {{ currentRound }}/{{ totalRoundsComputed }}
-            </div>
-            <div class="attempts-display">
-              Attempts: {{ currentAttempts }}/3
-            </div>
-            <div class="timer-display">
+  <div class="map-container">
+    <!-- Game Header -->
+    <div class="game-header">
+      <template v-if="!gameEnded">
+        <div class="game-info">
+          <div class="score-display">
+            Score: {{ score }}/{{ totalRoundsComputed }}
+          </div>
+          <div class="round-display">
+            Round: {{ currentRound }}/{{ totalRoundsComputed }}
+          </div>
+          <div class="attempts-display">
+            Attempts: {{ currentAttempts }}/3
+          </div>
+          <div class="timer-display">
+            Time: {{ formattedTime }}
+          </div>
+        </div>
+        <div class="target-entity">
+          Find: {{ targetEntity }}
+        </div>
+        <button
+          class="skip-btn"
+          :disabled="!!feedback"
+          @click="handleSkip"
+        >
+          Skip
+        </button>
+        <div
+          v-if="feedback"
+          :class="['feedback', feedbackType]"
+        >
+          {{ feedback }}
+        </div>
+      </template>
+      <template v-else>
+        <div class="game-end">
+          <div class="final-score">
+            Final Score: {{ score }}/{{ totalRoundsComputed }}
+            <div class="final-time">
               Time: {{ formattedTime }}
             </div>
           </div>
-          <div class="target-entity">
-            Find: {{ targetEntity }}
-          </div>
           <button
-            class="skip-btn"
-            @click="handleSkip"
-            :disabled="!!feedback"
+            class="new-game-btn"
+            @click="handleNewGame"
           >
-            Skip
+            Play Again
           </button>
-          <div
-            v-if="feedback"
-            :class="['feedback', feedbackType]"
-          >
-            {{ feedback }}
-          </div>
-        </template>
-        <template v-else>
-          <div class="game-end">
-            <div class="final-score">
-              Final Score: {{ score }}/{{ totalRoundsComputed }}
-              <div class="final-time">
-                Time: {{ formattedTime }}
-              </div>
-            </div>
-            <button
-              class="new-game-btn"
-              @click="handleNewGame"
-            >
-              Play Again
-            </button>
-          </div>
-        </template>
-      </div>
-
-      <!-- Map Div -->
-      <div
-        ref="mapElement"
-        class="map-render-area"
-      />
-
-      <!-- Slot for additional controls like France's overseas nav -->
-      <div class="extra-controls-container">
-        <slot name="extra-controls" :map="leafletMap"></slot>
-      </div>
+        </div>
+      </template>
     </div>
-  </template>
+
+    <!-- Map Div -->
+    <div
+      ref="mapElement"
+      class="map-render-area"
+    />
+
+    <!-- Slot for additional controls like France's overseas nav -->
+    <div class="extra-controls-container">
+      <slot
+        name="extra-controls"
+        :map="leafletMap"
+      />
+    </div>
+  </div>
+</template>
 
   <script setup lang="ts">
-  import type { FeatureCollection } from "geojson";
+  import type { FeatureCollection, Geometry, Feature } from "geojson";
   import L from "leaflet";
   import "leaflet/dist/leaflet.css"; // Import Leaflet CSS
   import {
-    computed,
     onMounted,
     onUnmounted, // Ensure onUnmounted is imported
     ref,
@@ -83,7 +85,6 @@
   import {
     animateLayer,
     defaultStyle, // Make sure defaultStyle is imported
-    failedStyle,
     getStyleForAttempts,
     isFeatureCollection,
     selectedStyle,
@@ -99,8 +100,8 @@
   }
 
   type ProcessGeoJsonFunc = (
-    data: FeatureCollection<any, any>
-  ) => FeatureCollection<any, GeoJSONProperties>;
+    data: FeatureCollection<Geometry, GeoJSONProperties>
+  ) => FeatureCollection<Geometry, GeoJSONProperties>;
   type AddManualMarkersFunc = (
     map: L.Map,
     available: Ref<string[]>,
@@ -143,7 +144,6 @@
     gameEnded,
     targetEntity,
     foundEntities,
-    timer,
     formattedTime,
     feedback,
     feedbackType,
@@ -230,7 +230,7 @@
     if (clickedEntityName === targetEntity.value) {
       handleCorrectGuess(clickedEntityName);
     } else {
-      const { shouldEndRound } = handleIncorrectGuess(clickedEntityName);
+      const { shouldEndRound } = handleIncorrectGuess();
       if (!shouldEndRound) {
         setLayerStyle(layer, selectedStyle);
         setTimeout(() => {
@@ -268,7 +268,7 @@
     if (name === targetEntity.value) {
       handleCorrectGuess(name);
     } else {
-      const { shouldEndRound } = handleIncorrectGuess(name);
+      const { shouldEndRound } = handleIncorrectGuess();
       if (shouldEndRound) {
         highlightTargetEntity(targetEntity.value);
       }
@@ -335,10 +335,10 @@
     try {
       const response = await fetch(props.geojsonUrl);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      let data = await response.json();
+      const data = await response.json();
 
       if (isFeatureCollection(data)) {
-        data.features.forEach((feature: any) => {
+        data.features.forEach((feature: Feature) => {
           if (!feature.properties) feature.properties = {};
           if (props.geojsonNameProperty in feature.properties) {
               feature.properties.name = feature.properties[props.geojsonNameProperty];
@@ -351,7 +351,7 @@
           }
         });
 
-        let processedData = props.processGeojsonDataFn ? props.processGeojsonDataFn(data) : data;
+        const processedData = props.processGeojsonDataFn ? props.processGeojsonDataFn(data) : data;
 
         if (isFeatureCollection(processedData)) {
           availableEntities.value = processedData.features
@@ -446,7 +446,7 @@
       updateAllLayerStyles();
   });
 
-  watch(foundEntities, (currentFoundEntities) => {
+  watch(foundEntities, () => {
       updateAllLayerStyles();
   }, { deep: true });
   </script>

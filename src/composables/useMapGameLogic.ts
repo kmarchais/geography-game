@@ -1,4 +1,3 @@
-// src/composables/useMapGameLogic.ts
 import { ref, computed, onScopeDispose, type Ref } from "vue"; // <-- Import onScopeDispose
 
 export interface MapGameLogicOptions {
@@ -144,9 +143,7 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
     setTimeout(advanceRound, 1000);
   };
 
-  const handleIncorrectGuess = (
-    guessedEntity: string
-  ): { shouldEndRound: boolean } => {
+  const handleIncorrectGuess = (): { shouldEndRound: boolean } => {
     currentAttempts.value++;
     const isOutOfAttempts = currentAttempts.value >= 3;
 

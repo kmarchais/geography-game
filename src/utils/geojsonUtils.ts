@@ -1,28 +1,32 @@
-// src/utils/geojsonUtils.ts
-import type { Feature, FeatureCollection, GeoJsonObject, Geometry } from "geojson"; // Added Geometry
+import type { Feature, FeatureCollection, Geometry } from "geojson";
 import type L from "leaflet";
 
 // Define interfaces for GeoJSON features with expected properties
 export interface GeoJSONProperties {
   name: string; // Ensure 'name' is the standard property used internally
   code?: string; // Optional code property
+  continent?: string; // For continent filtering
   // Add other potential properties if needed across different GeoJSON sources
-  [key: string]: any;
+  [key: string]: unknown; // Use unknown instead of any for better type safety
 }
 
-// Define our specific Feature type
-export interface GeoJSONFeature extends Feature {
-  properties: GeoJSONProperties;
-  geometry: Geometry; // Ensure geometry is included from base Feature type
-}
+export type GeoJSONFeature = Feature<Geometry, GeoJSONProperties>;
 
-// REMOVED the GeoJSONLayer interface to avoid conflicts
-
-// Type guard for FeatureCollection
+// Fixed type guard for FeatureCollection
 export function isFeatureCollection(
-  json: any
-): json is FeatureCollection<any, GeoJSONProperties> {
-  return json != null && json.type === "FeatureCollection" && Array.isArray(json.features);
+  json: unknown
+): json is FeatureCollection<Geometry, GeoJSONProperties> {
+  if (json == null || typeof json !== 'object') {
+    return false;
+  }
+
+  // Type assertion to access properties safely
+  const obj = json as Record<string, unknown>;
+
+  return (
+    obj.type === "FeatureCollection" &&
+    Array.isArray(obj.features)
+  );
 }
 
 // Define styles (consider making colors CSS variables if not already)

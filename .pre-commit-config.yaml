@@ -12,3 +12,9 @@ repos:
         args: ['--fix=lf']
       - id: no-commit-to-branch
         args: ['--branch', 'main']
+
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: 'v9.25.0'
+    hooks:
+    -   id: eslint
+        args: [--config eslint.config.js]

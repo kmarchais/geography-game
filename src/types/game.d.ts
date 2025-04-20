@@ -1,5 +1,5 @@
 import L from "leaflet";
-import type { GeoJsonObject } from "geojson";
+import type { GeoJsonObject, Feature, GeoJsonProperties } from "geojson";
 
 export interface GameConfig {
   /**
@@ -30,7 +30,7 @@ export interface GameConfig {
   /**
    * Optional filter function for the GeoJSON features
    */
-  filterFunction?: (feature: any) => boolean;
+  filterFunction?: (feature: Feature) => boolean;
 
   /**
    * Property name to use for entity names (typically "name")
@@ -55,7 +55,7 @@ export interface GameConfig {
   /**
    * Optional function to map properties to the entity name
    */
-  nameMapping?: (properties: any) => string;
+  nameMapping?: (properties: GeoJsonProperties) => string;
 
   /**
    * Optional function to process the GeoJSON data after fetching

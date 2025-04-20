@@ -11,21 +11,86 @@
   >
     <!-- Slot for the overseas navigation controls -->
     <template #extra-controls="{ map }">
-      <div v-if="map" class="overseas-navigation">
-        <div class="overseas-title">Territories</div>
+      <div
+        v-if="map"
+        class="overseas-navigation"
+      >
+        <div class="overseas-title">
+          Territories
+        </div>
         <div class="overseas-buttons">
-           <button class="overseas-btn" @click="navigateTo(map, 'mainland')">Mainland</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'caribbean')">Caribbean</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'guiana')">Guiana</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'reunion')">Réunion</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'mayotte')">Mayotte</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'stpierre')">St Pierre</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'polynesia')">Polynesia</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'newcaledonia')">New Caledonia</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'wallis')">Wallis</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'taaf')">TAAF</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'clipperton')">Clipperton</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'world')">World</button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'mainland')"
+          >
+            Mainland
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'caribbean')"
+          >
+            Caribbean
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'guiana')"
+          >
+            Guiana
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'reunion')"
+          >
+            Réunion
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'mayotte')"
+          >
+            Mayotte
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'stpierre')"
+          >
+            St Pierre
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'polynesia')"
+          >
+            Polynesia
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'newcaledonia')"
+          >
+            New Caledonia
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'wallis')"
+          >
+            Wallis
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'taaf')"
+          >
+            TAAF
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'clipperton')"
+          >
+            Clipperton
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'world')"
+          >
+            World
+          </button>
         </div>
       </div>
     </template>
@@ -34,7 +99,7 @@
 
 <script setup lang="ts">
 import L from "leaflet";
-import { ref, watch, type Ref } from "vue"; // Import Ref
+import { watch, type Ref } from "vue"; // Import Ref
 import MapGame from "./MapGame.vue"; // Adjust path
 import { getStyleForAttempts } from "../utils/geojsonUtils"; // Adjust path
 

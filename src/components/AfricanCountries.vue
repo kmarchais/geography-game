@@ -5,13 +5,13 @@
     geojson-url="https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson"
     geojson-name-property="name"
     :map-options="mapOptions"
-    :process-geojsonData-fn="filterAfricaData"
+    :process-geojson-data-fn="filterAfricaData"
     :total-rounds-override="54"
   />
 </template>
 
 <script setup lang="ts">
-import type { FeatureCollection } from "geojson";
+import type { FeatureCollection, Geometry } from "geojson";
 import L from "leaflet";
 import MapGame from "./MapGame.vue"; // Adjust path
 import type { GeoJSONProperties } from "../utils/geojsonUtils"; // Adjust path
@@ -44,8 +44,8 @@ const africanCountriesList = [
 
 // Processing function to filter only African countries
 const filterAfricaData = (
-  data: FeatureCollection<any, GeoJSONProperties>
-): FeatureCollection<any, GeoJSONProperties> => {
+  data: FeatureCollection<Geometry, GeoJSONProperties>
+): FeatureCollection<Geometry, GeoJSONProperties> => {
 
   let filteredFeatures = data.features.filter((feature) => {
     // Primary filter: Check for continent property
