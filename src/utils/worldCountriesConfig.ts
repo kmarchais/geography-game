@@ -1,5 +1,5 @@
 import L from "leaflet";
-import type { GameConfig } from "../types/game";
+import type { GameConfig } from "../types/game.d.ts";
 
 // World Countries Configuration
 export const worldCountriesConfig: GameConfig = {
