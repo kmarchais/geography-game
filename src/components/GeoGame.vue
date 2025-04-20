@@ -3,13 +3,17 @@
     <div class="game-header">
       <template v-if="!gameEnded">
         <div class="game-info">
-          <div class="score-display">Score: {{ score }}/{{ totalRounds }}</div>
-          <div class="round-display">Round: {{ currentRound }}/{{ totalRounds }}</div>
+          <div class="score-display">
+            Score: {{ score }}/{{ totalRoundsLocal }}
+          </div>
+          <div class="round-display">
+            Round: {{ currentRound }}/{{ totalRoundsLocal }}
+          </div>
           <div class="attempts-display">Attempts: {{ currentAttempts }}/3</div>
           <div class="timer-display">Time: {{ formattedTime }}</div>
         </div>
-        <div class="target-country">Find: {{ targetCountry }}</div>
-        <button class="skip-btn" @click="skipCountry">Skip</button>
+        <div class="target-entity">Find: {{ targetEntity }}</div>
+        <button class="skip-btn" @click="skipEntity">Skip</button>
         <div v-if="feedback" :class="['feedback', feedbackType]">
           {{ feedback }}
         </div>
@@ -17,12 +21,10 @@
       <template v-else>
         <div class="game-end">
           <div class="final-score">
-            Final Score: {{ score }}/{{ totalRounds }}
+            Final Score: {{ score }}/{{ totalRoundsLocal }}
             <div class="final-time">Time: {{ formattedTime }}</div>
           </div>
-          <button class="new-game-btn" @click="startNewGame">
-            Play Again
-          </button>
+          <button class="new-game-btn" @click="startNewGame">Play Again</button>
         </div>
       </template>
     </div>
@@ -31,7 +33,6 @@
 </template>
 
 <script setup lang="ts">
-import type { FeatureCollection } from "geojson";
 import L from "leaflet";
 import { computed, onMounted, ref, watch, type Ref } from "vue";
 import { useTheme } from "vuetify";
@@ -43,6 +44,12 @@ import {
   isFeatureCollection,
   selectedStyle,
 } from "../utils/geojsonUtils";
+import type { GameConfig } from "../types/game";
+
+// Props to configure the game
+const props = defineProps<{
+  config: GameConfig;
+}>();
 
 const theme = useTheme();
 const tileLayer = ref<L.TileLayer | null>(null);
@@ -60,11 +67,13 @@ watch(
     if (geojsonLayer.value) {
       geojsonLayer.value.eachLayer((layer) => {
         const geoLayer = layer as GeoJSONLayer;
-        const countryName = geoLayer.feature?.properties?.name;
-        if (foundCountries.value.has(countryName)) {
-          (layer as L.Path).setStyle(
-            getStyleForAttempts(foundCountries.value.get(countryName))
-          );
+        const entityName =
+          geoLayer.feature?.properties?.[props.config.propertyName];
+        if (foundEntities.value.has(entityName)) {
+          const attempts = foundEntities.value.get(entityName);
+          if (attempts !== undefined) {
+            (layer as L.Path).setStyle(getStyleForAttempts(attempts));
+          }
         } else {
           (layer as L.Path).setStyle(defaultStyle);
         }
@@ -73,12 +82,8 @@ watch(
   }
 );
 
-const props = defineProps({
-  totalRounds: {
-    type: Number,
-    default: 241,
-  },
-});
+const totalRoundsLocal = ref(0);
+
 // Timer state
 const timer = ref(0);
 const timerInterval = ref<number | null>(null);
@@ -93,61 +98,34 @@ const formattedTime = computed(() => {
 // Game state
 const map = ref<HTMLElement | null>(null);
 const geojsonLayer: Ref<L.GeoJSON | null> = ref(null);
-const targetCountry = ref("");
+const targetEntity = ref("");
 const score = ref(0);
 const currentRound = ref(1);
 const feedback = ref("");
 const feedbackType = ref("");
 const gameEnded = ref(false);
 const currentAttempts = ref(0);
-const availableCountries = ref<string[]>([]);
-const usedCountries = ref<string[]>([]);
-const foundCountries = ref(new Map<string, number>());
+const availableEntities = ref<string[]>([]);
+const usedEntities = ref<string[]>([]);
+const foundEntities = ref(new Map<string, number>());
 
-const createShiftedGeoJSON = (
-  originalData: FeatureCollection,
-  longitudeShift: number
-): FeatureCollection => {
-  const shiftedData = JSON.parse(JSON.stringify(originalData)) as FeatureCollection;
-  shiftedData.features.forEach((feature) => {
-    if (feature.geometry.type === "Polygon") {
-      feature.geometry.coordinates.forEach((ring: number[][]) => {
-        ring.forEach((coord: number[]) => {
-          coord[0] += longitudeShift;
-        });
-      });
-    } else if (feature.geometry.type === "MultiPolygon") {
-      feature.geometry.coordinates.forEach((polygon: number[][][]) => {
-        polygon.forEach((ring: number[][]) => {
-          ring.forEach((coord: number[]) => {
-            coord[0] += longitudeShift;
-          });
-        });
-      });
-    }
-  });
-  return shiftedData;
-};
-
-const selectNewTargetCountry = () => {
-  const remainingCountries = availableCountries.value.filter(
-    (country) => !usedCountries.value.includes(country)
+const selectNewTargetEntity = () => {
+  const remainingEntities = availableEntities.value.filter(
+    (entity) => !usedEntities.value.includes(entity)
   );
-  if (remainingCountries.length === 0) {
-    usedCountries.value = [];
+  if (remainingEntities.length === 0) {
+    usedEntities.value = [];
     const randomIndex = Math.floor(
-      Math.random() * availableCountries.value.length
+      Math.random() * availableEntities.value.length
     );
-    const newTarget = availableCountries.value[randomIndex];
-    usedCountries.value.push(newTarget);
-    targetCountry.value = newTarget;
+    const newTarget = availableEntities.value[randomIndex];
+    usedEntities.value.push(newTarget);
+    targetEntity.value = newTarget;
   } else {
-    const randomIndex = Math.floor(
-      Math.random() * remainingCountries.length
-    );
-    const newTarget = remainingCountries[randomIndex];
-    usedCountries.value.push(newTarget);
-    targetCountry.value = newTarget;
+    const randomIndex = Math.floor(Math.random() * remainingEntities.length);
+    const newTarget = remainingEntities[randomIndex];
+    usedEntities.value.push(newTarget);
+    targetEntity.value = newTarget;
   }
   currentAttempts.value = 0;
 };
@@ -162,8 +140,10 @@ const showFeedback = (isCorrect: boolean, customMsg?: string) => {
   } else {
     feedback.value =
       currentAttempts.value === 3
-        ? `Out of attempts! The correct country was ${targetCountry.value}`
-        : `Wrong! Try again to find ${targetCountry.value}`;
+        ? `Out of attempts! The correct ${props.config.targetLabel.toLowerCase()} was ${
+            targetEntity.value
+          }`
+        : `Wrong! Try again to find ${targetEntity.value}`;
   }
   setTimeout(() => {
     feedback.value = "";
@@ -198,9 +178,9 @@ const startNewGame = () => {
   currentRound.value = 1;
   currentAttempts.value = 0;
   gameEnded.value = false;
-  usedCountries.value = [];
-  foundCountries.value.clear();
-  selectNewTargetCountry();
+  usedEntities.value = [];
+  foundEntities.value.clear();
+  selectNewTargetEntity();
   startTimer();
   if (geojsonLayer.value) {
     geojsonLayer.value.eachLayer((layer) => {
@@ -211,9 +191,9 @@ const startNewGame = () => {
 
 /**
  * Computes the scale factor based on the element's minimum dimension.
- * - Very small countries (minDim < 50) will now scale much more (up to a factor of 10).
- * - Medium countries (minDim between 50 and 150) get a moderate enlargement.
- * - Large countries (minDim >= 150) are scaled only slightly.
+ * - Very small entities (minDim < 50) will scale much more (up to a factor of 10).
+ * - Medium entities (minDim between 50 and 150) get a moderate enlargement.
+ * - Large entities (minDim >= 150) are scaled only slightly.
  */
 function computeScaleFactor(bbox: SVGRect): number {
   const minDim = Math.min(bbox.width, bbox.height);
@@ -238,7 +218,9 @@ function animateLayer(layer: L.Layer) {
     // Bring the layer to the front
     pathLayer.bringToFront();
 
-    const svgEl = element as unknown as SVGGraphicsElement & { style: CSSStyleDeclaration };
+    const svgEl = element as unknown as SVGGraphicsElement & {
+      style: CSSStyleDeclaration;
+    };
     const bbox = svgEl.getBBox();
     // Calculate the center of the bounding box.
     const centerX = bbox.x + bbox.width / 2;
@@ -250,59 +232,66 @@ function animateLayer(layer: L.Layer) {
     svgEl.style.transformOrigin = `${centerX}px ${centerY}px`;
 
     // Apply the animation.
-    element.classList.add("country-reveal-animation");
+    element.classList.add("entity-reveal-animation");
     element.addEventListener(
       "animationend",
       () => {
-        element.classList.remove("country-reveal-animation");
+        element.classList.remove("entity-reveal-animation");
       },
       { once: true }
     );
   }
 }
 
-const skipCountry = () => {
+const skipEntity = () => {
   if (gameEnded.value) return;
   currentAttempts.value = 3;
   if (geojsonLayer.value) {
     geojsonLayer.value.eachLayer((l) => {
       const geoL = l as GeoJSONLayer;
-      if (geoL.feature?.properties?.name === targetCountry.value) {
+      if (
+        geoL.feature?.properties?.[props.config.propertyName] ===
+        targetEntity.value
+      ) {
         (l as L.Path).setStyle(failedStyle);
         animateLayer(l);
       }
     });
   }
-  foundCountries.value.set(targetCountry.value, 4);
+  foundEntities.value.set(targetEntity.value, 4);
   showFeedback(
     false,
-    `Skipped! The correct country was ${targetCountry.value}`
+    `Skipped! The correct ${props.config.targetLabel.toLowerCase()} was ${
+      targetEntity.value
+    }`
   );
-  if (currentRound.value === props.totalRounds) {
+  if (currentRound.value === totalRoundsLocal.value) {
     setTimeout(endGame, 1000);
   } else {
     currentRound.value++;
     setTimeout(() => {
-      selectNewTargetCountry();
+      selectNewTargetEntity();
     }, 1000);
   }
 };
 
-const onCountryClick = (e: L.LeafletMouseEvent) => {
+const onEntityClick = (e: L.LeafletMouseEvent) => {
   if (gameEnded.value) return;
   const layer = e.target as GeoJSONLayer;
-  const clickedCountry = layer.feature.properties.name;
+  const clickedEntity = layer.feature.properties[props.config.propertyName];
+
   if (leafletMap.value) {
     L.popup({
       autoClose: true,
       closeButton: false,
-      className: "wrong-country-popup",
+      className: "wrong-entity-popup",
     })
       .setLatLng(e.latlng)
-      .setContent(clickedCountry)
+      .setContent(clickedEntity)
       .openOn(leafletMap.value as L.Map);
   }
-  if (clickedCountry === targetCountry.value) {
+
+  if (clickedEntity === targetEntity.value) {
     currentAttempts.value++;
     if (currentAttempts.value === 1) {
       score.value++;
@@ -311,18 +300,21 @@ const onCountryClick = (e: L.LeafletMouseEvent) => {
     if (geojsonLayer.value) {
       geojsonLayer.value.eachLayer((l) => {
         const geoL = l as GeoJSONLayer;
-        if (geoL.feature?.properties?.name === clickedCountry) {
+        if (
+          geoL.feature?.properties?.[props.config.propertyName] ===
+          clickedEntity
+        ) {
           (l as L.Path).setStyle(getStyleForAttempts(currentAttempts.value));
         }
       });
     }
-    foundCountries.value.set(clickedCountry, currentAttempts.value);
-    if (currentRound.value === props.totalRounds) {
+    foundEntities.value.set(clickedEntity, currentAttempts.value);
+    if (currentRound.value === totalRoundsLocal.value) {
       setTimeout(endGame, 1000);
     } else {
       currentRound.value++;
       setTimeout(() => {
-        selectNewTargetCountry();
+        selectNewTargetEntity();
       }, 1000);
     }
   } else {
@@ -330,19 +322,22 @@ const onCountryClick = (e: L.LeafletMouseEvent) => {
     if (currentAttempts.value >= 3 && geojsonLayer.value) {
       geojsonLayer.value.eachLayer((l) => {
         const geoL = l as GeoJSONLayer;
-        if (geoL.feature?.properties?.name === targetCountry.value) {
+        if (
+          geoL.feature?.properties?.[props.config.propertyName] ===
+          targetEntity.value
+        ) {
           (l as L.Path).setStyle(failedStyle);
           animateLayer(l);
         }
       });
-      foundCountries.value.set(targetCountry.value, 4);
+      foundEntities.value.set(targetEntity.value, 4);
       showFeedback(false);
-      if (currentRound.value === props.totalRounds) {
+      if (currentRound.value === totalRoundsLocal.value) {
         setTimeout(endGame, 1000);
       } else {
         currentRound.value++;
         setTimeout(() => {
-          selectNewTargetCountry();
+          selectNewTargetEntity();
         }, 1000);
       }
     } else {
@@ -350,16 +345,22 @@ const onCountryClick = (e: L.LeafletMouseEvent) => {
       if (geojsonLayer.value) {
         geojsonLayer.value.eachLayer((l) => {
           const geoL = l as GeoJSONLayer;
-          if (geoL.feature?.properties?.name === clickedCountry) {
+          if (
+            geoL.feature?.properties?.[props.config.propertyName] ===
+            clickedEntity
+          ) {
             (l as L.Path).setStyle(selectedStyle);
           }
         });
       }
       setTimeout(() => {
-        if (!foundCountries.value.has(clickedCountry) && geojsonLayer.value) {
+        if (!foundEntities.value.has(clickedEntity) && geojsonLayer.value) {
           geojsonLayer.value.eachLayer((l) => {
             const geoL = l as GeoJSONLayer;
-            if (geoL.feature?.properties?.name === clickedCountry) {
+            if (
+              geoL.feature?.properties?.[props.config.propertyName] ===
+              clickedEntity
+            ) {
               (l as L.Path).setStyle(defaultStyle);
             }
           });
@@ -370,69 +371,103 @@ const onCountryClick = (e: L.LeafletMouseEvent) => {
 };
 
 onMounted(() => {
-  document.documentElement.setAttribute(
-    "data-theme",
-    theme.global.name.value
-  );
+  document.documentElement.setAttribute("data-theme", theme.global.name.value);
   startTimer();
   if (!map.value) return;
-  const leafletMapInstance = L.map(map.value, {
+
+  const mapOptions: L.MapOptions = {
     minZoom: 2,
     maxZoom: 12,
     worldCopyJump: true,
-    center: [20, 0],
-    zoom: 2,
-    maxBounds: [
-      [-90, -540],
-      [90, 540],
-    ],
-    maxBoundsViscosity: 1.0,
-  });
+    center: props.config.mapCenter,
+    zoom: props.config.zoom,
+  };
+
+  if (props.config.maxBounds) {
+    mapOptions.maxBounds = props.config.maxBounds;
+    mapOptions.maxBoundsViscosity = 1.0;
+  }
+
+  const leafletMapInstance = L.map(map.value, mapOptions);
   leafletMap.value = leafletMapInstance;
+
   const tileLayerInstance = L.tileLayer(
-    "https://{s}.basemaps.cartocdn.com/{themeName}_nolabels/{z}/{x}/{y}{r}.png"
-      .replace(
-        "{themeName}",
-        theme.global.name.value === "dark" ? "dark" : "light"
-      ),
+    "https://{s}.basemaps.cartocdn.com/{themeName}_nolabels/{z}/{x}/{y}{r}.png".replace(
+      "{themeName}",
+      theme.global.name.value === "dark" ? "dark" : "light"
+    ),
     {
       attribution: "",
       noWrap: false,
     }
   ).addTo(leafletMapInstance);
   tileLayer.value = tileLayerInstance;
-  fetch(
-    "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson"
-  )
+
+  // Add custom controls if defined in config
+  if (props.config.customControls) {
+    props.config.customControls(leafletMapInstance);
+  }
+
+  fetch(props.config.dataUrl)
     .then((response) => response.json())
     .then((data: unknown) => {
       if (isFeatureCollection(data)) {
-        availableCountries.value = data.features
-          .map((feature) => feature.properties?.name)
-          .filter((name): name is string => name !== undefined);
-        selectNewTargetCountry();
-        const leftWorldData = createShiftedGeoJSON(data, -360);
-        const rightWorldData = createShiftedGeoJSON(data, 360);
-        const combinedData: FeatureCollection = {
-          type: "FeatureCollection",
-          features: [
-            ...leftWorldData.features,
-            ...data.features,
-            ...rightWorldData.features,
-          ],
-        };
-        geojsonLayer.value = L.geoJSON(combinedData, {
+        // Apply filter function if provided in config
+        let processedData: any = data;
+        if (props.config.filterFunction && isFeatureCollection(data)) {
+          processedData = {
+            type: "FeatureCollection" as const,
+            features: data.features.filter(props.config.filterFunction),
+          };
+        }
+
+        // If custom data processing is provided, use it
+        if (props.config.processData) {
+          processedData = props.config.processData(processedData);
+        }
+
+        const numberOfEntities = processedData.features.length;
+        totalRoundsLocal.value = props.config.maxRounds
+          ? Math.min(numberOfEntities, props.config.maxRounds)
+          : numberOfEntities;
+
+        // Extract entity names
+        availableEntities.value = processedData.features
+          .map(
+            (feature: any) => feature.properties?.[props.config.propertyName]
+          )
+          .filter((name: any): name is string => name !== undefined);
+
+        // Use fallback list if available and no entities found
+        if (availableEntities.value.length === 0 && props.config.fallbackList) {
+          availableEntities.value = props.config.fallbackList;
+        }
+
+        selectNewTargetEntity();
+
+        // Create GeoJSON layer with configured property name
+        geojsonLayer.value = L.geoJSON(processedData, {
           style: defaultStyle,
           onEachFeature: (feature, layer) => {
+            // Ensure name property is available on the feature
+            if (props.config.nameMapping) {
+              feature.properties[props.config.propertyName] =
+                props.config.nameMapping(feature.properties);
+            }
+
             layer.on({
-              click: onCountryClick,
+              click: onEntityClick,
               mouseover: (e) => {
                 const geoLayer = e.target as GeoJSONLayer;
-                const countryName = geoLayer.feature.properties.name;
-                if (!foundCountries.value.has(countryName)) {
+                const entityName =
+                  geoLayer.feature.properties[props.config.propertyName];
+                if (!foundEntities.value.has(entityName)) {
                   geojsonLayer.value?.eachLayer((l) => {
                     const geoL = l as GeoJSONLayer;
-                    if (geoL.feature?.properties?.name === countryName) {
+                    if (
+                      geoL.feature?.properties?.[props.config.propertyName] ===
+                      entityName
+                    ) {
                       (l as L.Path).setStyle({
                         ...defaultStyle,
                         fillOpacity: 0.7,
@@ -443,11 +478,15 @@ onMounted(() => {
               },
               mouseout: (e) => {
                 const geoLayer = e.target as GeoJSONLayer;
-                const countryName = geoLayer.feature.properties.name;
-                if (!foundCountries.value.has(countryName)) {
+                const entityName =
+                  geoLayer.feature.properties[props.config.propertyName];
+                if (!foundEntities.value.has(entityName)) {
                   geojsonLayer.value?.eachLayer((l) => {
                     const geoL = l as GeoJSONLayer;
-                    if (geoL.feature?.properties?.name === countryName) {
+                    if (
+                      geoL.feature?.properties?.[props.config.propertyName] ===
+                      entityName
+                    ) {
                       (l as L.Path).setStyle(defaultStyle);
                     }
                   });
@@ -456,7 +495,18 @@ onMounted(() => {
             });
           },
         }).addTo(leafletMapInstance);
+
+        // If there's a post-initialization function in config, call it
+        if (props.config.postInitialization) {
+          props.config.postInitialization(
+            leafletMapInstance,
+            geojsonLayer.value
+          );
+        }
       }
+    })
+    .catch((error) => {
+      console.error(`Error loading data for ${props.config.name}:`, error);
     });
 });
 </script>
@@ -517,7 +567,7 @@ onMounted(() => {
   color: var(--text-color);
   font-size: 18px;
 }
-.target-country {
+.target-entity {
   color: var(--text-color);
   font-size: 20px;
   font-weight: bold;
@@ -597,7 +647,7 @@ onMounted(() => {
 }
 
 /* Exaggerated animation using the computed --target-scale */
-.country-reveal-animation {
+.entity-reveal-animation {
   animation: highlight-pulse 2s ease-in-out;
 }
 @keyframes highlight-pulse {
@@ -614,7 +664,7 @@ onMounted(() => {
     filter: drop-shadow(0 0 0px red);
   }
 }
-.wrong-country-popup {
+.wrong-entity-popup {
   font-weight: bold;
   color: var(--text-color);
   background: var(--header-bg);
