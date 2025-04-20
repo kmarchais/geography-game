@@ -20,7 +20,7 @@ const gameOptions = [
   {
     name: "World Countries",
     description:
-      "Learn the countries of the world. Can you locate all 195 countries?",
+      "Learn the countries of the world. Can you locate all 241 territories?",
     route: "/world",
   },
   {

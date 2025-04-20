@@ -1,39 +1,10 @@
 import L from "leaflet";
 import type { GameConfig } from "../types/game";
-import type { GeoJsonObject } from "geojson";
+import { worldCountriesConfig } from "./worldCountriesConfig";
 
-// World Countries Configuration
-export const worldCountriesConfig: GameConfig = {
-  name: "World Countries",
-  dataUrl: "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson",
-  mapCenter: [20, 0],
-  zoom: 2,
-  maxBounds: [
-    [-90, -540],
-    [90, 540],
-  ],
-  propertyName: "name",
-  targetLabel: "Country",
-  
-  // For world map, create wrapped duplicates for better user experience
-  processData: (data: GeoJsonObject) => {
-    const featureCollection = data as any;
-    if (!featureCollection.features) return data;
-    
-    // Create shifted versions of the world for continuous scrolling
-    const leftWorldData = createShiftedGeoJSON(featureCollection, -360);
-    const rightWorldData = createShiftedGeoJSON(featureCollection, 360);
-    
-    return {
-      type: "FeatureCollection",
-      features: [
-        ...leftWorldData.features,
-        ...featureCollection.features,
-        ...rightWorldData.features,
-      ],
-    };
-  }
-};
+// Re-export the world countries config
+export { worldCountriesConfig };
+
 
 // US States Configuration
 export const usStatesConfig: GameConfig = {
