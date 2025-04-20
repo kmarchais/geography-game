@@ -1,9 +1,10 @@
 [[headers]]
-for = "*.js"
+for = "/geography-game/assets/*.js"
 [headers.values]
 Content-Type = "application/javascript"
 
 [[headers]]
-for = "*.mjs"
+# This is a catch-all for any JS files
+for = "/*.js"
 [headers.values]
 Content-Type = "application/javascript"
