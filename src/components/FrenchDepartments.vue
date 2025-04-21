@@ -18,79 +18,27 @@
           Territories
         </div>
         <div class="overseas-buttons">
-          <button
-            class="overseas-btn"
-            @click="navigateTo(map, 'mainland')"
-          >
-            Mainland
-          </button>
-          <button
-            class="overseas-btn"
-            @click="navigateTo(map, 'caribbean')"
-          >
-            Caribbean
-          </button>
-          <button
-            class="overseas-btn"
-            @click="navigateTo(map, 'guiana')"
-          >
-            Guiana
-          </button>
-          <button
-            class="overseas-btn"
-            @click="navigateTo(map, 'reunion')"
-          >
-            Réunion
-          </button>
-          <button
-            class="overseas-btn"
-            @click="navigateTo(map, 'mayotte')"
-          >
-            Mayotte
-          </button>
-          <button
-            class="overseas-btn"
-            @click="navigateTo(map, 'stpierre')"
-          >
-            St Pierre
-          </button>
-          <button
-            class="overseas-btn"
-            @click="navigateTo(map, 'polynesia')"
-          >
-            Polynesia
-          </button>
-          <button
-            class="overseas-btn"
-            @click="navigateTo(map, 'newcaledonia')"
-          >
-            New Caledonia
-          </button>
-          <button
-            class="overseas-btn"
-            @click="navigateTo(map, 'wallis')"
-          >
-            Wallis
-          </button>
-          <button
-            class="overseas-btn"
-            @click="navigateTo(map, 'taaf')"
-          >
-            TAAF
-          </button>
-          <button
-            class="overseas-btn"
-            @click="navigateTo(map, 'clipperton')"
-          >
-            Clipperton
-          </button>
-          <button
-            class="overseas-btn"
-            @click="navigateTo(map, 'world')"
-          >
-            World
-          </button>
-        </div>
+  <button class="overseas-btn" @click="navigateTo(map, 'mainland')">
+    Mainland
+  </button>
+  <button class="overseas-btn" @click="navigateTo(map, 'atlantic')">
+    Atlantic
+  </button>
+  <button class="overseas-btn" @click="navigateTo(map, 'caribbean')">
+    Caribbean
+  </button>
+  <button class="overseas-btn" @click="navigateTo(map, 'indianocean')">
+    Indian Ocean
+  </button>
+  <button class="overseas-btn" @click="navigateTo(map, 'pacific')">
+    Pacific
+  </button>
+  <button class="overseas-btn" @click="navigateTo(map, 'world')">
+    World
+  </button>
+</div>
+
+
       </div>
     </template>
   </MapGame>
@@ -115,20 +63,32 @@ const mapOptions = {
 const navigateTo = (mapInstance: L.Map | null, region: string) => {
   if (!mapInstance) return;
   switch (region) {
-    case "mainland": mapInstance.setView([46.6, 1.9], 5); break;
-    case "caribbean": mapInstance.setView([16.5, -62.0], 7); break;
-    case "guiana": mapInstance.setView([4.0, -53.0], 7); break;
-    case "reunion": mapInstance.setView([-21.1, 55.5], 9); break;
-    case "mayotte": mapInstance.setView([-12.8, 45.2], 10); break;
-    case "stpierre": mapInstance.setView([46.8, -56.2], 9); break;
-    case "polynesia": mapInstance.setView([-17.7, -149.4], 6); break;
-    case "newcaledonia": mapInstance.setView([-21.5, 165.8], 7); break;
-    case "wallis": mapInstance.setView([-13.7, -177.1], 9); break;
-    case "taaf": mapInstance.setView([-49.3, 69.3], 6); break;
-    case "clipperton": mapInstance.setView([10.3, -109.2], 10); break;
-    case "world": mapInstance.setView([20, 0], 2); break;
+    case "mainland":
+      mapInstance.setView([47, 1.9], 5.5);
+      break;
+    case "atlantic":
+      // Covers Caribbean, Guyane, St Pierre & Miquelon
+      mapInstance.setView([30, -55], 4.0);
+      break;
+    case "indianocean":
+      // Covers Réunion, Mayotte, TAAF
+      mapInstance.setView([-25, 60], 3.9);
+      break;
+    case "pacific":
+      // Covers Polynesia, Wallis, Clipperton, New Caledonia
+      mapInstance.setView([-13, -140], 4.0);
+      break;
+    case "caribbean":
+      mapInstance.setView([12, -60], 5.5);
+      break;
+    case "world":
+      mapInstance.setView([20, 0], 2);
+      break;
   }
 };
+
+
+
 
 interface Territory {
   name: string;
