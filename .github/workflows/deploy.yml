@@ -80,7 +80,6 @@ jobs:
               issue_number,
               body: `## 🚀 Preview Deployment\n\n**Preview URL:** [${previewUrl}](${previewUrl})\n\nThis preview will update automatically when new changes are pushed to this PR.`
             });
-
   deploy:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
