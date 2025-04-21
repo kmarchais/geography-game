@@ -21,12 +21,9 @@ repos:
         additional_dependencies:
           - eslint@9.25.0
           - eslint-plugin-vue@10.0.0
-          # Add these:
-          - '@typescript-eslint/eslint-plugin' # Add the specific version you use locally
-          - '@typescript-eslint/parser'       # Add the specific version you use locally
-          - 'vue-eslint-parser'               # Add the specific version you use locally
-          # You probably don't need this one if using the flat config above:
-          # - '@vue/eslint-config-typescript@14.5.0'
+          - '@typescript-eslint/eslint-plugin@8.30.1'
+          - '@typescript-eslint/parser@8.30.1'
+          - 'vue-eslint-parser@10.1.3'
           - typescript@5.8.3
 
   - repo: https://github.com/thibaudcolas/pre-commit-stylelint
