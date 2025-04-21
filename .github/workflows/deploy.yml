@@ -11,6 +11,7 @@ permissions:
   contents: write
   pages: write
   id-token: write
+  pull-requests: write
 
 jobs:
   build:
@@ -31,7 +32,7 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           echo "Building PR with base: /geography-game/${{ github.head_ref }}/"
-          GITHUB_HEAD_REF=${{ github.head_ref }} bun run build
+          bun run build
         env:
           BASE_URL: /geography-game/${{ github.head_ref }}/
 
@@ -43,13 +44,6 @@ jobs:
         env:
           BASE_URL: /geography-game/
 
-      # For main branch - use GitHub Pages deployment
-      - name: Upload artifact
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./dist
-
       # For PR branches - deploy to gh-pages branch in subdirectory
       - name: Deploy PR Preview
         if: github.event_name == 'pull_request'
@@ -59,15 +53,50 @@ jobs:
           target-folder: ${{ github.head_ref }}
           branch: gh-pages
           token: ${{ secrets.GITHUB_TOKEN }}
+          clean: false # Important! Don't remove other directories
 
-  deploy:
-    needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      # For main branch - also deploy to gh-pages but in the root
+      - name: Deploy Main to Root
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist
+          branch: gh-pages
+          token: ${{ secrets.GITHUB_TOKEN }}
+          clean-exclude: |
+            */
+          # This deploys to root but preserves branch subdirectories
+
+      # Add a comment to the PR with the preview URL
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.issue.number;
+            const branch = context.payload.pull_request.head.ref;
+
+            const previewUrl = `https://${owner}.github.io/geography-game/${branch}/`;
+
+            github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number,
+              body: `## 🚀 Preview Deployment\n\n**Preview URL:** [${previewUrl}](${previewUrl})\n\nThis preview will update automatically when new changes are pushed to this PR.`
+            });
+
+  # This job is no longer needed as we're using the gh-pages branch for both deployments
+  # deploy:
+  #   needs: build
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+  #   runs-on: ubuntu-latest
+  #   environment:
+  #     name: github-pages
+  #     url: ${{ steps.deployment.outputs.page_url }}
+  #   steps:
+  #     - name: Deploy to GitHub Pages
+  #       id: deployment
+  #       uses: actions/deploy-pages@v4

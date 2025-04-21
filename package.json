@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force",
-    "lint": "eslint --config eslint.config.js . --fix"
+    "lint": "eslint --config eslint.config.cjs . --fix"
   },
   "dependencies": {
     "@mdi/font": "7.4.47",
