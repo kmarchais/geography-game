@@ -17,6 +17,7 @@ repos:
     rev: 'v9.25.0'
     hooks:
     -   id: eslint
+        language_version: "23.8.0"
         args: [--config eslint.config.js]
         additional_dependencies:
           - eslint@9.25.0
