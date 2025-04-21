@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write # Updated to allow writing to repository contents for PR deployments
   pages: write
   id-token: write
 
@@ -27,14 +27,33 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Build
+      - name: Build for PR
+        if: github.event_name == 'pull_request'
+        run: bun run build
+        env:
+          # Adjust the base path for PR deployments
+          BASE_URL: /geography-game/${{ github.head_ref }}/
+
+      - name: Build for main
+        if: github.event_name != 'pull_request'
         run: bun run build
 
+      # For main branch - use GitHub Pages deployment
       - name: Upload artifact
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
+
+      # For PR branches - deploy to gh-pages branch in subdirectory
+      - name: Deploy PR Preview
+        if: github.event_name == 'pull_request'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist
+          target-folder: ${{ github.head_ref }}
+          branch: gh-pages
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   deploy:
     needs: build
