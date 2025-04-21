@@ -8,9 +8,12 @@ import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 
+// Get base path from environment variable or use default
+const basePath = process.env.BASE_URL || '/geography-game/'
+
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/geography-game/',
+  base: basePath,
   plugins: [
     VueRouter(),
     Vue({

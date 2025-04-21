@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write # Updated to allow writing to repository contents for PR deployments
+  contents: write
   pages: write
   id-token: write
 
@@ -29,14 +29,19 @@ jobs:
 
       - name: Build for PR
         if: github.event_name == 'pull_request'
-        run: bun run build
+        run: |
+          echo "Building PR with base: /geography-game/${{ github.head_ref }}/"
+          GITHUB_HEAD_REF=${{ github.head_ref }} bun run build
         env:
-          # Adjust the base path for PR deployments
           BASE_URL: /geography-game/${{ github.head_ref }}/
 
       - name: Build for main
         if: github.event_name != 'pull_request'
-        run: bun run build
+        run: |
+          echo "Building main with base: /geography-game/"
+          bun run build
+        env:
+          BASE_URL: /geography-game/
 
       # For main branch - use GitHub Pages deployment
       - name: Upload artifact
