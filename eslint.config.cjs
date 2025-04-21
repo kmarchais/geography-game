@@ -1,22 +1,17 @@
-/**
- * eslint.config.js
- *
- * ESLint configuration file.
- */
+// eslint.config.cjs
+const pluginVue = require('eslint-plugin-vue');
+const typescriptPlugin = require('@typescript-eslint/eslint-plugin');
+const typescriptParser = require('@typescript-eslint/parser');
+const vueParser = require('vue-eslint-parser');
 
-import pluginVue from 'eslint-plugin-vue'
-import typescriptPlugin from '@typescript-eslint/eslint-plugin'
-import typescriptParser from '@typescript-eslint/parser'
-import vueParser from 'vue-eslint-parser'
-
-export default [
-  // Base configuration for all files
+module.exports = [
   {
     name: 'app/base',
     files: ['**/*.{ts,mts,tsx,vue}'],
     ignores: ['**/dist/**', '**/dist-ssr/**', '**/coverage/**'],
     plugins: {
-      '@typescript-eslint': typescriptPlugin
+      '@typescript-eslint': typescriptPlugin,
+      'vue': pluginVue,
     },
     rules: {
       '@typescript-eslint/no-unused-expressions': [
@@ -29,11 +24,7 @@ export default [
       'vue/multi-word-component-names': 'off',
     }
   },
-
-  // Vue recommended configuration
   ...pluginVue.configs['flat/recommended'],
-
-  // TypeScript configuration for Vue files
   {
     files: ['**/*.vue'],
     languageOptions: {
@@ -46,8 +37,6 @@ export default [
       }
     }
   },
-
-  // TypeScript configuration for TS files
   {
     files: ['**/*.{ts,mts,tsx}'],
     languageOptions: {
@@ -58,4 +47,4 @@ export default [
       }
     }
   }
-]
+];
