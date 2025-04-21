@@ -18,6 +18,9 @@ repos:
     hooks:
     -   id: eslint
         args: [--config eslint.config.js]
+        additional_dependencies:
+          - eslint@9.25.0
+          - eslint-plugin-vue@9.30.0
 
   - repo: https://github.com/thibaudcolas/pre-commit-stylelint
     rev: v16.18.0
