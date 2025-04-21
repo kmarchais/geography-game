@@ -1,7 +1,10 @@
-
 <template>
   <v-container class="fill-height d-flex align-center justify-center">
-    <v-card class="pa-6 text-center" elevation="3" max-width="500">
+    <v-card
+      class="pa-6 text-center"
+      elevation="3"
+      max-width="500"
+    >
       <v-card-title class="text-h4 font-weight-bold mb-4">
         Geography Game Hub
       </v-card-title>
@@ -10,10 +13,13 @@
         Select a map challenge below to test your geography knowledge!
       </v-card-text>
 
-      <v-divider class="mb-6"></v-divider>
+      <v-divider class="mb-6" />
 
       <v-row dense>
-        <v-col cols="12" sm="6">
+        <v-col
+          cols="12"
+          sm="6"
+        >
           <v-btn
             block
             color="blue-darken-1"
@@ -24,7 +30,10 @@
             World Countries
           </v-btn>
         </v-col>
-        <v-col cols="12" sm="6">
+        <v-col
+          cols="12"
+          sm="6"
+        >
           <v-btn
             block
             color="green-darken-1"
@@ -35,7 +44,10 @@
             African Countries
           </v-btn>
         </v-col>
-        <v-col cols="12" sm="6">
+        <v-col
+          cols="12"
+          sm="6"
+        >
           <v-btn
             block
             color="red-darken-1"
@@ -46,7 +58,10 @@
             US States
           </v-btn>
         </v-col>
-        <v-col cols="12" sm="6">
+        <v-col
+          cols="12"
+          sm="6"
+        >
           <v-btn
             block
             color="purple-darken-1"
@@ -55,6 +70,20 @@
             @click="navigateTo('/french-departments')"
           >
             French Departments
+          </v-btn>
+        </v-col>
+        <v-col
+          cols="12"
+          sm="12"
+        >
+          <v-btn
+            block
+            color="orange-darken-1"
+            size="large"
+            class="mb-3"
+            @click="navigateTo('/spanish-communities')"
+          >
+            Spanish Communities
           </v-btn>
         </v-col>
       </v-row>
@@ -73,12 +102,12 @@ const navigateTo = (path: string) => {
 </script>
 
 <style scoped>
-/* Add any specific styles for the home view here if needed */
-.v-card {
-  border-radius: 8px;
-}
-.v-btn {
-  text-transform: none; /* Keep button text case as is */
-  font-weight: 500;
-}
+  .v-card {
+    border-radius: 8px;
+  }
+
+  .v-btn {
+    text-transform: none;
+    font-weight: 500;
+  }
 </style>

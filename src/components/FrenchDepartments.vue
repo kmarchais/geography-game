@@ -9,23 +9,87 @@
     :add-manual-markers-fn="addFrenchTerritoryMarkers"
     :total-rounds-override="109"
   >
-    <!-- Slot for the overseas navigation controls -->
     <template #extra-controls="{ map }">
-      <div v-if="map" class="overseas-navigation">
-        <div class="overseas-title">Territories</div>
+      <div
+        v-if="map"
+        class="overseas-navigation"
+      >
+        <div class="overseas-title">
+          Territories
+        </div>
         <div class="overseas-buttons">
-           <button class="overseas-btn" @click="navigateTo(map, 'mainland')">Mainland</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'caribbean')">Caribbean</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'guiana')">Guiana</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'reunion')">Réunion</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'mayotte')">Mayotte</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'stpierre')">St Pierre</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'polynesia')">Polynesia</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'newcaledonia')">New Caledonia</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'wallis')">Wallis</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'taaf')">TAAF</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'clipperton')">Clipperton</button>
-           <button class="overseas-btn" @click="navigateTo(map, 'world')">World</button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'mainland')"
+          >
+            Mainland
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'caribbean')"
+          >
+            Caribbean
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'guiana')"
+          >
+            Guiana
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'reunion')"
+          >
+            Réunion
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'mayotte')"
+          >
+            Mayotte
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'stpierre')"
+          >
+            St Pierre
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'polynesia')"
+          >
+            Polynesia
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'newcaledonia')"
+          >
+            New Caledonia
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'wallis')"
+          >
+            Wallis
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'taaf')"
+          >
+            TAAF
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'clipperton')"
+          >
+            Clipperton
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'world')"
+          >
+            World
+          </button>
         </div>
       </div>
     </template>
@@ -34,21 +98,20 @@
 
 <script setup lang="ts">
 import L from "leaflet";
-import { ref, watch, type Ref } from "vue"; // Import Ref
-import MapGame from "./MapGame.vue"; // Adjust path
-import { getStyleForAttempts } from "../utils/geojsonUtils"; // Adjust path
+import { watch, type Ref } from "vue";
+import MapGame from "./MapGame.vue";
+import { getStyleForAttempts } from "../utils/geojsonUtils";
 
 const mapOptions = {
-  initialCenter: [46.603354, 1.888334] as L.LatLngExpression, // Center of France
+  initialCenter: [46.603354, 1.888334] as L.LatLngExpression,
   initialZoom: 5,
   minZoom: 2,
-  maxZoom: 12, // Allow closer zoom for small territories
-  worldCopyJump: true, // Needed to see all territories easily
-  maxBounds: undefined, // Explicitly undefined
-  maxBoundsViscosity: 0.0, // Allow panning outside initial view easily
+  maxZoom: 12,
+  worldCopyJump: true,
+  maxBounds: undefined,
+  maxBoundsViscosity: 0.0,
 };
 
-// --- Navigation for Overseas Territories ---
 const navigateTo = (mapInstance: L.Map | null, region: string) => {
   if (!mapInstance) return;
   switch (region) {
@@ -61,13 +124,12 @@ const navigateTo = (mapInstance: L.Map | null, region: string) => {
     case "polynesia": mapInstance.setView([-17.7, -149.4], 6); break;
     case "newcaledonia": mapInstance.setView([-21.5, 165.8], 7); break;
     case "wallis": mapInstance.setView([-13.7, -177.1], 9); break;
-    case "taaf": mapInstance.setView([-49.3, 69.3], 6); break; // Kerguelen approx
+    case "taaf": mapInstance.setView([-49.3, 69.3], 6); break;
     case "clipperton": mapInstance.setView([10.3, -109.2], 10); break;
     case "world": mapInstance.setView([20, 0], 2); break;
   }
 };
 
-// --- Manual Markers for Territories without GeoJSON ---
 interface Territory {
   name: string;
   lat: number;
@@ -80,13 +142,12 @@ const additionalTerritories: Territory[] = [
     { name: "Wallis et Futuna", lat: -13.77, lng: -177.15, code: "986" },
     { name: "Polynésie Française", lat: -17.68, lng: -149.45, code: "987" },
     { name: "Nouvelle-Calédonie", lat: -21.25, lng: 165.5, code: "988" },
-    { name: "Terres Australes et Antarctiques Françaises", lat: -49.35, lng: 70.22, code: "984" }, // Kerguelen
+    { name: "Terres Australes et Antarctiques Françaises", lat: -49.35, lng: 70.22, code: "984" },
     { name: "Saint-Martin", lat: 18.08, lng: -63.05, code: "978" },
     { name: "Saint-Barthélemy", lat: 17.9, lng: -62.83, code: "977" },
-    { name: "Île de Clipperton", lat: 10.28, lng: -109.22, code: "989" } // Often unofficial code
+    { name: "Île de Clipperton", lat: 10.28, lng: -109.22, code: "989" }
 ];
 
-// Define the type for the function explicitly
 type AddManualMarkersFnType = (
   map: L.Map,
   available: Ref<string[]>,
@@ -94,19 +155,17 @@ type AddManualMarkersFnType = (
   clickHandler: (name: string, latlng: L.LatLng) => void
 ) => void;
 
-// Assign the function to the explicitly typed variable
 const addFrenchTerritoryMarkers: AddManualMarkersFnType = (
   map,
   available,
   found,
   clickHandler
 ) => {
-  const markers: Record<string, L.Marker> = {}; // Store markers by name
+  const markers: Record<string, L.Marker> = {};
   const markerLayer = L.layerGroup().addTo(map);
 
-  // Function to create/update marker icon style
   const createMarkerIcon = (territory: Territory, attempts?: number) => {
-    let borderColor = '#d35400'; // Default orange border
+    let borderColor = '#d35400';
     let bgColor = 'var(--header-bg)';
     let textColor = 'var(--text-color)';
 

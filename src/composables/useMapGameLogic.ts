@@ -1,5 +1,4 @@
-// src/composables/useMapGameLogic.ts
-import { ref, computed, onScopeDispose, type Ref } from "vue"; // <-- Import onScopeDispose
+import { ref, computed, onScopeDispose, type Ref } from "vue";
 
 export interface MapGameLogicOptions {
   entityNameSingular: string;
@@ -11,19 +10,17 @@ export interface MapGameLogicOptions {
 export function useMapGameLogic(options: MapGameLogicOptions) {
   const { entityNameSingular, availableEntities, totalRounds } = options;
 
-  // Game state
   const score = ref(0);
   const currentRound = ref(1);
   const currentAttempts = ref(0);
   const gameEnded = ref(false);
   const targetEntity = ref("");
   const usedEntities = ref<string[]>([]);
-  // Map stores entity name -> number of attempts (1, 2, 3) or 4 for failed/skipped
+
   const foundEntities = ref(new Map<string, number>());
 
-  // Timer state
   const timer = ref(0);
-  const timerInterval = ref<number | null>(null); // Ensure timerInterval is defined
+  const timerInterval = ref<number | null>(null);
   const formattedTime = computed(() => {
     const minutes = Math.floor(timer.value / 60);
     const seconds = timer.value % 60;
@@ -32,28 +29,25 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
       .padStart(2, "0")}`;
   });
 
-  // Feedback state
   const feedback = ref("");
-  const feedbackType = ref(""); // 'correct' or 'incorrect'
+  const feedbackType = ref("");
 
-  // --- Timer Methods ---
   const stopTimer = () => {
     if (timerInterval.value !== null) {
-      console.log("Clearing timer interval from composable scope dispose."); // Optional log
+      console.log("Clearing timer interval from composable scope dispose.");
       clearInterval(timerInterval.value);
       timerInterval.value = null;
     }
   };
 
   const startTimer = () => {
-    stopTimer(); // Clear any existing interval
+    stopTimer();
     timer.value = 0;
     timerInterval.value = window.setInterval(() => {
       timer.value++;
     }, 1000);
   };
 
-  // --- Feedback Methods ---
   const showFeedback = (isCorrect: boolean, customMsg?: string) => {
     feedbackType.value = isCorrect ? "correct" : "incorrect";
     if (customMsg) {
@@ -67,7 +61,6 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
           ? `Out of attempts! The correct ${entityNameSingular} was ${targetEntity.value}`
           : `Wrong! Try again to find ${targetEntity.value}`;
     }
-    // Clear feedback after a delay
     setTimeout(() => {
       feedback.value = "";
       feedbackType.value = "";
@@ -79,7 +72,6 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
     feedbackType.value = "";
   };
 
-  // --- Game Flow Methods ---
   const selectNewTargetEntity = () => {
     if (availableEntities.value.length === 0) {
       console.warn("No available entities to select from.");
@@ -117,7 +109,7 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
 
   const endGame = () => {
     gameEnded.value = true;
-    stopTimer(); // Stop timer explicitly on game end as well
+    stopTimer();
     clearFeedback();
   };
 
@@ -133,7 +125,6 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
     startTimer();
   };
 
-  // --- Attempt/Guess Handling ---
   const handleCorrectGuess = (guessedEntity: string) => {
     currentAttempts.value++;
     if (currentAttempts.value === 1) {
@@ -144,9 +135,7 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
     setTimeout(advanceRound, 1000);
   };
 
-  const handleIncorrectGuess = (
-    guessedEntity: string
-  ): { shouldEndRound: boolean } => {
+  const handleIncorrectGuess = (): { shouldEndRound: boolean } => {
     currentAttempts.value++;
     const isOutOfAttempts = currentAttempts.value >= 3;
 
@@ -162,25 +151,22 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
   };
 
   const skipEntity = () => {
-    if (gameEnded.value) return { skippedEntity: "" }; // Return empty if game ended
+    if (gameEnded.value) return { skippedEntity: "" };
     currentAttempts.value = 3;
     foundEntities.value.set(targetEntity.value, 4);
     showFeedback(
       false,
       `Skipped! The correct ${entityNameSingular} was ${targetEntity.value}`
     );
-    const skipped = targetEntity.value; // Store before advancing
+    const skipped = targetEntity.value;
     setTimeout(advanceRound, 1000);
     return { skippedEntity: skipped };
   };
 
-  // --- Cleanup ---
-  // Register cleanup logic to run when the component using this composable unmounts
   onScopeDispose(() => {
     stopTimer();
   });
 
-  // --- Return Values ---
   return {
     // State Refs
     score,
@@ -201,6 +187,5 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
     skipEntity,
     handleCorrectGuess,
     handleIncorrectGuess,
-    // No need to return stopTimer anymore
   };
 }

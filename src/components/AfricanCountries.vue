@@ -5,31 +5,30 @@
     geojson-url="https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson"
     geojson-name-property="name"
     :map-options="mapOptions"
-    :process-geojsonData-fn="filterAfricaData"
+    :process-geojson-data-fn="filterAfricaData"
     :total-rounds-override="54"
   />
 </template>
 
 <script setup lang="ts">
-import type { FeatureCollection } from "geojson";
+import type { FeatureCollection, Geometry } from "geojson";
 import L from "leaflet";
-import MapGame from "./MapGame.vue"; // Adjust path
-import type { GeoJSONProperties } from "../utils/geojsonUtils"; // Adjust path
+import MapGame from "./MapGame.vue";
+import type { GeoJSONProperties } from "../utils/geojsonUtils";
 
 const mapOptions = {
-  initialCenter: [5, 20] as L.LatLngExpression, // Center on Africa
+  initialCenter: [5, 20] as L.LatLngExpression,
   initialZoom: 3,
   minZoom: 2,
   maxZoom: 12,
-  worldCopyJump: false, // No wrap needed for regional map
+  worldCopyJump: false,
   maxBounds: [
-    [-40, -30], // Southwest corner
-    [40, 60], // Northeast corner
+    [-40, -30],
+    [40, 60],
   ] as L.LatLngBoundsExpression,
   maxBoundsViscosity: 1.0,
 };
 
-// Predefined list of African countries for fallback filtering
 const africanCountriesList = [
     "Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi",
     "Cabo Verde", "Cameroon", "Central African Republic", "Chad", "Comoros",
@@ -42,21 +41,17 @@ const africanCountriesList = [
     "Togo", "Tunisia", "Uganda", "Zambia", "Zimbabwe", "Western Sahara",
 ];
 
-// Processing function to filter only African countries
 const filterAfricaData = (
-  data: FeatureCollection<any, GeoJSONProperties>
-): FeatureCollection<any, GeoJSONProperties> => {
+  data: FeatureCollection<Geometry, GeoJSONProperties>
+): FeatureCollection<Geometry, GeoJSONProperties> => {
 
   let filteredFeatures = data.features.filter((feature) => {
-    // Primary filter: Check for continent property
     return feature.properties?.continent === "Africa";
   });
 
-  // Fallback filter: If no features found using 'continent', use the predefined list
   if (filteredFeatures.length === 0) {
     console.warn("Filtering African countries by name list as 'continent' property might be missing or didn't match.");
     filteredFeatures = data.features.filter((feature) => {
-        // Use the standardized 'name' property added during initial processing
         return africanCountriesList.includes(feature.properties?.name);
     });
   }

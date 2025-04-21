@@ -13,6 +13,7 @@ declare module 'vue' {
     MapGame: typeof import('./src/components/MapGame.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SpanishCommunities: typeof import('./src/components/SpanishCommunities.vue')['default']
     UsStates: typeof import('./src/components/UsStates.vue')['default']
     WorldCountries: typeof import('./src/components/WorldCountries.vue')['default']
   }

@@ -1,10 +1,10 @@
-// src/router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue' // Example Home View
-import WorldCountries from '../components/WorldCountries.vue' // Adjust path
-import AfricanCountries from '../components/AfricanCountries.vue' // Adjust path
-import UsStates from '../components/UsStates.vue' // Adjust path
-import FrenchDepartments from '../components/FrenchDepartments.vue' // Adjust path
+import HomeView from '../views/HomeView.vue'
+import WorldCountries from '../components/WorldCountries.vue'
+import AfricanCountries from '../components/AfricanCountries.vue'
+import UsStates from '../components/UsStates.vue'
+import FrenchDepartments from '../components/FrenchDepartments.vue'
+import SpanishCommunities from '../components/SpanishCommunities.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -12,7 +12,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView // Replace with your actual home component
+      component: HomeView
     },
     {
       path: '/world-countries',
@@ -33,8 +33,12 @@ const router = createRouter({
       path: '/french-departments',
       name: 'french-departments',
       component: FrenchDepartments
+    },
+    {
+      path: '/spanish-communities',
+      name: 'spanish-communities',
+      component: SpanishCommunities
     }
-    // Add other routes as needed
   ]
 })
 

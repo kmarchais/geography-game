@@ -1,7 +1,13 @@
-import L from "leaflet";
-import type { GameConfig } from "../types/game";
+import type { GameConfig } from "../types/game.d";
+import type { FeatureCollection, Feature, Geometry, GeoJsonObject } from "geojson";
 
-// World Countries Configuration
+interface GeoJSONProperties {
+  name: string;
+  [key: string]: unknown;
+}
+type GeoJSONFeatureCollection = FeatureCollection<Geometry, GeoJSONProperties>;
+type GeoJSONFeature = Feature<Geometry, GeoJSONProperties>;
+
 export const worldCountriesConfig: GameConfig = {
   name: "World Countries",
   dataUrl: "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson",
@@ -14,12 +20,13 @@ export const worldCountriesConfig: GameConfig = {
   propertyName: "name",
   targetLabel: "Country",
 
-  // For world map, create wrapped duplicates for better user experience
-  processData: (data: any) => {
-    const featureCollection = data;
-    if (!featureCollection.features) return data;
+  processData: (data: GeoJsonObject): GeoJsonObject => {
+    if (!isFeatureCollection(data)) {
+      return data;
+    }
 
-    // Create shifted versions of the world for continuous scrolling
+    const featureCollection = data as GeoJSONFeatureCollection;
+
     const leftWorldData = createShiftedGeoJSON(featureCollection, -360);
     const rightWorldData = createShiftedGeoJSON(featureCollection, 360);
 
@@ -30,27 +37,50 @@ export const worldCountriesConfig: GameConfig = {
         ...featureCollection.features,
         ...rightWorldData.features,
       ],
-    };
+    } as GeoJsonObject;
   }
 };
 
 /**
- * Helper function to create a shifted version of GeoJSON data for world wrapping
+ * Type guard to check if the object is a FeatureCollection
  */
-function createShiftedGeoJSON(originalData: any, longitudeShift: number): any {
-  const shiftedData = JSON.parse(JSON.stringify(originalData));
+function isFeatureCollection(obj: unknown): obj is GeoJSONFeatureCollection {
+  return (
+    obj != null &&
+    typeof obj === 'object' &&
+    obj !== null &&
+    'type' in obj &&
+    (obj as Record<string, unknown>).type === 'FeatureCollection' &&
+    'features' in obj &&
+    Array.isArray((obj as Record<string, unknown>).features)
+  );
+}
 
-  shiftedData.features.forEach((feature: any) => {
+/**
+ * Helper function to create a shifted version of GeoJSON data for world wrapping
+ * @param originalData The original GeoJSON data
+ * @param longitudeShift The amount to shift longitude coordinates
+ * @returns A new GeoJSON collection with shifted coordinates
+ */
+function createShiftedGeoJSON(
+  originalData: GeoJSONFeatureCollection,
+  longitudeShift: number
+): GeoJSONFeatureCollection {
+  const shiftedData = JSON.parse(JSON.stringify(originalData)) as GeoJSONFeatureCollection;
+
+  shiftedData.features.forEach((feature: GeoJSONFeature) => {
     if (feature.geometry.type === "Polygon") {
-      feature.geometry.coordinates.forEach((ring: number[][]) => {
-        ring.forEach((coord: number[]) => {
+      const polygonGeometry = feature.geometry as GeoJSON.Polygon;
+      polygonGeometry.coordinates.forEach((ring) => {
+        ring.forEach((coord) => {
           coord[0] += longitudeShift;
         });
       });
     } else if (feature.geometry.type === "MultiPolygon") {
-      feature.geometry.coordinates.forEach((polygon: number[][][]) => {
-        polygon.forEach((ring: number[][]) => {
-          ring.forEach((coord: number[]) => {
+      const multiPolygonGeometry = feature.geometry as GeoJSON.MultiPolygon;
+      multiPolygonGeometry.coordinates.forEach((polygon) => {
+        polygon.forEach((ring) => {
+          ring.forEach((coord) => {
             coord[0] += longitudeShift;
           });
         });

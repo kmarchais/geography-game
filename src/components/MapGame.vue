@@ -1,97 +1,94 @@
 <template>
-    <div class="map-container">
-      <!-- Game Header -->
-      <div class="game-header">
-        <template v-if="!gameEnded">
-          <div class="game-info">
-            <div class="score-display">
-              Score: {{ score }}/{{ totalRoundsComputed }}
-            </div>
-            <div class="round-display">
-              Round: {{ currentRound }}/{{ totalRoundsComputed }}
-            </div>
-            <div class="attempts-display">
-              Attempts: {{ currentAttempts }}/3
-            </div>
-            <div class="timer-display">
+  <div class="map-container">
+    <div class="game-header">
+      <template v-if="!gameEnded">
+        <div class="game-info">
+          <div class="score-display">
+            Score: {{ score }}/{{ totalRoundsComputed }}
+          </div>
+          <div class="round-display">
+            Round: {{ currentRound }}/{{ totalRoundsComputed }}
+          </div>
+          <div class="attempts-display">
+            Attempts: {{ currentAttempts }}/3
+          </div>
+          <div class="timer-display">
+            Time: {{ formattedTime }}
+          </div>
+        </div>
+        <div class="target-entity">
+          Find: {{ targetEntity }}
+        </div>
+        <button
+          class="skip-btn"
+          :disabled="!!feedback"
+          @click="handleSkip"
+        >
+          Skip
+        </button>
+        <div
+          v-if="feedback"
+          :class="['feedback', feedbackType]"
+        >
+          {{ feedback }}
+        </div>
+      </template>
+      <template v-else>
+        <div class="game-end">
+          <div class="final-score">
+            Final Score: {{ score }}/{{ totalRoundsComputed }}
+            <div class="final-time">
               Time: {{ formattedTime }}
             </div>
           </div>
-          <div class="target-entity">
-            Find: {{ targetEntity }}
-          </div>
           <button
-            class="skip-btn"
-            @click="handleSkip"
-            :disabled="!!feedback"
+            class="new-game-btn"
+            @click="handleNewGame"
           >
-            Skip
+            Play Again
           </button>
-          <div
-            v-if="feedback"
-            :class="['feedback', feedbackType]"
-          >
-            {{ feedback }}
-          </div>
-        </template>
-        <template v-else>
-          <div class="game-end">
-            <div class="final-score">
-              Final Score: {{ score }}/{{ totalRoundsComputed }}
-              <div class="final-time">
-                Time: {{ formattedTime }}
-              </div>
-            </div>
-            <button
-              class="new-game-btn"
-              @click="handleNewGame"
-            >
-              Play Again
-            </button>
-          </div>
-        </template>
-      </div>
-
-      <!-- Map Div -->
-      <div
-        ref="mapElement"
-        class="map-render-area"
-      />
-
-      <!-- Slot for additional controls like France's overseas nav -->
-      <div class="extra-controls-container">
-        <slot name="extra-controls" :map="leafletMap"></slot>
-      </div>
+        </div>
+      </template>
     </div>
-  </template>
 
-  <script setup lang="ts">
-  import type { FeatureCollection } from "geojson";
+    <div
+      ref="mapElement"
+      class="map-render-area"
+    />
+
+    <div class="extra-controls-container">
+      <slot
+        name="extra-controls"
+        :map="leafletMap"
+      />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+  import type { FeatureCollection, Geometry, Feature } from "geojson";
   import L from "leaflet";
-  import "leaflet/dist/leaflet.css"; // Import Leaflet CSS
+  import "leaflet/dist/leaflet.css";
   import {
-    computed,
     onMounted,
-    onUnmounted, // Ensure onUnmounted is imported
+    onUnmounted,
     ref,
     watch,
     type Ref,
     shallowRef,
   } from "vue";
   import { useTheme } from "vuetify";
-  import { useMapGameLogic } from "../composables/useMapGameLogic"; // Adjust path if needed
+  import { useMapGameLogic } from "../composables/useMapGameLogic";
   import {
     animateLayer,
-    defaultStyle, // Make sure defaultStyle is imported
-    failedStyle,
+    defaultStyle,
     getStyleForAttempts,
     isFeatureCollection,
     selectedStyle,
-    type GeoJSONFeature, // Keep this type for assertions
+    type GeoJSONFeature,
     type GeoJSONProperties,
-  } from "../utils/geojsonUtils"; // Adjust path if needed
+  } from "../utils/geojsonUtils";
 
-  // --- Props ---
 
   interface MapOptions extends L.MapOptions {
     initialCenter: L.LatLngExpression;
@@ -99,8 +96,8 @@
   }
 
   type ProcessGeoJsonFunc = (
-    data: FeatureCollection<any, any>
-  ) => FeatureCollection<any, GeoJSONProperties>;
+    data: FeatureCollection<Geometry, GeoJSONProperties>
+  ) => FeatureCollection<Geometry, GeoJSONProperties>;
   type AddManualMarkersFunc = (
     map: L.Map,
     available: Ref<string[]>,
@@ -120,7 +117,6 @@
     mapOptions: MapOptions;
   }>();
 
-  // --- Refs ---
   const mapElement = ref<HTMLElement | null>(null);
   const leafletMap = shallowRef<L.Map | null>(null);
   const tileLayer = shallowRef<L.TileLayer | null>(null);
@@ -128,7 +124,6 @@
   const availableEntities = ref<string[]>([]);
   const totalRoundsComputed = ref(0);
 
-  // --- Composables ---
   const theme = useTheme();
   const gameLogic = useMapGameLogic({
     entityNameSingular: props.entityNameSingular,
@@ -143,17 +138,15 @@
     gameEnded,
     targetEntity,
     foundEntities,
-    timer,
     formattedTime,
     feedback,
     feedbackType,
-    startNewGame, // Correct function name exposed
+    startNewGame,
     skipEntity,
     handleCorrectGuess,
     handleIncorrectGuess,
   } = gameLogic;
 
-  // --- Map and Layer Styling ---
 
   const setLayerStyle = (layer: L.Layer, style: L.PathOptions) => {
     if (layer && typeof (layer as L.Path).setStyle === 'function') {
@@ -165,9 +158,7 @@
     if (!geojsonLayer.value) return;
 
     geojsonLayer.value.eachLayer((layer) => {
-      // Check if the layer has the 'feature' property before accessing it
       if ('feature' in layer && layer.feature) {
-          // Assert the type of feature after confirming its existence
           const feature = layer.feature as GeoJSONFeature;
           const entityName = feature.properties?.name;
 
@@ -176,14 +167,10 @@
             const styleToApply = getStyleForAttempts(attempts);
             setLayerStyle(layer, styleToApply);
           } else {
-            // Feature exists but name is missing/invalid
             setLayerStyle(layer, defaultStyle);
           }
       } else {
-          // Layer doesn't have a feature property (might be a marker or other layer type)
-          // Apply default style or handle differently if needed
-          // For GeoJSON layers, this case shouldn't ideally happen if filtered correctly
-          if (layer instanceof L.Path) { // Apply default only to vector layers
+          if (layer instanceof L.Path) {
                setLayerStyle(layer, defaultStyle);
           }
       }
@@ -191,14 +178,11 @@
   };
 
 
-  // --- Event Handlers ---
 
   const onEntityClick = (e: L.LeafletMouseEvent) => {
     if (gameEnded.value || feedback.value) return;
 
-    // Target should be a GeoJSON layer in this context
     const layer = e.target as L.GeoJSON;
-    // Assert the type of feature
     const feature = layer.feature as GeoJSONFeature | undefined;
 
     if (!feature?.properties) {
@@ -230,7 +214,7 @@
     if (clickedEntityName === targetEntity.value) {
       handleCorrectGuess(clickedEntityName);
     } else {
-      const { shouldEndRound } = handleIncorrectGuess(clickedEntityName);
+      const { shouldEndRound } = handleIncorrectGuess();
       if (!shouldEndRound) {
         setLayerStyle(layer, selectedStyle);
         setTimeout(() => {
@@ -268,7 +252,7 @@
     if (name === targetEntity.value) {
       handleCorrectGuess(name);
     } else {
-      const { shouldEndRound } = handleIncorrectGuess(name);
+      const { shouldEndRound } = handleIncorrectGuess();
       if (shouldEndRound) {
         highlightTargetEntity(targetEntity.value);
       }
@@ -291,9 +275,7 @@
     if (!geojsonLayer.value || !entityNameToHighlight) return;
     let layerFound = false;
     geojsonLayer.value.eachLayer((layer) => {
-      // Check if the layer has the 'feature' property before accessing it
       if ('feature' in layer && layer.feature) {
-          // Assert the type of feature after confirming its existence
           const feature = layer.feature as GeoJSONFeature;
           if (feature.properties?.name === entityNameToHighlight) {
             animateLayer(layer);
@@ -306,7 +288,6 @@
     }
   };
 
-  // --- Lifecycle Hooks ---
 
   onMounted(async () => {
     if (!mapElement.value) {
@@ -335,10 +316,10 @@
     try {
       const response = await fetch(props.geojsonUrl);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      let data = await response.json();
+      const data = await response.json();
 
       if (isFeatureCollection(data)) {
-        data.features.forEach((feature: any) => {
+        data.features.forEach((feature: Feature) => {
           if (!feature.properties) feature.properties = {};
           if (props.geojsonNameProperty in feature.properties) {
               feature.properties.name = feature.properties[props.geojsonNameProperty];
@@ -351,7 +332,7 @@
           }
         });
 
-        let processedData = props.processGeojsonDataFn ? props.processGeojsonDataFn(data) : data;
+        const processedData = props.processGeojsonDataFn ? props.processGeojsonDataFn(data) : data;
 
         if (isFeatureCollection(processedData)) {
           availableEntities.value = processedData.features
@@ -369,7 +350,6 @@
           geojsonLayer.value = L.geoJSON(processedData, {
             style: defaultStyle,
             onEachFeature: (feature, layer) => {
-              // Assert feature type here for safety within the closure
               const feat = feature as GeoJSONFeature | undefined;
               if (feat?.properties?.name && feat.properties.name !== 'Unknown') {
                   layer.on({
@@ -406,7 +386,7 @@
             totalRoundsComputed.value = props.totalRoundsOverride ?? availableEntities.value.length;
           }
 
-          startNewGame(); // Corrected typo here
+          startNewGame();
 
         } else {
            console.error("Processed data is not a valid FeatureCollection.");
@@ -434,7 +414,6 @@
     }
   });
 
-  // --- Watchers ---
 
   watch(() => theme.global.name.value, (newTheme) => {
       document.documentElement.setAttribute("data-theme", newTheme);
@@ -446,20 +425,20 @@
       updateAllLayerStyles();
   });
 
-  watch(foundEntities, (currentFoundEntities) => {
+  watch(foundEntities, () => {
       updateAllLayerStyles();
   }, { deep: true });
-  </script>
+</script>
 
-  <style>
-  /* Styles remain the same */
+<style>
   :root {
     color-scheme: light dark;
-    --header-bg: rgba(255, 255, 255, 0.9);
-    --text-color: #333333;
+
+    --header-bg: rgba(255 255 255 / 90%);
+    --text-color: #333;
     --map-default-fill: #f0f0f0;
-    --map-border-color: #cccccc;
-    --map-bg: #ffffff;
+    --map-border-color: #ccc;
+    --map-bg: #fff;
     --popup-bg: var(--header-bg);
     --popup-text: var(--text-color);
     --popup-border: var(--map-border-color);
@@ -467,27 +446,27 @@
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --header-bg: rgba(51, 51, 51, 0.9);
-      --text-color: #ffffff;
-      --map-default-fill: #333333;
-      --map-border-color: #666666;
+      --header-bg: rgba(51 51 51 / 90%);
+      --text-color: #fff;
+      --map-default-fill: #333;
+      --map-border-color: #666;
       --map-bg: #2f343a;
     }
   }
 
   [data-theme="light"] {
-    --header-bg: rgba(255, 255, 255, 0.9);
-    --text-color: #333333;
+    --header-bg: rgba(255 255 255 / 90%);
+    --text-color: #333;
     --map-default-fill: #f0f0f0;
-    --map-border-color: #cccccc;
-    --map-bg: #ffffff;
+    --map-border-color: #ccc;
+    --map-bg: #fff;
   }
 
   [data-theme="dark"] {
-    --header-bg: rgba(51, 51, 51, 0.9);
-    --text-color: #ffffff;
-    --map-default-fill: #333333;
-    --map-border-color: #666666;
+    --header-bg: rgba(51 51 51 / 90%);
+    --text-color: #fff;
+    --map-default-fill: #333;
+    --map-border-color: #666;
     --map-bg: #2f343a;
   }
 
@@ -521,7 +500,7 @@
     border-radius: 8px;
     min-width: 250px;
     max-width: 90%;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 5px rgba(0 0 0 / 20%);
   }
 
   .game-info {
@@ -530,13 +509,13 @@
     justify-content: center;
     gap: 15px;
     color: var(--text-color);
-    font-size: clamp(0.8rem, 2.5vw, 1rem);
+    font-size: clamp(.8rem, 2.5vw, 1rem);
   }
 
   .target-entity {
     color: var(--text-color);
     font-size: clamp(1rem, 3vw, 1.25rem);
-    font-weight: bold;
+    font-weight: 700;
     text-align: center;
   }
 
@@ -546,19 +525,21 @@
     border: none;
     padding: 6px 12px;
     border-radius: 4px;
-    font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+    font-size: clamp(.8rem, 2.5vw, .9rem);
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color .2s;
     margin-top: 5px;
-  }
-  .skip-btn:disabled {
-    background-color: #aaa;
-    cursor: not-allowed;
   }
 
   .skip-btn {
     background-color: #e67e22;
   }
+
+  .skip-btn:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+  }
+
   .skip-btn:not(:disabled):hover {
     background-color: #d35400;
   }
@@ -566,6 +547,7 @@
   .new-game-btn {
     background-color: #4a90e2;
   }
+
   .new-game-btn:hover {
     background-color: #357abd;
   }
@@ -573,18 +555,18 @@
   .feedback {
     padding: 5px 10px;
     border-radius: 4px;
-    font-weight: bold;
+    font-weight: 700;
     color: white;
     text-align: center;
-    font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+    font-size: clamp(.8rem, 2.5vw, .9rem);
   }
 
   .feedback.correct {
-    background-color: rgba(75, 181, 67, 0.9);
+    background-color: rgb(75 181 67 / 90%);
   }
 
   .feedback.incorrect {
-    background-color: rgba(181, 67, 67, 0.9);
+    background-color: rgb(181 67 67 / 90%);
   }
 
   .game-end {
@@ -594,12 +576,12 @@
   .final-score {
     color: var(--text-color);
     font-size: clamp(1.2rem, 4vw, 1.5rem);
-    font-weight: bold;
+    font-weight: 700;
     margin-bottom: 10px;
   }
 
   .final-time {
-    font-size: clamp(0.9rem, 3vw, 1.1rem);
+    font-size: clamp(.9rem, 3vw, 1.1rem);
     margin-top: 5px;
     color: var(--text-color);
   }
@@ -619,8 +601,8 @@
 
   .entity-popup .leaflet-popup-content {
     margin: 8px 10px;
-    font-size: 0.9rem;
-    font-weight: bold;
+    font-size: .9rem;
+    font-weight: 700;
     text-align: center;
     min-width: 50px;
   }
@@ -638,11 +620,6 @@
     box-shadow: none;
   }
 
-  .leaflet-control-container .leaflet-top,
-  .leaflet-control-container .leaflet-bottom {
-    /* display: none; */
-  }
-
   .entity-reveal-animation {
     animation: highlight-pulse 1.5s ease-in-out;
   }
@@ -650,15 +627,17 @@
   @keyframes highlight-pulse {
     0% {
       transform: scale(1);
-      filter: drop-shadow(0 0 0px rgba(255, 0, 0, 0.7));
+      filter: drop-shadow(0 0 0 rgb(255 0 0 / 70%));
     }
+
     50% {
       transform: scale(var(--target-scale, 1.5));
-      filter: drop-shadow(0 0 25px rgba(255, 0, 0, 0.9));
+      filter: drop-shadow(0 0 25px rgb(255 0 0 / 90%));
     }
+
     100% {
       transform: scale(1);
-      filter: drop-shadow(0 0 0px rgba(255, 0, 0, 0.7));
+      filter: drop-shadow(0 0 0 rgb(255 0 0 / 70%));
     }
   }
 
@@ -673,27 +652,31 @@
     background-color: var(--header-bg);
     padding: 8px;
     border-radius: 6px;
-    box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+    box-shadow: 0 1px 5px rgb(0 0 0 / 20%);
     max-width: 180px;
-    opacity: 0.9;
-    transition: opacity 0.3s;
+    opacity: .9;
+    transition: opacity .3s;
   }
+
   .overseas-navigation:hover {
     opacity: 1;
   }
+
   .overseas-title {
     color: var(--text-color);
-    font-weight: bold;
+    font-weight: 700;
     font-size: 13px;
     margin-bottom: 6px;
     text-align: center;
   }
+
   .overseas-buttons {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
     justify-content: center;
   }
+
   .overseas-btn {
     flex: 1 0 calc(50% - 4px);
     background-color: #4a90e2;
@@ -703,9 +686,10 @@
     border-radius: 4px;
     font-size: 11px;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color .2s;
     text-align: center;
   }
+
   .overseas-btn:hover {
     background-color: #357abd;
   }
@@ -720,10 +704,10 @@
     border: 2px solid #d35400;
     background-color: var(--header-bg);
     color: var(--text-color);
-    font-weight: bold;
+    font-weight: 700;
     font-size: 10px;
     text-align: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
     cursor: pointer;
   }
 
