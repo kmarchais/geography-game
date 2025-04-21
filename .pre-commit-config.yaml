@@ -24,7 +24,7 @@ repos:
     hooks:
       - id: stylelint
         files: \.(scss|vue)$
-        args: [--fix]
+        args: [--fix, --config=.stylelintrc.json]
         additional_dependencies:
           - stylelint@16.18.0
           - stylelint-config-standard-scss@14.0.0
