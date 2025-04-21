@@ -74,7 +74,7 @@
         </v-col>
         <v-col
           cols="12"
-          sm="12"
+          sm="6"
         >
           <v-btn
             block
@@ -84,6 +84,20 @@
             @click="navigateTo('/spanish-communities')"
           >
             Spanish Communities
+          </v-btn>
+        </v-col>
+        <v-col
+          cols="12"
+          sm="6"
+        >
+          <v-btn
+            block
+            color="pink-darken-1"
+            size="large"
+            class="mb-3"
+            @click="navigateTo('/flag-game')"
+          >
+            Guess the Flag
           </v-btn>
         </v-col>
       </v-row>

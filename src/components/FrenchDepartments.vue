@@ -18,27 +18,43 @@
           Territories
         </div>
         <div class="overseas-buttons">
-  <button class="overseas-btn" @click="navigateTo(map, 'mainland')">
-    Mainland
-  </button>
-  <button class="overseas-btn" @click="navigateTo(map, 'atlantic')">
-    Atlantic
-  </button>
-  <button class="overseas-btn" @click="navigateTo(map, 'caribbean')">
-    Caribbean
-  </button>
-  <button class="overseas-btn" @click="navigateTo(map, 'indianocean')">
-    Indian Ocean
-  </button>
-  <button class="overseas-btn" @click="navigateTo(map, 'pacific')">
-    Pacific
-  </button>
-  <button class="overseas-btn" @click="navigateTo(map, 'world')">
-    World
-  </button>
-</div>
-
-
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'mainland')"
+          >
+            Mainland
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'atlantic')"
+          >
+            Atlantic
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'caribbean')"
+          >
+            Caribbean
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'indianocean')"
+          >
+            Indian Ocean
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'pacific')"
+          >
+            Pacific
+          </button>
+          <button
+            class="overseas-btn"
+            @click="navigateTo(map, 'world')"
+          >
+            World
+          </button>
+        </div>
       </div>
     </template>
   </MapGame>

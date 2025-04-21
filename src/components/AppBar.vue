@@ -7,39 +7,9 @@
     <v-spacer />
     <v-btn
       variant="text"
-      @click="goToHome"
+      @click="goHome"
     >
       Home
-    </v-btn>
-    <v-btn
-      variant="text"
-      @click="goToUsStates"
-    >
-      US States
-    </v-btn>
-    <v-btn
-      variant="text"
-      @click="goToFrenchDepartments"
-    >
-      French Departments
-    </v-btn>
-    <v-btn
-      variant="text"
-      @click="goToSpanishCommunities"
-    >
-      Spanish Communities
-    </v-btn>
-    <v-btn
-      variant="text"
-      @click="goToAfricanCountries"
-    >
-      African Countries
-    </v-btn>
-    <v-btn
-      variant="text"
-      @click="goToWorldCountries"
-    >
-      World Countries
     </v-btn>
     <v-btn
       variant="text"
@@ -57,15 +27,8 @@ import { useTheme } from "vuetify";
 const router = useRouter();
 const theme = useTheme();
 
-const goToHome = () => router.push("/");
-const goToUsStates = () => router.push("/us-states");
-const goToFrenchDepartments = () => router.push("/french-departments");
-const goToSpanishCommunities = () => router.push("/spanish-communities");
-const goToAfricanCountries = () => router.push("/african-countries");
-const goToWorldCountries = () => router.push("/world-countries");
-
+const goHome = () => router.push('/');
 const toggleTheme = () => {
-  theme.global.name.value =
-    theme.global.name.value === "light" ? "dark" : "light";
+  theme.global.name.value = theme.global.name.value === 'light' ? 'dark' : 'light';
 };
 </script>
