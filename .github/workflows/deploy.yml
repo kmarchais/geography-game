@@ -44,6 +44,14 @@ jobs:
         env:
           BASE_URL: /geography-game/
 
+      # Debug: List build output
+      - name: List build output
+        run: |
+          echo "Contents of dist directory:"
+          ls -la dist/
+          echo "Contents of assets (if exists):"
+          ls -la dist/assets/ || echo "No assets directory found"
+
       # For PR branches - deploy to gh-pages branch in subdirectory
       - name: Deploy PR Preview
         if: github.event_name == 'pull_request'
@@ -65,7 +73,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           clean-exclude: |
             */
-          # This deploys to root but preserves branch subdirectories
 
       # Add a comment to the PR with the preview URL
       - name: Comment on PR
@@ -87,16 +94,3 @@ jobs:
               issue_number,
               body: `## 🚀 Preview Deployment\n\n**Preview URL:** [${previewUrl}](${previewUrl})\n\nThis preview will update automatically when new changes are pushed to this PR.`
             });
-
-  # This job is no longer needed as we're using the gh-pages branch for both deployments
-  # deploy:
-  #   needs: build
-  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
-  #   runs-on: ubuntu-latest
-  #   environment:
-  #     name: github-pages
-  #     url: ${{ steps.deployment.outputs.page_url }}
-  #   steps:
-  #     - name: Deploy to GitHub Pages
-  #       id: deployment
-  #       uses: actions/deploy-pages@v4
