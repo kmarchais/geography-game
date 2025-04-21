@@ -25,6 +25,12 @@
     </v-btn>
     <v-btn
       variant="text"
+      @click="goToSpanishCommunities"
+    >
+      Spanish Communities
+    </v-btn>
+    <v-btn
+      variant="text"
       @click="goToAfricanCountries"
     >
       African Countries
@@ -54,6 +60,7 @@ const theme = useTheme();
 const goToHome = () => router.push("/");
 const goToUsStates = () => router.push("/us-states");
 const goToFrenchDepartments = () => router.push("/french-departments");
+const goToSpanishCommunities = () => router.push("/spanish-communities");
 const goToAfricanCountries = () => router.push("/african-countries");
 const goToWorldCountries = () => router.push("/world-countries");
 

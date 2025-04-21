@@ -1,4 +1,3 @@
-
 <template>
   <v-container class="fill-height d-flex align-center justify-center">
     <v-card
@@ -71,6 +70,20 @@
             @click="navigateTo('/french-departments')"
           >
             French Departments
+          </v-btn>
+        </v-col>
+        <v-col
+          cols="12"
+          sm="12"
+        >
+          <v-btn
+            block
+            color="orange-darken-1"
+            size="large"
+            class="mb-3"
+            @click="navigateTo('/spanish-communities')"
+          >
+            Spanish Communities
           </v-btn>
         </v-col>
       </v-row>
