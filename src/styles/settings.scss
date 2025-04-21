@@ -87,11 +87,11 @@ $breakpoint-xl: 1200px;
   box-shadow: 0 4px 6px rgb(0 0 0 / 10%);
 
   @include respond-to(md) {
-    height: 70vh;
+    height: 90vh;
   }
 
   @include respond-to(lg) {
-    height: 75vh;
+    height: 93vh;
   }
 }
 
