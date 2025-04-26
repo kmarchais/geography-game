@@ -12,8 +12,8 @@
   <script setup lang="ts">
     import type { FeatureCollection, Geometry } from "geojson";
     import L from "leaflet";
-    import MapGame from "./MapGame.vue";
-    import type { GeoJSONProperties } from "../utils/geojsonUtils";
+    import MapGame from "../MapGame.vue";
+    import type { GeoJSONProperties } from "../../utils/geojsonUtils";
 
     const mapOptions = {
       initialCenter: [25, -90] as L.LatLngExpression,

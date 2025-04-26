@@ -63,8 +63,8 @@
 <script setup lang="ts">
 import L from "leaflet";
 import { watch, type Ref } from "vue";
-import MapGame from "./MapGame.vue";
-import { getStyleForAttempts } from "../utils/geojsonUtils";
+import MapGame from "../MapGame.vue";
+import { getStyleForAttempts } from "../../utils/geojsonUtils";
 
 const mapOptions = {
   initialCenter: [46.603354, 1.888334] as L.LatLngExpression,
