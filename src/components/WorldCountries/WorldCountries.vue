@@ -11,10 +11,10 @@
 </template>
 
 <script setup lang="ts">
-import MapGame from '../components/MapGame.vue';
+import MapGame from '../MapGame.vue';
 import L from 'leaflet';
 import type { FeatureCollection, Geometry } from 'geojson';
-import type { GeoJSONProperties } from '../utils/geojsonUtils';
+import type { GeoJSONProperties } from '../../utils/geojsonUtils';
 
 const mapOptions = {
   initialCenter: [20, 0] as L.LatLngExpression,

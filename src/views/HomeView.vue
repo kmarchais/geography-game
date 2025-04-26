@@ -158,7 +158,7 @@
             >
               <v-btn
                 block
-                color="blue-darken-4"
+                color="blue-grey"
                 @click="navigateTo('/us-states')"
               >
                 <span class="flag-emoji me-1">🇺🇸</span>
@@ -172,7 +172,7 @@
             >
               <v-btn
                 block
-                color="red-darken-1"
+                color="blue-grey"
                 @click="navigateTo('/french-departments')"
               >
                 <span class="flag-emoji me-1">🇫🇷</span>
@@ -186,7 +186,7 @@
             >
               <v-btn
                 block
-                color="red-darken-3"
+                color="blue-grey"
                 @click="navigateTo('/spanish-communities')"
               >
                 <span class="flag-emoji me-1">🇪🇸</span>
@@ -200,7 +200,8 @@
             >
               <v-btn
                 block
-                disabled
+                color="blue-grey darken-1"
+                @click="navigateTo('/german-states')"
               >
                 <span class="flag-emoji me-1">🇩🇪</span>
                 <span>German States</span>
@@ -213,7 +214,8 @@
             >
               <v-btn
                 block
-                disabled
+                color="blue-grey darken-2"
+                @click="navigateTo('/canadian-provinces')"
               >
                 <span class="flag-emoji me-1">🇨🇦</span>
                 <span>Canadian Prov.</span>
@@ -226,7 +228,22 @@
             >
               <v-btn
                 block
-                disabled
+                color="blue-grey darken-3"
+                @click="navigateTo('/australian-states')"
+              >
+                <span class="flag-emoji me-1">🇦🇺</span>
+                <span>Australian St.</span>
+              </v-btn>
+            </v-col>
+            <v-col
+              cols="12"
+              md="4"
+              sm="12"
+            >
+              <v-btn
+                block
+                color="blue-grey"
+                @click="navigateTo('/brazilian-states')"
               >
                 <span class="flag-emoji me-1">🇧🇷</span>
                 <span>Brazilian States</span>
@@ -239,7 +256,8 @@
             >
               <v-btn
                 block
-                disabled
+                color="blue-grey darken-1"
+                @click="navigateTo('/italian-regions')"
               >
                 <span class="flag-emoji me-1">🇮🇹</span>
                 <span>Italian Regions</span>
@@ -252,7 +270,8 @@
             >
               <v-btn
                 block
-                disabled
+                color="blue-grey darken-2"
+                @click="navigateTo('/uk-counties')"
               >
                 <span class="flag-emoji me-1">🇬🇧</span>
                 <span>UK Counties</span>
@@ -265,7 +284,8 @@
             >
               <v-btn
                 block
-                disabled
+                color="blue-grey darken-3"
+                @click="navigateTo('/russian-oblasts')"
               >
                 <span class="flag-emoji me-1">🇷🇺</span>
                 <span>Russian Oblasts</span>
@@ -278,7 +298,8 @@
             >
               <v-btn
                 block
-                disabled
+                color="blue-grey darken-4"
+                @click="navigateTo('/ukrainian-oblasts')"
               >
                 <span class="flag-emoji me-1">🇺🇦</span>
                 <span>Ukrainian Oblasts</span>
@@ -291,7 +312,8 @@
             >
               <v-btn
                 block
-                disabled
+                color="blue-grey darken-5"
+                @click="navigateTo('/chinese-provinces')"
               >
                 <span class="flag-emoji me-1">🇨🇳</span>
                 <span>Chinese Provinces</span>
@@ -304,7 +326,8 @@
             >
               <v-btn
                 block
-                disabled
+                color="blue-grey darken-6"
+                @click="navigateTo('/belgian-provinces')"
               >
                 <span class="flag-emoji me-1">🇧🇪</span>
                 <span>Belgian Provinces</span>
@@ -317,7 +340,8 @@
             >
               <v-btn
                 block
-                disabled
+                color="blue-grey darken-7"
+                @click="navigateTo('/dutch-provinces')"
               >
                 <span class="flag-emoji me-1">🇳🇱</span>
                 <span>Dutch Provinces</span>
