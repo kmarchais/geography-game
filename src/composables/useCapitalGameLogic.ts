@@ -38,11 +38,9 @@ export function useCapitalGameLogic(options: CapitalGameLogicOptions) {
   const feedback = ref("");
   const feedbackType = ref("");
 
-  // Score is awarded based on distance: closer = higher score
-  // Maximum of 1000 points per guess
+  // Score is equal to the distance from the target capital
   const calculateScore = (distanceKm: number): number => {
-    if (distanceKm > maxDistance) return 0;
-    return Math.round(1000 * (1 - distanceKm / maxDistance));
+    return Math.round(distanceKm);
   };
 
   const formatDistance = (distanceKm: number): string => {

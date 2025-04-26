@@ -16,13 +16,6 @@
           <div class="target-entity">
             Find: {{ targetCapital?.name }} ({{ targetCapital?.country }})
           </div>
-          <button
-            class="skip-btn"
-            :disabled="!!feedback"
-            @click="skipCapital"
-          >
-            Skip
-          </button>
           <div
             v-if="feedback"
             :class="['feedback', feedbackType]"
@@ -62,8 +55,7 @@
       <div class="instructions" v-if="!gameStarted">
         <div class="instructions-box">
           <h2>Capital City Guessing Game</h2>
-          <p>Click anywhere on the map to guess the location of the capital city.</p>
-          <p>Get points based on how close your guess is to the actual location!</p>
+          <p>Click anywhere on the map to guess the location of the city.</p>
           <button class="new-game-btn" @click="startNewGame">Start Game</button>
         </div>
       </div>
@@ -148,7 +140,6 @@
     feedback,
     feedbackType,
     startNewGame: initNewGame,
-    skipCapital,
     handleGuess,
     formatDistance,
     calculateScore,
