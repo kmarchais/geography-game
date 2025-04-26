@@ -54,7 +54,7 @@
 <script setup lang="ts">
   import { ref, computed } from 'vue';
   import L from 'leaflet';
-  import WorldCountries from './WorldCountries.vue';
+  import WorldCountries from './WorldCountries/WorldCountries.vue';
   import WorldCapitals from '../views/WorldCapitals.vue';
 
   const selectedGameMode = ref<string | null>(null);

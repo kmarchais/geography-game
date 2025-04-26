@@ -10,7 +10,7 @@
 
   <script setup lang="ts">
   import L from "leaflet";
-  import MapGame from "./MapGame.vue";
+  import MapGame from "../MapGame.vue";
 
   const mapOptions = {
     initialCenter: [40.0, -4.0] as L.LatLngExpression,
