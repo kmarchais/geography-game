@@ -1,32 +1,57 @@
 <template>
-    <div class="game-hub">
-      <div v-if="!selectedGameMode" class="game-selection">
-        <div class="selection-header">
-          <h1>Geography Games</h1>
-          <p>Choose a game mode to play</p>
-        </div>
-        <div class="game-options">
-          <div class="game-option" @click="selectGame('countries')">
-            <div class="option-icon">🌎</div>
-            <h2>Countries</h2>
-            <p>Find countries on the world map</p>
-          </div>
-          <div class="game-option" @click="selectGame('capitals')">
-            <div class="option-icon">🏙️</div>
-            <h2>Capitals</h2>
-            <p>Guess the location of capital cities</p>
-          </div>
-        </div>
+  <div class="game-hub">
+    <div
+      v-if="!selectedGameMode"
+      class="game-selection"
+    >
+      <div class="selection-header">
+        <h1>Geography Games</h1>
+        <p>Choose a game mode to play</p>
       </div>
-
-      <div v-else class="game-container">
-        <button class="back-button" @click="returnToMenu">← Back to Menu</button>
-        <component :is="selectedComponent" :map-options="mapOptions" :total-rounds-override="10" />
+      <div class="game-options">
+        <div
+          class="game-option"
+          @click="selectGame('countries')"
+        >
+          <div class="option-icon">
+            🌎
+          </div>
+          <h2>Countries</h2>
+          <p>Find countries on the world map</p>
+        </div>
+        <div
+          class="game-option"
+          @click="selectGame('capitals')"
+        >
+          <div class="option-icon">
+            🏙️
+          </div>
+          <h2>Capitals</h2>
+          <p>Guess the location of capital cities</p>
+        </div>
       </div>
     </div>
-  </template>
 
-  <script setup lang="ts">
+    <div
+      v-else
+      class="game-container"
+    >
+      <button
+        class="back-button"
+        @click="returnToMenu"
+      >
+        ← Back to Menu
+      </button>
+      <component
+        :is="selectedComponent"
+        :map-options="mapOptions"
+        :total-rounds-override="10"
+      />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
   import { ref, computed } from 'vue';
   import L from 'leaflet';
   import WorldCountries from './WorldCountries.vue';
@@ -65,9 +90,9 @@
   const returnToMenu = () => {
     selectedGameMode.value = null;
   };
-  </script>
+</script>
 
-  <style scoped>
+<style scoped>
   .game-hub {
     position: relative;
     width: 100%;
@@ -178,4 +203,4 @@
       max-width: 300px;
     }
   }
-  </style>
+</style>

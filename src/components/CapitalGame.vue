@@ -1,68 +1,79 @@
 <template>
-    <div class="map-container">
-      <div class="game-header">
-        <template v-if="!gameEnded">
-          <div class="game-info">
-            <div class="score-display">
-              Score: {{ score }}
-            </div>
-            <div class="round-display">
-              Round: {{ currentRound }}/{{ totalRoundsComputed }}
-            </div>
-            <div class="timer-display">
+  <div class="map-container">
+    <div class="game-header">
+      <template v-if="!gameEnded">
+        <div class="game-info">
+          <div class="score-display">
+            Score: {{ score }}
+          </div>
+          <div class="round-display">
+            Round: {{ currentRound }}/{{ totalRoundsComputed }}
+          </div>
+          <div class="timer-display">
+            Time: {{ formattedTime }}
+          </div>
+        </div>
+        <div class="target-entity">
+          Find: {{ targetCapital?.name }} ({{ targetCapital?.country }})
+        </div>
+        <div
+          v-if="feedback"
+          :class="['feedback', feedbackType]"
+        >
+          {{ feedback }}
+        </div>
+      </template>
+      <template v-else>
+        <div class="game-end">
+          <div class="final-score">
+            Final Score: {{ score }}
+            <div class="final-time">
               Time: {{ formattedTime }}
             </div>
           </div>
-          <div class="target-entity">
-            Find: {{ targetCapital?.name }} ({{ targetCapital?.country }})
-          </div>
-          <div
-            v-if="feedback"
-            :class="['feedback', feedbackType]"
+          <button
+            class="new-game-btn"
+            @click="startNewGame"
           >
-            {{ feedback }}
-          </div>
-        </template>
-        <template v-else>
-          <div class="game-end">
-            <div class="final-score">
-              Final Score: {{ score }}
-              <div class="final-time">
-                Time: {{ formattedTime }}
-              </div>
-            </div>
-            <button
-              class="new-game-btn"
-              @click="startNewGame"
-            >
-              Play Again
-            </button>
-          </div>
-        </template>
-      </div>
-
-      <div
-        ref="mapElement"
-        class="map-render-area"
-      />
-
-      <div v-if="!gameEnded && targetCapital && currentGuess" class="distance-info">
-        <div class="distance-display">
-          Distance: {{ currentDistance ? formatDistance(currentDistance) : "N/A" }}
+            Play Again
+          </button>
         </div>
-      </div>
+      </template>
+    </div>
 
-      <div class="instructions" v-if="!gameStarted">
-        <div class="instructions-box">
-          <h2>Capital City Guessing Game</h2>
-          <p>Click anywhere on the map to guess the location of the city.</p>
-          <button class="new-game-btn" @click="startNewGame">Start Game</button>
-        </div>
+    <div
+      ref="mapElement"
+      class="map-render-area"
+    />
+
+    <div
+      v-if="!gameEnded && targetCapital && currentGuess"
+      class="distance-info"
+    >
+      <div class="distance-display">
+        Distance: {{ currentDistance ? formatDistance(currentDistance) : "N/A" }}
       </div>
     </div>
-  </template>
 
-  <script setup lang="ts">
+    <div
+      v-if="!gameStarted"
+      class="instructions"
+    >
+      <div class="instructions-box">
+        <h2>Capital City Guessing Game</h2>
+        <p>Click anywhere on the map to guess the location of the city.</p>
+        <button
+          class="new-game-btn"
+          @click="startNewGame"
+        >
+          Start Game
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
   import L from "leaflet";
   import "leaflet/dist/leaflet.css";
   import {
@@ -76,7 +87,6 @@
   import { useTheme } from "vuetify";
   import { useCapitalGameLogic, type Capital } from "../composables/useCapitalGameLogic";
   import { worldCapitals } from "../utils/capitalCitiesData";
-  import ScoreDisplay from "./ScoreDisplay.vue";
 
   const props = defineProps<{
     totalRoundsOverride?: number;
@@ -293,9 +303,9 @@
         );
       }
   });
-  </script>
+</script>
 
-  <style scoped>
+<style scoped>
   .distance-info {
     position: absolute;
     bottom: 20px;
@@ -362,4 +372,4 @@
   }
 
   /* Inherit styles from the main component */
-  </style>
+</style>
