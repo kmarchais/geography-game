@@ -6,6 +6,8 @@ import UsStates from '../components/UsStates.vue'
 import FrenchDepartments from '../components/FrenchDepartments.vue'
 import SpanishCommunities from '../components/SpanishCommunities.vue'
 import FlagGame from '@/components/FlagGame.vue'
+import WorldCapitals from '../views/WorldCapitals.vue'
+
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -44,6 +46,14 @@ const router = createRouter({
       path: '/flag-game',
       name: 'flag-game',
       component: FlagGame
+    },
+    {
+      path: '/world-capitals',
+      name: 'world-capitals',
+      component: WorldCapitals,
+      meta: {
+        title: 'World Capitals Game'
+      }
     }
   ]
 })
