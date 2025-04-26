@@ -7,6 +7,11 @@ import FrenchDepartments from '../components/FrenchDepartments.vue'
 import SpanishCommunities from '../components/SpanishCommunities.vue'
 import FlagGame from '@/components/FlagGame.vue'
 import WorldCapitals from '../views/WorldCapitals.vue'
+import EuropeMapGame from '../components/EuropeMapGame.vue'
+import AsiaMapGame from '../components/AsiaMapGame.vue'
+import NorthAmericaMapGame from '../components/NorthAmericaMapGame.vue'
+import SouthAmericaMapGame from '../components/SouthAmericaMapGame.vue'
+import OceaniaMapGame from '../components/OceaniaMapGame.vue'
 
 
 const router = createRouter({
@@ -26,6 +31,31 @@ const router = createRouter({
       path: '/african-countries',
       name: 'african-countries',
       component: AfricanCountries
+    },
+    {
+      path: '/european-countries',
+      name: 'european-countries',
+      component: EuropeMapGame
+    },
+    {
+      path: '/asian-countries',
+      name: 'asian-countries',
+      component: AsiaMapGame
+    },
+    {
+      path: '/north-american-countries',
+      name: 'north-american-countries',
+      component: NorthAmericaMapGame
+    },
+    {
+      path: '/south-american-countries',
+      name: 'south-american-countries',
+      component: SouthAmericaMapGame
+    },
+    {
+      path: '/oceanian-countries',
+      name: 'oceanian-countries',
+      component: OceaniaMapGame
     },
     {
       path: '/us-states',
