@@ -9,8 +9,10 @@ declare module 'vue' {
   export interface GlobalComponents {
     AfricanCountries: typeof import('./src/components/AfricanCountries.vue')['default']
     AppBar: typeof import('./src/components/AppBar.vue')['default']
+    CapitalGame: typeof import('./src/components/CapitalGame.vue')['default']
     FlagGame: typeof import('./src/components/FlagGame.vue')['default']
     FrenchDepartments: typeof import('./src/components/FrenchDepartments.vue')['default']
+    GameHub: typeof import('./src/components/GameHub.vue')['default']
     MapGame: typeof import('./src/components/MapGame.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

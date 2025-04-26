@@ -100,6 +100,20 @@
             Guess the Flag
           </v-btn>
         </v-col>
+        <v-col
+          cols="12"
+          sm="6"
+        >
+          <v-btn
+            block
+            color="amber-darken-1"
+            size="large"
+            class="mb-3"
+            @click="navigateTo('/world-capitals')"
+          >
+            World Capitals
+          </v-btn>
+        </v-col>
       </v-row>
     </v-card>
   </v-container>
