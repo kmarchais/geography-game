@@ -28,7 +28,7 @@ if (railwayHost) {
     'RAILWAY_STATIC_URL environment variable not found. Falling back to default main branch host.',
   )
   // Add your main branch URL as a default fallback
-  allowed.push('geography-game-geography-game.up.railway.app')
+  allowed.push('geography-game.up.railway.app')
 }
 
 // Ensure unique hosts
