@@ -59,7 +59,7 @@ export default defineConfig({
   },
   preview: {
     // Allow Railway's health check domain
-    allowedHosts: ['healthcheck.railway.app'],
+    allowedHosts: ['healthcheck.railway.app', 'geography-game-geography-game-pr-17.up.railway.app'],
   },
   css: {
     preprocessorOptions: {
