@@ -11,6 +11,9 @@ import { defineConfig } from 'vite'
 // Get base path from environment variable or use default
 const basePath = process.env.BASE_URL || '/geography-game/'
 
+// Detect if we're in Railway environment
+const isRailway = process.env.RAILWAY_ENVIRONMENT === 'production'
+
 // https://vitejs.dev/config/
 export default defineConfig({
   base: basePath,
@@ -22,7 +25,9 @@ export default defineConfig({
     // https://github.com/vuetifyjs/vuetify-loader/tree/master/packages/vite-plugin#readme
     Vuetify({
       autoImport: true,
-      styles: 'none', // Temporarily disable Vuetify's style processing
+      styles: isRailway ? 'none' : {
+        configFile: 'src/styles/settings.scss',
+      },
     }),
     Components(),
     ViteFonts({
@@ -54,7 +59,7 @@ export default defineConfig({
   },
   css: {
     preprocessorOptions: {
-      sass: {}
+      sass: isRailway ? {} : {}, // Remove any sass options for Railway
     },
   },
 })
