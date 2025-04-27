@@ -57,6 +57,10 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  preview: {
+    // Allow Railway's health check domain
+    allowedHosts: ['healthcheck.railway.app'],
+  },
   css: {
     preprocessorOptions: {
       sass: isRailway ? {} : {}, // Remove any sass options for Railway
