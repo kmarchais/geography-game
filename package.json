@@ -9,11 +9,14 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force",
-    "lint": "eslint --config eslint.config.cjs . --fix"
+    "lint": "eslint --config eslint.config.cjs . --fix",
+    "start": "vite preview --host --port $PORT"
   },
   "dependencies": {
     "@mdi/font": "7.4.47",
+    "compression": "^1.8.0",
     "core-js": "^3.37.1",
+    "express": "^5.1.0",
     "leaflet": "^1.9.4",
     "roboto-fontface": "*",
     "vue": "^3.4.31",
