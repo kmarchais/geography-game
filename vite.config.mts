@@ -58,10 +58,10 @@ export default defineConfig({
     allowedHosts: ['healthcheck.railway.app', 'geography-game-geography-game-pr-17.up.railway.app'],
   },
   css: {
-    // preprocessorOptions: {
-    //   sass: {
-    //     api: 'modern-compiler',
-    //   },
-    // },
+    preprocessorOptions: {
+      sass: {
+        api: 'modern-compiler',
+      },
+    },
   },
 })
