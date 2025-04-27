@@ -17,6 +17,7 @@
   "dependencies": {
     "@mdi/font": "7.4.47",
     "core-js": "^3.41.0",
+    "country-flag-emoji-polyfill": "^0.1.8",
     "leaflet": "^1.9.4",
     "roboto-fontface": "^0.10.0",
     "vue": "^3.5.13",
