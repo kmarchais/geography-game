@@ -1,9 +1,12 @@
+// vite.config.mts
+
 // Plugins
 import Vue from '@vitejs/plugin-vue'
 import ViteFonts from 'unplugin-fonts/vite'
 import Components from 'unplugin-vue-components/vite'
 import VueRouter from 'unplugin-vue-router/vite'
 import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
+
 // Utilities
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
@@ -12,28 +15,13 @@ import { defineConfig } from 'vite'
 // Base allowed hosts
 const allowed = ['healthcheck.railway.app']
 
-// Railway injects the public URL into RAILWAY_STATIC_URL
-// This will contain the specific URL for the current deployment (main or PR)
-const railwayStaticUrl = process.env.RAILWAY_STATIC_URL
+// Railway injects the public HOSTNAME into RAILWAY_STATIC_URL (based on error)
+const railwayHost = process.env.RAILWAY_STATIC_URL
 
-if (railwayStaticUrl) {
-  try {
-    // Extract the hostname (e.g., "my-app-pr-123.up.railway.app")
-    const railwayHost = new URL(railwayStaticUrl).hostname
-    allowed.push(railwayHost)
-    console.log(`Dynamically added Railway host: ${railwayHost}`)
-  } catch (e) {
-    console.error(
-      'Failed to parse RAILWAY_STATIC_URL:',
-      railwayStaticUrl,
-      e,
-    )
-    // Fallback to main branch URL if parsing fails
-    allowed.push('geography-game-geography-game.up.railway.app')
-    console.warn(
-      'Falling back to default main branch host: geography-game-geography-game.up.railway.app',
-    )
-  }
+if (railwayHost) {
+  // The environment variable directly contains the hostname we need
+  allowed.push(railwayHost)
+  console.log(`Using Railway host from env var: ${railwayHost}`)
 } else {
   // Fallback for local development or if the variable isn't set
   console.warn(
@@ -45,6 +33,8 @@ if (railwayStaticUrl) {
 
 // Ensure unique hosts
 const uniqueAllowedHosts = [...new Set(allowed)]
+console.log('Allowed hosts:', uniqueAllowedHosts) // Log the final list for debugging
+// --- End Dynamic Host Logic ---
 
 // Get base path from environment variable or use default
 const basePath = process.env.BASE_URL || '/geography-game/'
@@ -67,43 +57,40 @@ export default defineConfig({
     Components(),
     ViteFonts({
       google: {
-        families: [{
-          name: 'Roboto',
-          styles: 'wght@100;300;400;500;700;900',
-        }],
+        families: [
+          {
+            name: 'Roboto',
+            styles: 'wght@100;300;400;500;700;900',
+          },
+        ],
       },
     }),
   ],
-  define: { 'process.env': {} },
+  define: { 'process.env': {} }, // Keep this if your client-side code needs it
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
-    extensions: [
-      '.js',
-      '.json',
-      '.jsx',
-      '.mjs',
-      '.ts',
-      '.tsx',
-      '.vue',
-    ],
+    extensions: ['.js', '.json', '.jsx', '.mjs', '.ts', '.tsx', '.vue'],
   },
   server: {
     port: 3000,
+    // host: true, // Optional for dev server access
   },
   preview: {
     // Use the dynamically generated list of hosts
     allowedHosts: uniqueAllowedHosts,
     // Set host to true to allow access from network IPs (needed in containers)
     host: true,
-    // You can specify a port for the preview server if needed, e.g.:
-    // port: 4173, // Vite's default preview port
+    // port: 4173, // Default Vite preview port, Railway uses $PORT
   },
   css: {
     preprocessorOptions: {
       sass: {
         api: 'modern-compiler',
+      },
+      scss: {
+        // additionalData: `@import "@/styles/variables.scss";`
       },
     },
   },
