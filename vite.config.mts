@@ -55,7 +55,11 @@ export default defineConfig({
     port: 3000,
   },
   preview: {
-    allowedHosts: ['healthcheck.railway.app', 'geography-game-geography-game-pr-17.up.railway.app'],
+    allowedHosts: [
+      'healthcheck.railway.app',
+      'geography-game-geography-game.up.railway.app',
+      /^geography-game-geography-game-pr-\d+\.up\.railway\.app$/,
+    ],
   },
   css: {
     preprocessorOptions: {
