@@ -509,9 +509,24 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
 
+import { polyfillCountryFlagEmojis } from "country-flag-emoji-polyfill";
+polyfillCountryFlagEmojis();
+
+
 const router = useRouter();
 
 const navigateTo = (path: string) => {
   router.push(path);
 };
 </script>
+
+<style scoped lang="scss">
+
+.flag-emoji {
+  font-family: Twemoji Country Flags, Apple Color emoji, Segoe UI emoji, Segoe UI Symbol,
+    Noto Color emoji, EmojiOne Color, Android emoji, sans-serif;
+  vertical-align: middle;
+}
+
+
+</style>
