@@ -1,0 +1,5 @@
+[install]
+production = true
+
+[install.cache]
+dir = ".bun/cache"
