@@ -6,7 +6,7 @@
   "packageManager": "bun@1.1.43",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --build --force && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force",
