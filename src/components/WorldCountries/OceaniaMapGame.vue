@@ -22,10 +22,6 @@
       minZoom: 2,
       maxZoom: 12,
       worldCopyJump: true, // Enable world copy jump to handle the date line crossing
-      maxBounds: [
-        [-50, -250], // Use negative longitude to center Pacific properly
-        [20, -70],
-      ] as L.LatLngBoundsExpression,
       maxBoundsViscosity: 1.0,
     };
 
