@@ -6,7 +6,6 @@
     geojson-name-property="name"
     :map-options="mapOptions"
     :process-geojson-data-fn="filterUSStates"
-    :total-rounds-override="52"
   />
 </template>
 

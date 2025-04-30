@@ -22,10 +22,6 @@
     minZoom: 2,
     maxZoom: 12,
     worldCopyJump: false,
-    maxBounds: [
-      [-40, -30],
-      [40, 60],
-    ] as L.LatLngBoundsExpression,
     maxBoundsViscosity: 1.0,
   };
 

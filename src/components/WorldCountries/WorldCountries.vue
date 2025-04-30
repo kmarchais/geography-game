@@ -22,10 +22,6 @@ const mapOptions = {
   minZoom: 2,
   maxZoom: 8,
   worldCopyJump: true,
-  maxBounds: [
-    [-90, -540],
-    [90, 540],
-  ] as L.LatLngBoundsExpression,
   maxBoundsViscosity: 1.0
 };
 
