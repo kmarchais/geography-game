@@ -24,12 +24,19 @@
       maxBoundsViscosity: 1.0,
     };
 
+    const additionalCountries = [
+      "Turkey",
+      "Cyprus",
+      "N. Cyprus",
+      "Greenland",
+    ];
+
     const filterEuropeData = (
       data: FeatureCollection<Geometry, GeoJSONProperties>
     ): FeatureCollection<Geometry, GeoJSONProperties> => {
 
       const filteredFeatures = data.features.filter((feature) => {
-        return feature.properties?.continent === "Europe";
+        return feature.properties?.continent === "Europe" || additionalCountries.includes(feature.properties.name);
       });
 
       if (filteredFeatures.length === 0) {

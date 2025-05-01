@@ -24,12 +24,16 @@
       maxBoundsViscosity: 1.0,
     };
 
+    const additionalCountries = [
+      "Russia",
+    ];
+
     const filterAsiaData = (
       data: FeatureCollection<Geometry, GeoJSONProperties>
     ): FeatureCollection<Geometry, GeoJSONProperties> => {
 
       const filteredFeatures = data.features.filter((feature) => {
-        return feature.properties?.continent === "Asia";
+        return feature.properties?.continent === "Asia" || additionalCountries.includes(feature.properties.name);
       });
 
       if (filteredFeatures.length === 0) {
