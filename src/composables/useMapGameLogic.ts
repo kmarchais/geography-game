@@ -64,7 +64,7 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
     setTimeout(() => {
       feedback.value = "";
       feedbackType.value = "";
-    }, 2000);
+    }, 500);
   };
 
   const clearFeedback = () => {
@@ -132,7 +132,7 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
     }
     foundEntities.value.set(guessedEntity, currentAttempts.value);
     showFeedback(true);
-    setTimeout(advanceRound, 1000);
+    advanceRound();
   };
 
   const handleIncorrectGuess = (): { shouldEndRound: boolean } => {
@@ -142,7 +142,7 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
     if (isOutOfAttempts) {
       foundEntities.value.set(targetEntity.value, 4);
       showFeedback(false);
-      setTimeout(advanceRound, 1000);
+      advanceRound();
       return { shouldEndRound: true };
     } else {
       showFeedback(false);
@@ -159,7 +159,7 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
       `Skipped! The correct ${entityNameSingular} was ${targetEntity.value}`
     );
     const skipped = targetEntity.value;
-    setTimeout(advanceRound, 1000);
+    advanceRound();
     return { skippedEntity: skipped };
   };
 
