@@ -82,63 +82,78 @@
     ref,
     watch,
     shallowRef,
-    computed,
   } from "vue";
   import { useTheme } from "vuetify";
   import { useCapitalGameLogic, type Capital } from "../composables/useCapitalGameLogic";
   import { worldCapitals } from "../utils/capitalCitiesData";
 
-  // Helper function to normalize longitude
+  // Helper function to normalize longitude values
   const normalizeLongitude = (lng: number): number => {
-    // Normalize longitude to be within -180 to 180 degrees
     let normalized = ((lng + 180) % 360) - 180;
     if (normalized < -180) normalized += 360;
     return normalized;
   };
 
-  // Improved Haversine distance calculation
-  const calculateHaversineDistance = (
-    lat1: number,
-    lng1: number,
-    lat2: number,
-    lng2: number
-  ): number => {
-    const R = 6371; // Earth radius in kilometers
-
-    // Check for invalid input values
+  // Helper function to calculate Haversine distance
+  const calculateHaversineDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    // Check for invalid inputs
     if (isNaN(lat1) || isNaN(lng1) || isNaN(lat2) || isNaN(lng2)) {
-      console.error("Invalid coordinates detected:", { lat1, lng1, lat2, lng2 });
-      return 0; // Return 0 instead of NaN for better user experience
+      return 0;
     }
 
-    // Ensure all values are numbers
+    // Convert all inputs to numbers
     const lat1Num = Number(lat1);
     const lng1Num = Number(lng1);
     const lat2Num = Number(lat2);
     const lng2Num = Number(lng2);
 
-    // Normalize longitudes
-    const normalizedLng1 = normalizeLongitude(lng1Num);
-    const normalizedLng2 = normalizeLongitude(lng2Num);
+    const R = 6371; // Earth radius in km
 
     // Convert to radians
     const lat1Rad = lat1Num * Math.PI / 180;
     const lat2Rad = lat2Num * Math.PI / 180;
     const dLat = (lat2Num - lat1Num) * Math.PI / 180;
 
-    // Find the shortest distance around the globe
+    // Calculate longitude difference considering date line
+    const normalizedLng1 = normalizeLongitude(lng1Num);
+    const normalizedLng2 = normalizeLongitude(lng2Num);
+
     let dLng = (normalizedLng2 - normalizedLng1) * Math.PI / 180;
     if (Math.abs(dLng) > Math.PI) {
       dLng = dLng > 0 ? dLng - 2 * Math.PI : dLng + 2 * Math.PI;
     }
 
-    const a =
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1Rad) * Math.cos(lat2Rad) *
-      Math.sin(dLng/2) * Math.sin(dLng/2);
+    // Haversine formula
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c; // Distance in km
+    return R * c;
+  };
+
+  // Helper function to fix date line crossing
+  const fixDateLineCrossing = (clickLng: number, targetLng: number) => {
+    // Normalize both longitudes
+    const normalizedClickLng = normalizeLongitude(clickLng);
+    const normalizedTargetLng = normalizeLongitude(targetLng);
+
+    // Check if we're on opposite sides of the date line AND both are near the date line
+    const onOppositeSides =
+      (normalizedClickLng > 0 && normalizedTargetLng < 0 &&
+       Math.abs(normalizedClickLng) > 90 && Math.abs(normalizedTargetLng) > 90) ||
+      (normalizedClickLng < 0 && normalizedTargetLng > 0 &&
+       Math.abs(normalizedClickLng) > 90 && Math.abs(normalizedTargetLng) > 90);
+
+    // If we're on opposite sides of the date line, adjust one longitude
+    if (onOppositeSides) {
+      return normalizedClickLng < 0
+        ? { clickLng: normalizedClickLng + 360, targetLng: normalizedTargetLng }
+        : { clickLng: normalizedClickLng, targetLng: normalizedTargetLng + 360 };
+    }
+
+    // Otherwise, just return the normalized values
+    return { clickLng: normalizedClickLng, targetLng: normalizedTargetLng };
   };
 
   const props = defineProps<{
@@ -165,14 +180,13 @@
   const totalRoundsComputed = ref(10);
   const gameStarted = ref(false);
 
-  // Map icon for user guesses
+  // Map icons
   const guessIcon = L.icon({
     iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2U3NGMzYyIgd2lkdGg9IjMwcHgiIGhlaWdodD0iMzBweCI+PHBhdGggZD0iTTEyIDJDOC4xMyAyIDUgNS4xMyA1IDljMCA1LjI1IDcgMTMgNyAxM3M3LTcuNzUgNy0xM2MwLTMuODctMy4xMy03LTctN3ptMCA5LjVjLTEuMzggMC0yLjUtMS4xMi0yLjUtMi41UzEwLjYyIDYuNSAxMiA2LjVzMi41IDEuMTIgMi41IDIuNS0xLjEyIDIuNS0yLjUgMi41eiIvPjwvc3ZnPg==',
     iconSize: [30, 30],
     iconAnchor: [15, 30],
   });
 
-  // Map icon for actual city locations
   const actualIcon = L.icon({
     iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzJlY2M3MSIgd2lkdGg9IjMwcHgiIGhlaWdodD0iMzBweCI+PHBhdGggZD0iTTEyIDJDOC4xMyAyIDUgNS4xMyA1IDljMCA1LjI1IDcgMTMgNyAxM3M3LTcuNzUgNy0xM2MwLTMuODctMy4xMy03LTctN3ptMCA5LjVjLTEuMzggMC0yLjUtMS4xMi0yLjUtMi41UzEwLjYyIDYuNSAxMiA2LjVzMi41IDEuMTIgMi41IDIuNS0xLjEyIDIuNS0yLjUgMi41eiIvPjwvc3ZnPg==',
     iconSize: [30, 30],
@@ -208,7 +222,7 @@
     calculateScore,
   } = gameLogic;
 
-  // Updated map click handler to properly handle world wrapping
+  // Simplified onMapClick function
   const onMapClick = (e: L.LeafletMouseEvent) => {
     if (gameEnded.value || feedback.value || !targetCapital.value) return;
 
@@ -217,104 +231,73 @@
       markersLayer.value.clearLayers();
     }
 
-    // Normalize the clicked longitude
-    const normalizedClickLng = normalizeLongitude(e.latlng.lng);
-    const normalizedClickLatLng = L.latLng(e.latlng.lat, normalizedClickLng);
+    // Get clicked coordinates
+    const clickLat = e.latlng.lat;
+    const clickLng = e.latlng.lng;
 
-    // Debug log the coordinates
-    console.log("Click coordinates:", e.latlng);
-    console.log("Normalized click coordinates:", normalizedClickLatLng);
-    console.log("Target coordinates:", targetCapital.value.location);
+    // Ensure target capital location has valid coordinates
+    const targetLat = Number(targetCapital.value.location[0]);
+    const targetLng = Number(targetCapital.value.location[1]);
 
-    // Add marker for the user's guess
+    if (isNaN(targetLat) || isNaN(targetLng)) {
+      console.error("Invalid target coordinates:", targetCapital.value.location);
+      return;
+    }
+
+    // Fix any date line crossing issues
+    const { clickLng: adjustedClickLng, targetLng: adjustedTargetLng } =
+      fixDateLineCrossing(clickLng, targetLng);
+
+    // Create new LatLng objects with adjusted coordinates
+    const adjustedClickLatLng = L.latLng(clickLat, adjustedClickLng);
+    const adjustedTargetLatLng = L.latLng(targetLat, adjustedTargetLng);
+
+    // Draw markers and lines only if map is available
     if (leafletMap.value && markersLayer.value) {
-      guessMarker.value = L.marker(normalizedClickLatLng, { icon: guessIcon })
+      // Add markers
+      guessMarker.value = L.marker(adjustedClickLatLng, { icon: guessIcon })
         .addTo(markersLayer.value)
         .bindPopup('Your guess')
         .openPopup();
 
-      // Ensure target capital location has valid coordinates
-      const targetLat = Number(targetCapital.value.location[0]);
-      const targetLng = normalizeLongitude(Number(targetCapital.value.location[1]));
-
-      if (isNaN(targetLat) || isNaN(targetLng)) {
-        console.error("Invalid target coordinates:", targetCapital.value.location);
-        return;
-      }
-
-      const actualLocation = L.latLng(targetLat, targetLng);
-
-      actualMarker.value = L.marker(actualLocation, { icon: actualIcon })
+      actualMarker.value = L.marker(adjustedTargetLatLng, { icon: actualIcon })
         .addTo(markersLayer.value)
         .bindPopup(`${targetCapital.value.name}, ${targetCapital.value.country}`)
         .openPopup();
 
-      // Find the closest path between the points
-      // This ensures the line goes the shortest way around the globe
-      const lngDiff = Math.abs(normalizedClickLng - targetLng);
-      let linePoints: L.LatLng[];
-
-      if (lngDiff > 180) {
-        // If the points are far apart longitudinally, we need to create
-        // a line that wraps around the globe
-        if (normalizedClickLng < targetLng) {
-          linePoints = [
-            L.latLng(normalizedClickLatLng.lat, normalizedClickLng + 360),
-            actualLocation
-          ];
-        } else {
-          linePoints = [
-            normalizedClickLatLng,
-            L.latLng(actualLocation.lat, targetLng + 360)
-          ];
-        }
-      } else {
-        // Normal case - points are close enough
-        linePoints = [normalizedClickLatLng, actualLocation];
-      }
-
-      // Draw a line between the guess and actual location
-      distanceLine.value = L.polyline(linePoints, {
+      // Draw line
+      distanceLine.value = L.polyline([adjustedClickLatLng, adjustedTargetLatLng], {
         color: '#3498db',
         weight: 3,
         opacity: 0.7,
         dashArray: '5, 8'
       }).addTo(markersLayer.value);
 
-      // Adjust map to show both markers
-      const bounds = L.latLngBounds([normalizedClickLatLng, actualLocation]);
-      leafletMap.value.fitBounds(bounds, {
-        padding: [100, 100],
-        maxZoom: 6
-      });
-
-      // Calculate distance using the improved Haversine formula
-      const distance = calculateHaversineDistance(
-        normalizedClickLatLng.lat,
-        normalizedClickLng,
-        targetLat,
-        targetLng
+      // Fit map to show both markers
+      leafletMap.value.fitBounds(
+        L.latLngBounds([adjustedClickLatLng, adjustedTargetLatLng]),
+        { padding: [100, 100], maxZoom: 6 }
       );
 
-      console.log("Calculated distance:", distance);
+      // Calculate distance using original coordinates for accuracy
+      const distance = calculateHaversineDistance(
+        clickLat, clickLng, targetLat, targetLng
+      );
 
-      // Modified to use our own distance calculation
-      handleGuess(normalizedClickLatLng, distance);
+      // Process the guess with game logic
+      handleGuess(adjustedClickLatLng, distance);
     } else {
-      // Fallback if map or markers layer isn't available
-      handleGuess(normalizedClickLatLng);
+      // Fallback
+      handleGuess(L.latLng(clickLat, clickLng));
     }
 
-    // Add to guess history if we have a target capital
+    // Add to guess history
     if (targetCapital.value && currentDistance.value !== null && !isNaN(currentDistance.value)) {
-      const distanceInKm = currentDistance.value;
-      const points = calculateScore(distanceInKm);
-
       guessHistory.value.push({
         capital: targetCapital.value.name,
         country: targetCapital.value.country,
-        distance: formatDistance(distanceInKm),
-        points: points
+        distance: formatDistance(currentDistance.value),
+        points: calculateScore(currentDistance.value)
       });
     }
   };
@@ -343,10 +326,9 @@
 
   // Load capital cities data
   const loadCapitalsData = async () => {
-    // Use data from our comprehensive world capitals list
     capitals.value = [...worldCapitals];
 
-    // Set the total rounds based on props or default to the number of available capitals
+    // Set total rounds based on props or default to available capitals
     totalRoundsComputed.value = props.totalRoundsOverride !== undefined
       ? props.totalRoundsOverride
       : capitals.value.length;
@@ -358,32 +340,32 @@
       return;
     }
 
-    // Ensure worldCopyJump is enabled
-    const mapOptions = {
+    // Create map with worldCopyJump enabled
+    const map = L.map(mapElement.value, {
       ...props.mapOptions,
       center: props.mapOptions.initialCenter,
       zoom: props.mapOptions.initialZoom,
       worldCopyJump: true, // Force this to be true
-    };
-
-    const map = L.map(mapElement.value, mapOptions);
+    });
     leafletMap.value = map;
 
+    // Add tile layer
     const currentTheme = theme.global.name.value;
     tileLayer.value = L.tileLayer(
       `https://{s}.basemaps.cartocdn.com/${currentTheme}_nolabels/{z}/{x}/{y}{r}.png`,
       {
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
-        noWrap: false, // Make sure this is false to allow world copy wrapping
+        noWrap: false, // Important for date line handling
       }
     ).addTo(map);
 
-    // Create a layer group for markers
+    // Create layer for markers
     markersLayer.value = L.layerGroup().addTo(map);
 
-    // Add click event listener to the map
+    // Add click handler
     map.on('click', onMapClick);
 
+    // Set theme
     document.documentElement.setAttribute("data-theme", currentTheme);
 
     // Load capital cities data
