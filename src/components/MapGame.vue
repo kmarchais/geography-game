@@ -197,6 +197,7 @@
       return;
     }
 
+    // Show popup regardless of found status
     if (leafletMap.value) {
       const popupContent = clickedEntityCode
         ? `${clickedEntityName} (${clickedEntityCode})`
@@ -211,25 +212,29 @@
         .openOn(leafletMap.value);
     }
 
+    // If the entity has already been found, do nothing further (don't count attempt)
+    if (foundEntities.value.has(clickedEntityName)) {
+      return;
+    }
+
+    // Proceed with guess logic only if the entity hasn't been found yet
     if (clickedEntityName === targetEntity.value) {
       handleCorrectGuess(clickedEntityName);
     } else {
       const { shouldEndRound } = handleIncorrectGuess();
       if (!shouldEndRound) {
+        // Temporarily highlight the incorrectly clicked layer
         setLayerStyle(layer, selectedStyle);
         setTimeout(() => {
+          // Check if layer still exists before trying to reset style
           if (leafletMap.value?.hasLayer(layer)) {
-              if (!foundEntities.value.has(clickedEntityName)) {
-                  setLayerStyle(layer, defaultStyle);
-              } else {
-                  setLayerStyle(
-                      layer,
-                      getStyleForAttempts(foundEntities.value.get(clickedEntityName))
-                  );
-              }
+              // Since it was an incorrect guess on an *unfound* entity,
+              // revert to the default style.
+              setLayerStyle(layer, defaultStyle);
           }
         }, 1000);
       } else {
+        // Round ended due to too many attempts, highlight the correct one
         highlightTargetEntity(targetEntity.value);
       }
     }
@@ -238,6 +243,7 @@
   const onManualMarkerClick = (name: string, latlng: L.LatLng) => {
     if (gameEnded.value || feedback.value) return;
 
+    // Show popup regardless of found status
     if (leafletMap.value) {
       L.popup({
         autoClose: true,
@@ -249,13 +255,22 @@
         .openOn(leafletMap.value);
     }
 
+    // If the entity (marker) has already been found, do nothing further
+    if (foundEntities.value.has(name)) {
+      return;
+    }
+
+    // Proceed with guess logic only if the entity hasn't been found yet
     if (name === targetEntity.value) {
       handleCorrectGuess(name);
     } else {
       const { shouldEndRound } = handleIncorrectGuess();
       if (shouldEndRound) {
+        // Round ended due to too many attempts, highlight the correct one
+        // (Highlighting might target a polygon even if a marker was clicked)
         highlightTargetEntity(targetEntity.value);
       }
+      // No temporary highlight logic for markers was present, so none added here
     }
   };
 
