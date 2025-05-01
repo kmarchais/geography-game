@@ -5,6 +5,7 @@
     geojson-url="https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements-avec-outre-mer.geojson"
     geojson-name-property="nom"
     geojson-code-property="code"
+    :process-geojson-data-fn="processGeojsonData"
     :map-options="mapOptions"
     :add-manual-markers-fn="addFrenchTerritoryMarkers"
     :total-rounds-override="109"
@@ -65,6 +66,8 @@ import L from "leaflet";
 import { watch, type Ref } from "vue";
 import MapGame from "../MapGame.vue";
 import { getStyleForAttempts } from "../../utils/geojsonUtils";
+import type { FeatureCollection, Geometry } from 'geojson';
+import type { GeoJSONProperties } from "../../utils/geojsonUtils";
 
 const mapOptions = {
   initialCenter: [46.603354, 1.888334] as L.LatLngExpression,
@@ -103,8 +106,67 @@ const navigateTo = (mapInstance: L.Map | null, region: string) => {
   }
 };
 
+// Process GeoJSON data to create east and west copies
+const processGeojsonData = (data: FeatureCollection<Geometry, GeoJSONProperties>) => {
+  const wrappedCollection = structuredClone(data);
+  const originalFeatures = data.features;
 
+  const eastFeatures = originalFeatures.map(feature => {
+    const clone = structuredClone(feature);
+    if (!clone.properties) clone.properties = {};
+    clone.properties.isEastCopy = true;
 
+    shiftCoordinates(clone, 360);
+    return clone;
+  });
+
+  const westFeatures = originalFeatures.map(feature => {
+    const clone = structuredClone(feature);
+    if (!clone.properties) clone.properties = {};
+    clone.properties.isWestCopy = true;
+
+    shiftCoordinates(clone, -360);
+    return clone;
+  });
+
+  wrappedCollection.features = [
+    ...originalFeatures,
+    ...eastFeatures,
+    ...westFeatures
+  ];
+
+  return wrappedCollection;
+};
+
+// Shift coordinates by the specified offset
+function shiftCoordinates(feature: any, offset: number) {
+  if (!feature.geometry) return feature;
+
+  const shiftPoint = (coords: number[]) => [coords[0] + offset, coords[1]];
+
+  switch (feature.geometry.type) {
+    case 'Point':
+      feature.geometry.coordinates = shiftPoint(feature.geometry.coordinates);
+      break;
+    case 'LineString':
+    case 'MultiPoint':
+      feature.geometry.coordinates = feature.geometry.coordinates.map(shiftPoint);
+      break;
+    case 'Polygon':
+    case 'MultiLineString':
+      feature.geometry.coordinates = feature.geometry.coordinates.map((ring: number[][]) =>
+        ring.map(shiftPoint)
+      );
+      break;
+    case 'MultiPolygon':
+      feature.geometry.coordinates = feature.geometry.coordinates.map((polygon: number[][][]) =>
+        polygon.map((ring: number[][]) => ring.map(shiftPoint))
+      );
+      break;
+  }
+
+  return feature;
+}
 
 interface Territory {
   name: string;
@@ -131,6 +193,7 @@ type AddManualMarkersFnType = (
   clickHandler: (name: string, latlng: L.LatLng) => void
 ) => void;
 
+// Add markers for territories with east and west copies
 const addFrenchTerritoryMarkers: AddManualMarkersFnType = (
   map,
   available,
@@ -170,11 +233,13 @@ const addFrenchTerritoryMarkers: AddManualMarkersFnType = (
     });
   };
 
+  // Add all territories to the available list
   additionalTerritories.forEach(territory => {
     if (!available.value.includes(territory.name)) {
       available.value.push(territory.name);
     }
 
+    // Create the original marker
     const marker = L.marker([territory.lat, territory.lng], {
       icon: createMarkerIcon(territory, found.value.get(territory.name)),
     }).addTo(markerLayer);
@@ -184,17 +249,53 @@ const addFrenchTerritoryMarkers: AddManualMarkersFnType = (
     marker.on('click', (e) => {
       clickHandler(territory.name, e.latlng);
     });
+
+    // Create east copy (longitude + 360)
+    const eastMarker = L.marker([territory.lat, territory.lng + 360], {
+      icon: createMarkerIcon(territory, found.value.get(territory.name)),
+    }).addTo(markerLayer);
+
+    markers[`${territory.name}_east`] = eastMarker;
+
+    eastMarker.on('click', (e) => {
+      clickHandler(territory.name, e.latlng);
+    });
+
+    // Create west copy (longitude - 360)
+    const westMarker = L.marker([territory.lat, territory.lng - 360], {
+      icon: createMarkerIcon(territory, found.value.get(territory.name)),
+    }).addTo(markerLayer);
+
+    markers[`${territory.name}_west`] = westMarker;
+
+    westMarker.on('click', (e) => {
+      clickHandler(territory.name, e.latlng);
+    });
   });
 
+  // Update all markers when a territory is found
   watch(found, (newFound) => {
-      additionalTerritories.forEach(territory => {
-          const marker = markers[territory.name];
-          if (marker) {
-              const attempts = newFound.get(territory.name);
-              marker.setIcon(createMarkerIcon(territory, attempts));
-          }
-      });
+    additionalTerritories.forEach(territory => {
+      const attempts = newFound.get(territory.name);
+
+      // Update original marker
+      const marker = markers[territory.name];
+      if (marker) {
+        marker.setIcon(createMarkerIcon(territory, attempts));
+      }
+
+      // Update east copy
+      const eastMarker = markers[`${territory.name}_east`];
+      if (eastMarker) {
+        eastMarker.setIcon(createMarkerIcon(territory, attempts));
+      }
+
+      // Update west copy
+      const westMarker = markers[`${territory.name}_west`];
+      if (westMarker) {
+        westMarker.setIcon(createMarkerIcon(territory, attempts));
+      }
+    });
   }, { deep: true });
 };
-
 </script>

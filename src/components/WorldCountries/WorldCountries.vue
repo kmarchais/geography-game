@@ -4,9 +4,9 @@
     entity-name-plural="Countries"
     geojson-url="https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson"
     geojson-name-property="name"
+    :process-geojson-data-fn="processGeojsonData"
     :map-options="mapOptions"
-    :process-geojson-data-fn="processWorldData"
-    :total-rounds-override="54"
+    :total-rounds-override="241"
   />
 </template>
 
@@ -14,7 +14,7 @@
 import MapGame from '../MapGame.vue';
 import L from 'leaflet';
 import type { FeatureCollection, Geometry } from 'geojson';
-import type { GeoJSONProperties } from '../../utils/geojsonUtils';
+import type { GeoJSONProperties } from "../utils/geojsonUtils";
 
 const mapOptions = {
   initialCenter: [20, 0] as L.LatLngExpression,
@@ -25,11 +25,63 @@ const mapOptions = {
   maxBoundsViscosity: 1.0
 };
 
-const processWorldData = (data: FeatureCollection<Geometry, GeoJSONProperties>) => {
-  return createWorldWrapping(data);
+const processGeojsonData = (data: FeatureCollection<Geometry, GeoJSONProperties>) => {
+  const wrappedCollection = structuredClone(data);
+  const originalFeatures = data.features;
+
+  const eastFeatures = originalFeatures.map(feature => {
+    const clone = structuredClone(feature);
+    if (!clone.properties) clone.properties = {};
+    clone.properties.isEastCopy = true;
+
+    shiftCoordinates(clone, 360);
+    return clone;
+  });
+
+  const westFeatures = originalFeatures.map(feature => {
+    const clone = structuredClone(feature);
+    if (!clone.properties) clone.properties = {};
+    clone.properties.isWestCopy = true;
+
+    shiftCoordinates(clone, -360);
+    return clone;
+  });
+
+  wrappedCollection.features = [
+    ...originalFeatures,
+    ...eastFeatures,
+    ...westFeatures
+  ];
+
+  return wrappedCollection;
 };
 
-function createWorldWrapping(featureCollection: FeatureCollection<Geometry, GeoJSONProperties>) {
-  return featureCollection;
+function shiftCoordinates(feature: any, offset: number) {
+  if (!feature.geometry) return feature;
+
+  const shiftPoint = (coords: number[]) => [coords[0] + offset, coords[1]];
+
+  switch (feature.geometry.type) {
+    case 'Point':
+      feature.geometry.coordinates = shiftPoint(feature.geometry.coordinates);
+      break;
+    case 'LineString':
+    case 'MultiPoint':
+      feature.geometry.coordinates = feature.geometry.coordinates.map(shiftPoint);
+      break;
+    case 'Polygon':
+    case 'MultiLineString':
+      feature.geometry.coordinates = feature.geometry.coordinates.map((ring: number[][]) =>
+        ring.map(shiftPoint)
+      );
+      break;
+    case 'MultiPolygon':
+      feature.geometry.coordinates = feature.geometry.coordinates.map((polygon: number[][][]) =>
+        polygon.map((ring: number[][]) => ring.map(shiftPoint))
+      );
+      break;
+  }
+
+  return feature;
 }
 </script>

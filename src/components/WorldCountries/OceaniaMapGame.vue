@@ -25,25 +25,6 @@
       maxBoundsViscosity: 1.0,
     };
 
-    const oceaniaCountriesList = [
-      // Australia and New Zealand
-      "Australia", "New Zealand",
-
-      // Melanesia
-      "Fiji", "Papua New Guinea", "Solomon Islands", "Vanuatu",
-
-      // Micronesia
-      "Kiribati", "Marshall Islands", "Micronesia", "Nauru", "Palau",
-
-      // Polynesia
-      "Samoa", "Tonga", "Tuvalu",
-
-      // Territories and dependencies that might be included in the GeoJSON
-      "American Samoa", "Cook Islands", "French Polynesia", "Guam",
-      "New Caledonia", "Niue", "Norfolk Island", "Northern Mariana Islands",
-      "Pitcairn Islands", "Tokelau", "Wallis and Futuna"
-    ];
-
     const filterOceaniaData = (
       data: FeatureCollection<Geometry, GeoJSONProperties>
     ): FeatureCollection<Geometry, GeoJSONProperties> => {
@@ -82,13 +63,6 @@
         }
         return featureCopy;
       });
-
-      if (filteredFeatures.length === 0) {
-        console.warn("Filtering Oceania countries by name list as 'continent' property might be missing or didn't match.");
-        filteredFeatures = data.features.filter((feature) => {
-            return oceaniaCountriesList.includes(feature.properties?.name);
-        });
-      }
 
       if (filteredFeatures.length === 0) {
           console.error("Could not filter any Oceania countries. Check GeoJSON source and properties.");

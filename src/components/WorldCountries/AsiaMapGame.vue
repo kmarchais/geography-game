@@ -24,32 +24,17 @@
       maxBoundsViscosity: 1.0,
     };
 
-    const asianCountriesList = [
-      "Afghanistan", "Armenia", "Azerbaijan", "Bahrain", "Bangladesh", "Bhutan",
-      "Brunei", "Cambodia", "China", "Cyprus", "Georgia", "India", "Indonesia",
-      "Iran", "Iraq", "Israel", "Japan", "Jordan", "Kazakhstan", "Kuwait",
-      "Kyrgyzstan", "Laos", "Lebanon", "Malaysia", "Maldives", "Mongolia",
-      "Myanmar", "Nepal", "North Korea", "Oman", "Pakistan", "Palestine",
-      "Philippines", "Qatar", "Saudi Arabia", "Singapore", "South Korea",
-      "Sri Lanka", "Syria", "Taiwan", "Tajikistan", "Thailand", "Timor-Leste",
-      "Turkey", "Turkmenistan", "United Arab Emirates", "Uzbekistan", "Vietnam",
-      "Yemen"
+    const additionalCountries = [
+      "Russia",
     ];
 
     const filterAsiaData = (
       data: FeatureCollection<Geometry, GeoJSONProperties>
     ): FeatureCollection<Geometry, GeoJSONProperties> => {
 
-      let filteredFeatures = data.features.filter((feature) => {
-        return feature.properties?.continent === "Asia";
+      const filteredFeatures = data.features.filter((feature) => {
+        return feature.properties?.continent === "Asia" || additionalCountries.includes(feature.properties.name);
       });
-
-      if (filteredFeatures.length === 0) {
-        console.warn("Filtering Asian countries by name list as 'continent' property might be missing or didn't match.");
-        filteredFeatures = data.features.filter((feature) => {
-            return asianCountriesList.includes(feature.properties?.name);
-        });
-      }
 
       if (filteredFeatures.length === 0) {
           console.error("Could not filter any Asian countries. Check GeoJSON source and properties.");
