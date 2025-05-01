@@ -27,40 +27,61 @@ export function isFeatureCollection(
 
 export const defaultStyle = {
   fillColor: "var(--map-default-fill)",
-  weight: 1,
-  opacity: 1,
+  weight: 2,
+  opacity: 0.8,
   color: "var(--map-border-color)",
-  fillOpacity: 0.5,
+  fillOpacity: 0.4,
+  dashArray: null,
 };
 
 export const selectedStyle = {
   ...defaultStyle,
-  fillColor: "#f39c12",
-  fillOpacity: 0.7,
+  fillColor: "#f39c12", // Amber
+  weight: 3,
+  opacity: 1,
+  color: "#d35400", // Darker border for contrast
+  fillOpacity: 0.65,
+  dashArray: null,
 };
 
 export const failedStyle = {
   ...defaultStyle,
-  fillColor: "#e74c3c",
-  fillOpacity: 0.8,
+  fillColor: "#e74c3c", // Red
+  weight: 2,
+  opacity: 1,
+  color: "#c0392b", // Darker red border
+  fillOpacity: 0.7,
+  dashArray: null,
 };
 
 export const correctStyle1 = {
   ...defaultStyle,
-  fillColor: "#2ecc71",
-  fillOpacity: 0.8,
+  fillColor: "#2ecc71", // Green
+  weight: 2.5,
+  opacity: 1,
+  color: "#27ae60", // Darker green border
+  fillOpacity: 0.7,
+  dashArray: null,
 };
 
 export const correctStyle2 = {
   ...defaultStyle,
-  fillColor: "#f1c40f",
-  fillOpacity: 0.8,
+  fillColor: "#f1c40f", // Yellow
+  weight: 2.5,
+  opacity: 1,
+  color: "#d4ac0d", // Darker yellow border
+  fillOpacity: 0.7,
+  dashArray: null,
 };
 
 export const correctStyle3 = {
   ...defaultStyle,
-  fillColor: "#e67e22",
-  fillOpacity: 0.8,
+  fillColor: "#e67e22", // Orange
+  weight: 2.5,
+  opacity: 1,
+  color: "#d35400", // Darker orange border
+  fillOpacity: 0.7,
+  dashArray: null,
 };
 
 export function getStyleForAttempts(attempts: number | undefined) {
