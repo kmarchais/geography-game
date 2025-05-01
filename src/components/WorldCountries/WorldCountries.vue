@@ -6,6 +6,7 @@
     geojson-name-property="name"
     :process-geojson-data-fn="processGeojsonData"
     :map-options="mapOptions"
+    :total-rounds-override="241"
   />
 </template>
 
