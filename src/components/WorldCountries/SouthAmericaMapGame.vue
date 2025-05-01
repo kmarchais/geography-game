@@ -24,26 +24,13 @@
       maxBoundsViscosity: 1.0,
     };
 
-    const southAmericanCountriesList = [
-      "Argentina", "Bolivia", "Brazil", "Chile", "Colombia", "Ecuador",
-      "Guyana", "Paraguay", "Peru", "Suriname", "Uruguay", "Venezuela",
-      "French Guiana" // Technically an overseas department of France but included for geographic completeness
-    ];
-
     const filterSouthAmericaData = (
       data: FeatureCollection<Geometry, GeoJSONProperties>
     ): FeatureCollection<Geometry, GeoJSONProperties> => {
 
-      let filteredFeatures = data.features.filter((feature) => {
+      const filteredFeatures = data.features.filter((feature) => {
         return feature.properties?.continent === "South America";
       });
-
-      if (filteredFeatures.length === 0) {
-        console.warn("Filtering South American countries by name list as 'continent' property might be missing or didn't match.");
-        filteredFeatures = data.features.filter((feature) => {
-            return southAmericanCountriesList.includes(feature.properties?.name);
-        });
-      }
 
       if (filteredFeatures.length === 0) {
           console.error("Could not filter any South American countries. Check GeoJSON source and properties.");

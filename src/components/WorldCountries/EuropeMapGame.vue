@@ -24,31 +24,13 @@
       maxBoundsViscosity: 1.0,
     };
 
-    const europeanCountriesList = [
-      "Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and Herzegovina",
-      "Bulgaria", "Croatia", "Czech Republic", "Denmark", "Estonia", "Finland",
-      "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Italy",
-      "Kosovo", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta",
-      "Moldova", "Monaco", "Montenegro", "Netherlands", "North Macedonia", "Norway",
-      "Poland", "Portugal", "Romania", "Russia", "San Marino", "Serbia", "Slovakia",
-      "Slovenia", "Spain", "Sweden", "Switzerland", "Ukraine", "United Kingdom",
-      "Vatican City"
-    ];
-
     const filterEuropeData = (
       data: FeatureCollection<Geometry, GeoJSONProperties>
     ): FeatureCollection<Geometry, GeoJSONProperties> => {
 
-      let filteredFeatures = data.features.filter((feature) => {
+      const filteredFeatures = data.features.filter((feature) => {
         return feature.properties?.continent === "Europe";
       });
-
-      if (filteredFeatures.length === 0) {
-        console.warn("Filtering European countries by name list as 'continent' property might be missing or didn't match.");
-        filteredFeatures = data.features.filter((feature) => {
-            return europeanCountriesList.includes(feature.properties?.name);
-        });
-      }
 
       if (filteredFeatures.length === 0) {
           console.error("Could not filter any European countries. Check GeoJSON source and properties.");
