@@ -285,7 +285,7 @@
       );
 
       // Process the guess with game logic
-      handleGuess(adjustedClickLatLng, distance);
+      handleGuess(adjustedClickLatLng);
     } else {
       // Fallback
       handleGuess(L.latLng(clickLat, clickLng));
