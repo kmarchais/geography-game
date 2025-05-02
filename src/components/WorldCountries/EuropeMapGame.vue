@@ -78,7 +78,6 @@ const splitNorwayTerritory = (
   mainlandNorway: Feature<Geometry, GeoJSONProperties> | null;
   svalbard: Feature<Geometry, GeoJSONProperties> | null;
 } => {
-// --- End Change ---
   // Find Norway feature in the original data
   const norwayFeature = data.features.find(f => f.properties?.name === "Norway");
 
@@ -88,21 +87,10 @@ const splitNorwayTerritory = (
     return { mainlandNorway: null, svalbard: null };
   }
 
-  // --- Start Change: Ensure properties are handled for mainlandNorway ---
-  // Handle potential null properties from the source feature type-safely
-  // Do this *before* checking the index, as we need it for mainlandNorway creation
   const baseNorwayProperties = norwayFeature.properties ?? {};
-  // --- End Change ---
 
   // Find Norway in filteredFeatures to update later
   const norwayIndex = filteredFeatures.findIndex(f => f.properties?.name === "Norway");
-  // Note: If Norway isn't found in filteredFeatures, we might proceed but won't update it.
-  // Consider if returning early here is desired if norwayIndex is -1.
-  // if (norwayIndex === -1) {
-  //   console.error("Norway not found in filtered features for update");
-  //   // Decide whether to return or continue without updating
-  //   // return { mainlandNorway: null, svalbard: null };
-  // }
 
 
   // Split Norway's polygons into mainland and Svalbard
@@ -118,20 +106,17 @@ const splitNorwayTerritory = (
   }
 
   // Create modified Norway with only mainland polygons
-  // --- Start Change: Add explicit type and use baseNorwayProperties ---
   const mainlandNorway: Feature<Geometry, GeoJSONProperties> | null =
     mainlandPolygons.length > 0 ? {
-      type: "Feature", // Ensure type is Feature
-      properties: { // Ensure properties are not null
-          ...baseNorwayProperties, // Use the safe properties object
-          // You might want to update specific properties if needed, e.g., name_long
+      type: "Feature",
+      properties: {
+          ...baseNorwayProperties,
       },
       geometry: {
-        type: "MultiPolygon", // Ensure geometry matches the coordinates type
+        type: "MultiPolygon",
         coordinates: mainlandPolygons
       }
-    } : null; // Handle case where there are no mainland polygons (unlikely for Norway)
-  // --- End Change ---
+    } : null;
 
 
   // Create Svalbard with northern polygons
@@ -140,7 +125,7 @@ const splitNorwayTerritory = (
     svalbardPolygons.length > 0 ? {
       type: "Feature",
       properties: {
-        ...baseNorwayProperties, // Use the safe properties object
+        ...baseNorwayProperties,
         name: "Svalbard",
         name_long: "Svalbard and Jan Mayen",
         admin: "Norway",
@@ -158,12 +143,9 @@ const splitNorwayTerritory = (
       }
   } : null;
 
-  // Update Norway in the filtered features
-  // --- Start Change: Check mainlandNorway is not null before updating ---
   if (norwayIndex !== -1 && mainlandNorway) {
     filteredFeatures[norwayIndex] = mainlandNorway;
   }
-  // --- End Change ---
 
   return { mainlandNorway, svalbard };
 };
