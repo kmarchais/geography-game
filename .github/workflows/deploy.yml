@@ -38,6 +38,7 @@ jobs:
           bun run build
         env:
           BASE_URL: /geography-game/${{ github.head_ref }}/
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
 
       - name: Build for main
         if: github.event_name != 'pull_request'
@@ -46,6 +47,7 @@ jobs:
           bun run build
         env:
           BASE_URL: /geography-game/
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
 
       # Debug: List build output
       - name: List build output
