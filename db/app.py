@@ -1,15 +1,16 @@
 # app.py
 import os
 
-# Import your database utility functions
-# Adjust the import path if db_utils.py is in a subdirectory like 'db'
-# from db import db_utils
-import db_utils
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS  # Import CORS
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
+
+# Import your database utility functions
+# Adjust the import path if db_utils.py is in a subdirectory like 'db'
+# from db import db_utils
+from . import db_utils
 
 # Load environment variables (including GOOGLE_CLIENT_ID and DB variables)
 load_dotenv()
