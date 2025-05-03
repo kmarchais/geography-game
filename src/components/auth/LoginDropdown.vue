@@ -1,8 +1,18 @@
 <template>
   <!-- Show login button if user is not authenticated -->
-  <v-menu v-if="!isLoggedIn" location="bottom end" transition="slide-y-transition" min-width="200">
+  <v-menu
+    v-if="!isLoggedIn"
+    location="bottom end"
+    transition="slide-y-transition"
+    min-width="200"
+  >
     <template #activator="{ props }">
-      <v-btn v-bind="props" variant="text">Login</v-btn>
+      <v-btn
+        v-bind="props"
+        variant="text"
+      >
+        Login
+      </v-btn>
     </template>
 
     <v-list density="compact">
@@ -13,10 +23,22 @@
   </v-menu>
 
   <!-- Show user profile if authenticated -->
-  <v-menu v-else location="bottom end" transition="slide-y-transition" min-width="200">
+  <v-menu
+    v-else
+    location="bottom end"
+    transition="slide-y-transition"
+    min-width="200"
+  >
     <template #activator="{ props }">
-      <v-btn v-bind="props" variant="text" class="profile-btn">
-        <v-avatar size="32" class="mr-2">
+      <v-btn
+        v-bind="props"
+        variant="text"
+        class="profile-btn"
+      >
+        <v-avatar
+          size="32"
+          class="mr-2"
+        >
           <v-img
             :src="userProfile?.picture"
             :alt="userProfile?.name"
@@ -28,7 +50,11 @@
 
     <v-list density="compact">
       <v-list-item>
-        <v-btn block variant="text" @click="logout">
+        <v-btn
+          block
+          variant="text"
+          @click="logout"
+        >
           Logout
         </v-btn>
       </v-list-item>

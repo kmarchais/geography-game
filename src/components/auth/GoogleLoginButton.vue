@@ -1,7 +1,7 @@
 <template>
-    <!-- This div is where Google will render its button -->
-    <div ref="googleButtonContainer"></div>
-  </template>
+  <!-- This div is where Google will render its button -->
+  <div ref="googleButtonContainer" />
+</template>
 
   <script setup lang="ts">
   import { ref, onMounted } from "vue";
