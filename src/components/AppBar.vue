@@ -11,6 +11,7 @@
     >
       Home
     </v-btn>
+    <LoginDropdown />
     <v-btn
       variant="text"
       @click="toggleTheme"
@@ -23,6 +24,7 @@
 <script setup lang="ts">
   import { useRouter } from "vue-router";
   import { useTheme } from "vuetify";
+  import LoginDropdown from "./auth/LoginDropdown.vue";
 
   const router = useRouter();
   const theme = useTheme();
