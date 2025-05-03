@@ -14,7 +14,7 @@
 import MapGame from '../MapGame.vue';
 import L from 'leaflet';
 import type { FeatureCollection, Geometry } from 'geojson';
-import type { GeoJSONProperties } from "../utils/geojsonUtils";
+import type { GeoJSONProperties } from "../../utils/geojsonUtils";
 
 const mapOptions = {
   initialCenter: [20, 0] as L.LatLngExpression,
@@ -31,7 +31,7 @@ const processGeojsonData = (data: FeatureCollection<Geometry, GeoJSONProperties>
 
   const eastFeatures = originalFeatures.map(feature => {
     const clone = structuredClone(feature);
-    if (!clone.properties) clone.properties = {};
+    if (!clone.properties) clone.properties = {name: ""};
     clone.properties.isEastCopy = true;
 
     shiftCoordinates(clone, 360);
@@ -40,7 +40,7 @@ const processGeojsonData = (data: FeatureCollection<Geometry, GeoJSONProperties>
 
   const westFeatures = originalFeatures.map(feature => {
     const clone = structuredClone(feature);
-    if (!clone.properties) clone.properties = {};
+    if (!clone.properties) clone.properties = {name: ""};
     clone.properties.isWestCopy = true;
 
     shiftCoordinates(clone, -360);

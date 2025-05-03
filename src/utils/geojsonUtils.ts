@@ -25,63 +25,57 @@ export function isFeatureCollection(
   );
 }
 
-export const defaultStyle = {
+export const defaultStyle: L.PathOptions = {
   fillColor: "var(--map-default-fill)",
   weight: 2,
   opacity: 0.8,
   color: "var(--map-border-color)",
   fillOpacity: 0.4,
-  dashArray: null,
 };
 
-export const selectedStyle = {
+export const selectedStyle: L.PathOptions = {
   ...defaultStyle,
   fillColor: "#f39c12", // Amber
   weight: 3,
   opacity: 1,
   color: "#d35400", // Darker border for contrast
   fillOpacity: 0.65,
-  dashArray: null,
 };
 
-export const failedStyle = {
+export const failedStyle: L.PathOptions = {
   ...defaultStyle,
   fillColor: "#e74c3c", // Red
   weight: 2,
   opacity: 1,
   color: "#c0392b", // Darker red border
   fillOpacity: 0.7,
-  dashArray: null,
 };
 
-export const correctStyle1 = {
+export const correctStyle1: L.PathOptions = {
   ...defaultStyle,
   fillColor: "#2ecc71", // Green
   weight: 2.5,
   opacity: 1,
   color: "#27ae60", // Darker green border
   fillOpacity: 0.7,
-  dashArray: null,
 };
 
-export const correctStyle2 = {
+export const correctStyle2: L.PathOptions = {
   ...defaultStyle,
   fillColor: "#f1c40f", // Yellow
   weight: 2.5,
   opacity: 1,
   color: "#d4ac0d", // Darker yellow border
   fillOpacity: 0.7,
-  dashArray: null,
 };
 
-export const correctStyle3 = {
+export const correctStyle3: L.PathOptions = {
   ...defaultStyle,
   fillColor: "#e67e22", // Orange
   weight: 2.5,
   opacity: 1,
   color: "#d35400", // Darker orange border
   fillOpacity: 0.7,
-  dashArray: null,
 };
 
 export function getStyleForAttempts(attempts: number | undefined) {

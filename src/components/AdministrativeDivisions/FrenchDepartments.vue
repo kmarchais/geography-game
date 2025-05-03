@@ -113,7 +113,7 @@ const processGeojsonData = (data: FeatureCollection<Geometry, GeoJSONProperties>
 
   const eastFeatures = originalFeatures.map(feature => {
     const clone = structuredClone(feature);
-    if (!clone.properties) clone.properties = {};
+    if (!clone.properties) clone.properties = {name: ""};
     clone.properties.isEastCopy = true;
 
     shiftCoordinates(clone, 360);
@@ -122,7 +122,7 @@ const processGeojsonData = (data: FeatureCollection<Geometry, GeoJSONProperties>
 
   const westFeatures = originalFeatures.map(feature => {
     const clone = structuredClone(feature);
-    if (!clone.properties) clone.properties = {};
+    if (!clone.properties) clone.properties = {name: ""};
     clone.properties.isWestCopy = true;
 
     shiftCoordinates(clone, -360);
@@ -210,18 +210,20 @@ const addFrenchTerritoryMarkers: AddManualMarkersFnType = (
 
     if (attempts) {
         const style = getStyleForAttempts(attempts);
-        borderColor = style.fillColor;
-        if (attempts > 0 && attempts < 4) {
-             bgColor = style.fillColor;
-             const hex = style.fillColor.replace('#', '');
-             const r = parseInt(hex.substring(0, 2), 16);
-             const g = parseInt(hex.substring(2, 4), 16);
-             const b = parseInt(hex.substring(4, 6), 16);
-             const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-             textColor = brightness > 128 ? '#000000' : '#ffffff';
-        } else if (attempts === 4) {
-             bgColor = style.fillColor;
-             textColor = '#ffffff';
+        if (style && typeof style.fillColor === 'string') {
+          borderColor = style.fillColor;
+          if (attempts > 0 && attempts < 4) {
+              bgColor = style.fillColor;
+              const hex = style.fillColor.replace('#', '');
+              const r = parseInt(hex.substring(0, 2), 16);
+              const g = parseInt(hex.substring(2, 4), 16);
+              const b = parseInt(hex.substring(4, 6), 16);
+              const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+              textColor = brightness > 128 ? '#000000' : '#ffffff';
+          } else if (attempts === 4) {
+              bgColor = style.fillColor;
+              textColor = '#ffffff';
+          }
         }
     }
 
