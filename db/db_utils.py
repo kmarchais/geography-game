@@ -1,5 +1,3 @@
-# db_utils.py
-
 import os
 import urllib.parse as urlparse
 
@@ -7,38 +5,28 @@ import psycopg2
 from dotenv import load_dotenv
 from psycopg2 import pool
 
-# Optional: For dictionary cursor, but manual conversion is used below
-# from psycopg2.extras import DictCursor
-
-# Load environment variables from a .env file
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")  # Check for Railway's variable first
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 if DATABASE_URL:
     print("Connecting using DATABASE_URL from environment.")
-    try:  # Add try/except around parsing
+    try:
         url = urlparse.urlparse(DATABASE_URL)
         DB_NAME = url.path[1:]
         DB_USER = url.username
         DB_PASSWORD = url.password
         DB_HOST = url.hostname
         DB_PORT = url.port or 5432
-        # --- Add logging here ---
         print(f"  Parsed DB_HOST: {DB_HOST}")
         print(f"  Parsed DB_PORT: {DB_PORT}")
         print(f"  Parsed DB_NAME: {DB_NAME}")
         print(f"  Parsed DB_USER: {DB_USER}")
-        print(
-            f"  Parsed DB_PASSWORD is set: {bool(DB_PASSWORD)}"
-        )  # Don't log the actual password
-        # --- End logging ---
+        print(f"  Parsed DB_PASSWORD is set: {bool(DB_PASSWORD)}")
     except Exception as parse_err:
         print(f"!!! ERROR parsing DATABASE_URL: {parse_err} !!!")
-        # Set defaults or handle error appropriately so DB_PASSWORD might still be checked
         DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD = None, None, None, None, None
 else:
-    # Fallback for local development (using .env)
     print("DATABASE_URL not found, falling back to individual DB_* variables.")
     DB_HOST = os.getenv("DB_HOST", "localhost")
     DB_NAME = os.getenv("DB_NAME", "geography_game")
@@ -46,16 +34,14 @@ else:
     DB_PASSWORD = os.getenv("DB_PASSWORD")
     DB_PORT = os.getenv("DB_PORT", "5432")
 
-# --- Connection Pooling ---
 connection_pool = None
 try:
-    # Check if essential components were parsed or set
     if not all([DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD]):
         print("Error: Missing one or more required DB connection parameters.")
     else:
         print(
             f"Attempting to create connection pool for {DB_USER}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-        )  # Log before pool creation
+        )
         connection_pool = pool.SimpleConnectionPool(
             1,
             10,
@@ -67,7 +53,7 @@ try:
         )
         print("Database connection pool created successfully.")
 except (Exception, psycopg2.OperationalError) as e:
-    print(f"Error creating connection pool: {e}")  # This error is crucial
+    print(f"Error creating connection pool: {e}")
 
 
 def get_db_connection():
@@ -87,9 +73,6 @@ def release_db_connection(conn):
     """Releases a connection back to the connection pool."""
     if connection_pool and conn:
         connection_pool.putconn(conn)
-
-
-# --- User Functions ---
 
 
 def add_or_update_user(google_id, email, name, profile_picture_url):
@@ -123,7 +106,7 @@ def add_or_update_user(google_id, email, name, profile_picture_url):
         if conn:
             with conn.cursor() as cur:
                 cur.execute(sql, (google_id, email, name, profile_picture_url))
-                user_id = cur.fetchone()[0]  # Get the returned id
+                user_id = cur.fetchone()[0]
                 conn.commit()
                 print(
                     f"User {email} (Google ID: {google_id}) added or updated. DB ID: {user_id}"
@@ -131,7 +114,7 @@ def add_or_update_user(google_id, email, name, profile_picture_url):
     except (Exception, psycopg2.Error) as error:
         print(f"Error interacting with database in add_or_update_user: {error}")
         if conn:
-            conn.rollback()  # Roll back changes on error
+            conn.rollback()
     finally:
         if conn:
             release_db_connection(conn)
@@ -160,7 +143,6 @@ def get_user_by_google_id(google_id):
                 cur.execute(sql, (google_id,))
                 result = cur.fetchone()
                 if result:
-                    # Convert tuple result to a dictionary for easier access
                     columns = [desc[0] for desc in cur.description]
                     user_data = dict(zip(columns, result))
     except (Exception, psycopg2.Error) as error:
@@ -180,7 +162,6 @@ def get_all_users():
                     (id, email, name, profile_picture_url, created_at, last_login),
                     or None if an error occurred. Returns an empty list if no users exist.
     """
-    # Select relevant fields, order by last_login descending
     sql = """
         SELECT id, email, name, profile_picture_url, created_at, last_login
         FROM users
@@ -195,21 +176,16 @@ def get_all_users():
                 cur.execute(sql)
                 results = cur.fetchall()
                 if results:
-                    # Get column names from cursor description
                     columns = [desc[0] for desc in cur.description]
-                    # Convert list of tuples into list of dictionaries
                     users_list = [dict(zip(columns, row)) for row in results]
 
     except (Exception, psycopg2.Error) as error:
         print(f"Error retrieving all users: {error}")
-        return None  # Indicate an error occurred
+        return None
     finally:
         if conn:
             release_db_connection(conn)
-    return users_list  # Return the list (could be empty if no users)
-
-
-# --- Game Score Functions ---
+    return users_list
 
 
 def add_game_score(user_id, game_mode, score):
@@ -236,14 +212,13 @@ def add_game_score(user_id, game_mode, score):
         if conn:
             with conn.cursor() as cur:
                 cur.execute(sql, (user_id, game_mode, score))
-                score_id = cur.fetchone()[0]  # Get the returned id
+                score_id = cur.fetchone()[0]
                 conn.commit()
                 print(
                     f"Score added for user ID {user_id} in mode '{game_mode}'. Score ID: {score_id}"
                 )
     except (Exception, psycopg2.Error) as error:
         print(f"Error adding game score: {error}")
-        # Check for foreign key violation (user_id doesn't exist)
         if isinstance(error, psycopg2.errors.ForeignKeyViolation):
             print(f"Error: User with ID {user_id} does not exist.")
         if conn:
@@ -254,14 +229,12 @@ def add_game_score(user_id, game_mode, score):
     return score_id
 
 
-# --- Example Usage (for testing this file directly) ---
 if __name__ == "__main__":
     print("Testing database utilities...")
 
     if not connection_pool:
         print("Exiting due to connection pool initialization failure.")
     else:
-        # Test adding/updating a user
         print("\nTesting add_or_update_user...")
         test_google_id = "test_google_id_12345"
         test_email = "test.user@example.com"
@@ -272,7 +245,6 @@ if __name__ == "__main__":
         if user_db_id:
             print(f"User added/updated successfully. Internal DB ID: {user_db_id}")
 
-            # Test retrieving the user
             print("\nTesting get_user_by_google_id...")
             retrieved_user = get_user_by_google_id(test_google_id)
             if retrieved_user:
@@ -281,7 +253,6 @@ if __name__ == "__main__":
             else:
                 print("Failed to retrieve user.")
 
-            # Test adding a game score
             print("\nTesting add_game_score...")
             game_mode = "capital_quiz"
             score = 1500
@@ -291,18 +262,13 @@ if __name__ == "__main__":
             else:
                 print("Failed to add game score.")
 
-            # Test adding score for non-existent user (should fail gracefully)
             print("\nTesting add_game_score for non-existent user...")
-            add_game_score(
-                99999, "flag_match", 500
-            )  # Assuming user 99999 doesn't exist
+            add_game_score(99999, "flag_match", 500)
 
-            # Test getting all users
             print("\nTesting get_all_users...")
             all_users = get_all_users()
             if all_users is not None:
                 print(f"Retrieved {len(all_users)} users:")
-                # Print first few users for brevity
                 for user in all_users[:3]:
                     print(user)
                 if len(all_users) > 3:
@@ -313,7 +279,6 @@ if __name__ == "__main__":
         else:
             print("Failed to add or update user.")
 
-        # Clean up the connection pool when the application exits
         if connection_pool:
             connection_pool.closeall()
             print("\nConnection pool closed.")
