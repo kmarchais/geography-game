@@ -1,5 +1,6 @@
 <template>
-  <v-menu location="bottom end" transition="slide-y-transition" min-width="200">
+  <!-- Show login button if user is not authenticated -->
+  <v-menu v-if="!isLoggedIn" location="bottom end" transition="slide-y-transition" min-width="200">
     <template #activator="{ props }">
       <v-btn v-bind="props" variant="text">Login</v-btn>
     </template>
@@ -8,27 +9,43 @@
       <v-list-item>
         <GoogleLoginButton />
       </v-list-item>
-      <!-- You could add other login methods here later -->
-      <!--
+    </v-list>
+  </v-menu>
+
+  <!-- Show user profile if authenticated -->
+  <v-menu v-else location="bottom end" transition="slide-y-transition" min-width="200">
+    <template #activator="{ props }">
+      <v-btn v-bind="props" variant="text" class="profile-btn">
+        <v-avatar size="32" class="mr-2">
+          <v-img
+            :src="userProfile?.picture"
+            :alt="userProfile?.name"
+          />
+        </v-avatar>
+        {{ userProfile?.name }}
+      </v-btn>
+    </template>
+
+    <v-list density="compact">
       <v-list-item>
-        <v-btn block variant="text" @click="handleOtherLogin">
-          Login with Email
+        <v-btn block variant="text" @click="logout">
+          Logout
         </v-btn>
       </v-list-item>
-      -->
     </v-list>
   </v-menu>
 </template>
 
 <script setup lang="ts">
-import GoogleLoginButton from "./GoogleLoginButton.vue"; // Adjust path if needed
+import GoogleLoginButton from "./GoogleLoginButton.vue"
+import { useAuth } from '../../composables/useAuth'
 
-// No specific logic needed here for now,
-// as GoogleLoginButton handles its own setup.
-// If you add other login methods, their handlers would go here.
-// const handleOtherLogin = () => { ... }
+const { isLoggedIn, userProfile, logout } = useAuth()
 </script>
 
 <style scoped>
-/* Add any specific styling for the dropdown if needed */
+.profile-btn {
+  min-width: 150px;
+  justify-content: flex-start;
+}
 </style>
