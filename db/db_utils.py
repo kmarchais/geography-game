@@ -16,13 +16,27 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")  # Check for Railway's variable first
 
 if DATABASE_URL:
-    print("Connecting using DATABASE_URL from environment.")  # Good log message
-    url = urlparse.urlparse(DATABASE_URL)
-    DB_NAME = url.path[1:]
-    DB_USER = url.username
-    DB_PASSWORD = url.password
-    DB_HOST = url.hostname
-    DB_PORT = url.port or 5432
+    print("Connecting using DATABASE_URL from environment.")
+    try:  # Add try/except around parsing
+        url = urlparse.urlparse(DATABASE_URL)
+        DB_NAME = url.path[1:]
+        DB_USER = url.username
+        DB_PASSWORD = url.password
+        DB_HOST = url.hostname
+        DB_PORT = url.port or 5432
+        # --- Add logging here ---
+        print(f"  Parsed DB_HOST: {DB_HOST}")
+        print(f"  Parsed DB_PORT: {DB_PORT}")
+        print(f"  Parsed DB_NAME: {DB_NAME}")
+        print(f"  Parsed DB_USER: {DB_USER}")
+        print(
+            f"  Parsed DB_PASSWORD is set: {bool(DB_PASSWORD)}"
+        )  # Don't log the actual password
+        # --- End logging ---
+    except Exception as parse_err:
+        print(f"!!! ERROR parsing DATABASE_URL: {parse_err} !!!")
+        # Set defaults or handle error appropriately so DB_PASSWORD might still be checked
+        DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD = None, None, None, None, None
 else:
     # Fallback for local development (using .env)
     print("DATABASE_URL not found, falling back to individual DB_* variables.")
@@ -33,29 +47,27 @@ else:
     DB_PORT = os.getenv("DB_PORT", "5432")
 
 # --- Connection Pooling ---
-connection_pool = None  # Initialize to None
+connection_pool = None
 try:
-    if not DB_PASSWORD:
-        print("Error: DB_PASSWORD environment variable not set.")
-        print("Create a .env file or set environment variables.")
+    # Check if essential components were parsed or set
+    if not all([DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD]):
+        print("Error: Missing one or more required DB connection parameters.")
     else:
+        print(
+            f"Attempting to create connection pool for {DB_USER}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        )  # Log before pool creation
         connection_pool = pool.SimpleConnectionPool(
-            1,  # minconn
-            10,  # maxconn
-            host=DB_HOST,
+            1,
+            10,
             database=DB_NAME,
             user=DB_USER,
             password=DB_PASSWORD,
+            host=DB_HOST,
             port=DB_PORT,
         )
         print("Database connection pool created successfully.")
-
-except psycopg2.OperationalError as e:
-    print(f"Error creating connection pool: {e}")
-    print(
-        "Please ensure the database is running and credentials in your .env file (or environment variables) are correct."
-    )
-    # connection_pool remains None
+except (Exception, psycopg2.OperationalError) as e:
+    print(f"Error creating connection pool: {e}")  # This error is crucial
 
 
 def get_db_connection():
