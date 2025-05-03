@@ -335,10 +335,6 @@
             </v-row>
           </v-card-text>
         </v-card>
-
-        <!-- User List Section -->
-        <!-- Conditionally render the UserList component if logged in -->
-        <UserList v-if="isLoggedIn" />
       </v-card>
     </div>
   </v-container>
@@ -348,8 +344,6 @@
 import { useRouter } from "vue-router";
 import { polyfillCountryFlagEmojis } from "country-flag-emoji-polyfill";
 
-// Import UserList and useAuth
-import UserList from "@/components/UserList.vue"; // Adjust path if needed
 import { useAuth } from "@/composables/useAuth"; // Adjust path if needed
 
 polyfillCountryFlagEmojis();
@@ -368,12 +362,6 @@ const navigateTo = (path: string) => {
     Segoe UI Symbol, Noto Color emoji, EmojiOne Color, Android emoji, sans-serif;
   vertical-align: middle;
 }
-
-/* Optional: Add some margin if needed, UserList already has internal padding */
-
-/* .user-list-section {
-  margin-top: 24px;
-} */
 
 /* Ensure container allows scrolling if content overflows */
 .v-container.fill-height {

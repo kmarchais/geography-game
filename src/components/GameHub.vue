@@ -17,10 +17,6 @@
           <p>Guess the location of capital cities</p>
         </div>
       </div>
-
-      <!-- Add the UserList component below the game options -->
-      <!-- Only show if the user is logged in -->
-      <UserList v-if="isLoggedIn" class="user-list-section" />
     </div>
 
     <div v-else class="game-container">
@@ -39,9 +35,6 @@ import { ref, computed } from "vue";
 import L from "leaflet";
 import WorldCountries from "./WorldCountries/WorldCountries.vue"; // Adjust path if needed
 import WorldCapitals from "../views/WorldCapitals.vue"; // Adjust path if needed
-
-// Import the UserList component
-import UserList from "../components/UserList.vue"; // Adjust path relative to GameHub.vue
 
 // Import useAuth to check login status
 import { useAuth } from "../composables/useAuth"; // Adjust path relative to GameHub.vue
@@ -87,21 +80,11 @@ const returnToMenu = () => {
 .game-hub {
   position: relative;
   width: 100%;
-
-  /* Adjust height if UserList makes it too long, or allow scrolling */
-  min-height: 100vh;
-  background-color: var(--map-bg);
-  overflow-y: auto; /* Allow vertical scroll if content overflows */
 }
 
 .game-selection {
   display: flex;
   flex-direction: column;
-
-  /* Use padding instead of justify-content to allow space for UserList */
-  padding: 40px 20px;
-  align-items: center;
-  min-height: 100%;
 }
 
 .selection-header {
@@ -160,13 +143,6 @@ const returnToMenu = () => {
 .game-option p {
   color: var(--text-color);
   opacity: 0.8;
-}
-
-/* Style the container for the UserList */
-.user-list-section {
-  width: 100%;
-  max-width: 900px; /* Match UserList internal max-width */
-  margin-top: 30px; /* Add space above the list */
 }
 
 .game-container {
