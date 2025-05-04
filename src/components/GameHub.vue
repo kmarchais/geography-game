@@ -1,26 +1,47 @@
 <template>
   <div class="game-hub">
-    <div v-if="!selectedGameMode" class="game-selection">
+    <div
+      v-if="!selectedGameMode"
+      class="game-selection"
+    >
       <div class="selection-header">
         <h1>Geography Games</h1>
         <p>Choose a game mode to play</p>
       </div>
       <div class="game-options">
-        <div class="game-option" @click="selectGame('countries')">
-          <div class="option-icon">🌎</div>
+        <div
+          class="game-option"
+          @click="selectGame('countries')"
+        >
+          <div class="option-icon">
+            🌎
+          </div>
           <h2>Countries</h2>
           <p>Find countries on the world map</p>
         </div>
-        <div class="game-option" @click="selectGame('capitals')">
-          <div class="option-icon">🏙️</div>
+        <div
+          class="game-option"
+          @click="selectGame('capitals')"
+        >
+          <div class="option-icon">
+            🏙️
+          </div>
           <h2>Capitals</h2>
           <p>Guess the location of capital cities</p>
         </div>
       </div>
     </div>
 
-    <div v-else class="game-container">
-      <button class="back-button" @click="returnToMenu">← Back to Menu</button>
+    <div
+      v-else
+      class="game-container"
+    >
+      <button
+        class="back-button"
+        @click="returnToMenu"
+      >
+        ← Back to Menu
+      </button>
       <component
         :is="selectedComponent"
         :map-options="mapOptions"

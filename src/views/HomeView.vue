@@ -2,7 +2,10 @@
   <v-container class="fill-height d-flex align-center justify-center">
     <!-- Use a div to allow content to potentially exceed viewport height -->
     <div style="width: 100%; max-width: 700px">
-      <v-card class="pa-6" elevation="3">
+      <v-card
+        class="pa-6"
+        elevation="3"
+      >
         <v-card-title class="text-h4 font-weight-bold mb-4 text-center">
           Geography Game Hub
         </v-card-title>
@@ -14,26 +17,43 @@
         <v-divider class="mb-6" />
 
         <!-- Countries Card -->
-        <v-card class="mb-6" variant="outlined">
+        <v-card
+          class="mb-6"
+          variant="outlined"
+        >
           <v-card-title class="text-h6 bg-blue-lighten-5 py-3 px-4">
-            <v-icon start color="blue-darken-2" class="me-2">
+            <v-icon
+              start
+              color="blue-darken-2"
+              class="me-2"
+            >
               mdi-earth
             </v-icon>
             Countries of the World
           </v-card-title>
           <v-card-text class="pt-4">
             <v-row dense>
-              <v-col cols="12" md="4" sm="6">
+              <v-col
+                cols="12"
+                md="4"
+                sm="6"
+              >
                 <v-btn
                   block
                   color="blue-darken-1"
                   @click="navigateTo('/world-countries')"
                 >
-                  <v-icon start> mdi-earth </v-icon>
+                  <v-icon start>
+                    mdi-earth
+                  </v-icon>
                   World
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="6">
+              <v-col
+                cols="12"
+                md="4"
+                sm="6"
+              >
                 <v-btn
                   block
                   color="green-darken-2"
@@ -43,7 +63,11 @@
                   Africa
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="6">
+              <v-col
+                cols="12"
+                md="4"
+                sm="6"
+              >
                 <v-btn
                   block
                   color="red-darken-2"
@@ -53,7 +77,11 @@
                   Asia
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="6">
+              <v-col
+                cols="12"
+                md="4"
+                sm="6"
+              >
                 <v-btn
                   block
                   color="blue-grey darken-1"
@@ -63,7 +91,11 @@
                   Europe
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="6">
+              <v-col
+                cols="12"
+                md="4"
+                sm="6"
+              >
                 <v-btn
                   block
                   color="orange darken-2"
@@ -73,7 +105,11 @@
                   N. America
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="6">
+              <v-col
+                cols="12"
+                md="4"
+                sm="6"
+              >
                 <v-btn
                   block
                   color="pink darken-2"
@@ -83,7 +119,11 @@
                   S. America
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="6">
+              <v-col
+                cols="12"
+                md="4"
+                sm="6"
+              >
                 <v-btn
                   block
                   color="purple darken-2"
@@ -98,16 +138,27 @@
         </v-card>
 
         <!-- Administrative Divisions Card -->
-        <v-card class="mb-6" variant="outlined">
+        <v-card
+          class="mb-6"
+          variant="outlined"
+        >
           <v-card-title class="text-h6 bg-green-lighten-5 py-3 px-4">
-            <v-icon start color="green-darken-2" class="me-2">
+            <v-icon
+              start
+              color="green-darken-2"
+              class="me-2"
+            >
               mdi-map-marker
             </v-icon>
             Administrative Divisions
           </v-card-title>
           <v-card-text class="pt-4">
             <v-row dense>
-              <v-col cols="12" md="4" sm="12">
+              <v-col
+                cols="12"
+                md="4"
+                sm="12"
+              >
                 <v-btn
                   block
                   color="blue-grey"
@@ -117,7 +168,11 @@
                   <span>US States</span>
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="12">
+              <v-col
+                cols="12"
+                md="4"
+                sm="12"
+              >
                 <v-btn
                   block
                   color="blue-grey"
@@ -127,7 +182,11 @@
                   <span>French Depts.</span>
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="12">
+              <v-col
+                cols="12"
+                md="4"
+                sm="12"
+              >
                 <v-btn
                   block
                   color="blue-grey"
@@ -137,7 +196,11 @@
                   <span>Spanish Comm.</span>
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="12">
+              <v-col
+                cols="12"
+                md="4"
+                sm="12"
+              >
                 <v-btn
                   block
                   color="blue-grey darken-1"
@@ -147,7 +210,11 @@
                   <span>German States</span>
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="12">
+              <v-col
+                cols="12"
+                md="4"
+                sm="12"
+              >
                 <v-btn
                   block
                   color="blue-grey darken-2"
@@ -157,7 +224,11 @@
                   <span>Canadian Prov.</span>
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="12">
+              <v-col
+                cols="12"
+                md="4"
+                sm="12"
+              >
                 <v-btn
                   block
                   color="blue-grey darken-3"
@@ -167,7 +238,11 @@
                   <span>Australian St.</span>
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="12">
+              <v-col
+                cols="12"
+                md="4"
+                sm="12"
+              >
                 <v-btn
                   block
                   color="blue-grey"
@@ -177,7 +252,11 @@
                   <span>Brazilian States</span>
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="12">
+              <v-col
+                cols="12"
+                md="4"
+                sm="12"
+              >
                 <v-btn
                   block
                   color="blue-grey darken-1"
@@ -187,7 +266,11 @@
                   <span>Italian Regions</span>
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="12">
+              <v-col
+                cols="12"
+                md="4"
+                sm="12"
+              >
                 <v-btn
                   block
                   color="blue-grey darken-2"
@@ -197,7 +280,11 @@
                   <span>UK Counties</span>
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="12">
+              <v-col
+                cols="12"
+                md="4"
+                sm="12"
+              >
                 <v-btn
                   block
                   color="blue-grey darken-3"
@@ -207,7 +294,11 @@
                   <span>Russian Oblasts</span>
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="12">
+              <v-col
+                cols="12"
+                md="4"
+                sm="12"
+              >
                 <v-btn
                   block
                   color="blue-grey darken-4"
@@ -217,7 +308,11 @@
                   <span>Ukrainian Oblasts</span>
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="12">
+              <v-col
+                cols="12"
+                md="4"
+                sm="12"
+              >
                 <v-btn
                   block
                   color="blue-grey darken-5"
@@ -227,7 +322,11 @@
                   <span>Chinese Provinces</span>
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="12">
+              <v-col
+                cols="12"
+                md="4"
+                sm="12"
+              >
                 <v-btn
                   block
                   color="blue-grey darken-6"
@@ -237,7 +336,11 @@
                   <span>Belgian Provinces</span>
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="12">
+              <v-col
+                cols="12"
+                md="4"
+                sm="12"
+              >
                 <v-btn
                   block
                   color="blue-grey darken-7"
@@ -252,11 +355,25 @@
         </v-card>
 
         <!-- Flag and Capitals Cards -->
-        <v-row dense class="mb-6">
-          <v-col cols="12" sm="6">
-            <v-card height="100%" variant="outlined" class="d-flex flex-column">
+        <v-row
+          dense
+          class="mb-6"
+        >
+          <v-col
+            cols="12"
+            sm="6"
+          >
+            <v-card
+              height="100%"
+              variant="outlined"
+              class="d-flex flex-column"
+            >
               <v-card-title class="text-h6 bg-amber-lighten-5 py-3 px-4">
-                <v-icon start color="amber-darken-2" class="me-2">
+                <v-icon
+                  start
+                  color="amber-darken-2"
+                  class="me-2"
+                >
                   mdi-flag
                 </v-icon>
                 Flag Challenge
@@ -271,17 +388,33 @@
                   variant="elevated"
                   @click="navigateTo('/flag-game')"
                 >
-                  <v-icon start size="large"> mdi-play-circle </v-icon>
+                  <v-icon
+                    start
+                    size="large"
+                  >
+                    mdi-play-circle
+                  </v-icon>
                   <span>Play Flag Game</span>
                 </v-btn>
               </v-card-actions>
             </v-card>
           </v-col>
 
-          <v-col cols="12" sm="6">
-            <v-card height="100%" variant="outlined" class="d-flex flex-column">
+          <v-col
+            cols="12"
+            sm="6"
+          >
+            <v-card
+              height="100%"
+              variant="outlined"
+              class="d-flex flex-column"
+            >
               <v-card-title class="text-h6 bg-purple-lighten-5 py-3 px-4">
-                <v-icon start color="purple-darken-2" class="me-2">
+                <v-icon
+                  start
+                  color="purple-darken-2"
+                  class="me-2"
+                >
                   mdi-city
                 </v-icon>
                 Capital Cities
@@ -296,7 +429,12 @@
                   variant="elevated"
                   @click="navigateTo('/world-capitals')"
                 >
-                  <v-icon start size="large"> mdi-play-circle </v-icon>
+                  <v-icon
+                    start
+                    size="large"
+                  >
+                    mdi-play-circle
+                  </v-icon>
                   <span>Play Capitals Game</span>
                 </v-btn>
               </v-card-actions>
@@ -305,30 +443,67 @@
         </v-row>
 
         <!-- Coming Soon Card -->
-        <v-card variant="outlined" class="mb-6">
+        <v-card
+          variant="outlined"
+          class="mb-6"
+        >
           <v-card-title class="text-h6 bg-teal-lighten-5 py-3 px-4">
-            <v-icon start color="teal-darken-2" class="me-2">
+            <v-icon
+              start
+              color="teal-darken-2"
+              class="me-2"
+            >
               mdi-puzzle-outline
             </v-icon>
             More Challenges (Coming Soon)
           </v-card-title>
           <v-card-text class="pt-4">
             <v-row dense>
-              <v-col cols="12" md="4" sm="6">
-                <v-btn block disabled class="mb-3 game-btn">
-                  <v-icon start> mdi-water </v-icon>
+              <v-col
+                cols="12"
+                md="4"
+                sm="6"
+              >
+                <v-btn
+                  block
+                  disabled
+                  class="mb-3 game-btn"
+                >
+                  <v-icon start>
+                    mdi-water
+                  </v-icon>
                   World Rivers
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="6">
-                <v-btn block disabled class="mb-3 game-btn">
-                  <v-icon start> mdi-image-filter-hdr </v-icon>
+              <v-col
+                cols="12"
+                md="4"
+                sm="6"
+              >
+                <v-btn
+                  block
+                  disabled
+                  class="mb-3 game-btn"
+                >
+                  <v-icon start>
+                    mdi-image-filter-hdr
+                  </v-icon>
                   Mountains
                 </v-btn>
               </v-col>
-              <v-col cols="12" md="4" sm="6">
-                <v-btn block disabled class="mb-3 game-btn">
-                  <v-icon start> mdi-bank </v-icon>
+              <v-col
+                cols="12"
+                md="4"
+                sm="6"
+              >
+                <v-btn
+                  block
+                  disabled
+                  class="mb-3 game-btn"
+                >
+                  <v-icon start>
+                    mdi-bank
+                  </v-icon>
                   Landmarks
                 </v-btn>
               </v-col>

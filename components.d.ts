@@ -35,7 +35,6 @@ declare module 'vue' {
     SpanishCommunities: typeof import('./src/components/AdministrativeDivisions/SpanishCommunities.vue')['default']
     UkCounties: typeof import('./src/components/AdministrativeDivisions/UkCounties.vue')['default']
     UkrainianOblasts: typeof import('./src/components/AdministrativeDivisions/UkrainianOblasts.vue')['default']
-    UserList: typeof import('./src/components/UserList.vue')['default']
     UsStates: typeof import('./src/components/AdministrativeDivisions/UsStates.vue')['default']
     WorldCountries: typeof import('./src/components/WorldCountries/WorldCountries.vue')['default']
   }

@@ -6,3 +6,5 @@ google-auth
 google-auth-oauthlib # Often needed by google.oauth2.id_token
 requests # Often needed by google-auth libraries
 gunicorn # Production WSGI server
+PyJWT
+cryptography
