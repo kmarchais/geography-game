@@ -29,11 +29,13 @@ logging.basicConfig(level=logging.INFO)
 
 
 # --- Configuration ---
-PRODUCTION_FRONTEND_URL = "https://kmarchais.github.io"
 LOCAL_FRONTEND_URL = os.getenv("LOCAL_FRONTEND_URL", "http://localhost:3000")
 allowed_origins = [
     LOCAL_FRONTEND_URL,
-    PRODUCTION_FRONTEND_URL,
+    "https://kmarchais.github.io",
+    "https://geography-game.up.railway.app",
+    "https://geography-game-test.up.railway.app",
+    "https://geography-game-geography-game-pr-22.up.railway.app",
 ]
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
