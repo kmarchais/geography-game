@@ -80,6 +80,16 @@ app.logger.info(f"CORS enabled for origins: {allowed_origins}")
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        # --- Add this check at the beginning ---
+        if request.method == "OPTIONS":
+            # Allow CORS preflight requests to pass through without token check
+            # We rely on Flask-CORS to handle the actual OPTIONS response later
+            return f(
+                *args, **kwargs
+            )  # Or potentially just `return app.make_default_options_response()`
+            # but letting it pass to the route which also checks OPTIONS is safer.
+        # ---------------------------------------
+
         token = None
         # Check for Bearer token in Authorization header
         if "Authorization" in request.headers:
