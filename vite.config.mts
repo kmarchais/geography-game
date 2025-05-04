@@ -13,7 +13,7 @@ import { defineConfig } from 'vite'
 
 // --- Dynamic Host Logic ---
 // Base allowed hosts
-const allowed = ['healthcheck.railway.app']
+const allowed = ['healthcheck.railway.app', 'geography-game-test.up.railway.app']
 
 // Railway injects the public HOSTNAME into RAILWAY_STATIC_URL (based on error)
 const railwayHost = process.env.RAILWAY_STATIC_URL
