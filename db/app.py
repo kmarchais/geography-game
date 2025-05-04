@@ -60,7 +60,7 @@ else:
 # --- CORS Setup ---
 CORS(
     app,
-    resources={r"/api/*": {"origins": "*"}},
+    resources={r"/api/*": {"origins": allowed_origins}},
     methods=[
         "GET",
         "POST",
@@ -89,7 +89,6 @@ def token_required(f):
             )  # Or potentially just `return app.make_default_options_response()`
             # but letting it pass to the route which also checks OPTIONS is safer.
         # ---------------------------------------
-
         token = None
         # Check for Bearer token in Authorization header
         if "Authorization" in request.headers:
