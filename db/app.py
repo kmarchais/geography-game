@@ -60,7 +60,7 @@ else:
 # --- CORS Setup ---
 CORS(
     app,
-    resources={r"/api/*": {"origins": allowed_origins}},
+    resources={r"/api/*": {"origins": "*"}},
     methods=[
         "GET",
         "POST",
