@@ -24,13 +24,20 @@ def _():
 
 
 @app.cell
-def _():
-    DATABASE = "LOCAL" # "LOCAL" or "RAILWAY"
-    return (DATABASE,)
+def _(mo):
+    dropdown = mo.ui.dropdown(options=["LOCAL", "RAILWAY"], value="LOCAL")
+    dropdown
+    return (dropdown,)
 
 
 @app.cell
-def _(DATABASE):
+def _(dropdown):
+    database = dropdown.value
+    return (database,)
+
+
+@app.cell
+def _(database):
     import os
     import sqlalchemy
     from dotenv import load_dotenv
@@ -39,36 +46,28 @@ def _(DATABASE):
     # Load environment variables
     load_dotenv()
 
-    if DATABASE == "LOCAL":
-        local_host = os.getenv("DB_HOST")
-        local_port = os.getenv("DB_PORT")
-        local_db = os.getenv("DB_NAME")
-        local_user = os.getenv("DB_USER")
-        local_password = os.getenv("DB_PASSWORD")
+    if database == "LOCAL":
+        host = os.getenv("DB_HOST")
+        port = os.getenv("DB_PORT")
+        database_name = os.getenv("DB_NAME")
+        user = os.getenv("DB_USER")
+        password = os.getenv("DB_PASSWORD")
 
-        # Create SQLAlchemy engine
-        conn_str = f"postgresql://{local_user}:{local_password}@{local_host}:{local_port}/{local_db}"
-        engine = sqlalchemy.create_engine(conn_str)
-        conn = engine.connect()
+    elif database == "RAILWAY":
+        host = os.getenv("RAILWAY_HOST")
+        port = os.getenv("RAILWAY_PORT")
+        database_name = os.getenv("RAILWAY_DATABASE")
+        user = os.getenv("RAILWAY_USER")
+        password = os.getenv("RAILWAY_PASSWORD")
 
-    elif DATABASE == "RAILWAY":
-        DATABASE_URL = os.getenv('DATABASE_URL')
-        if DATABASE_URL:
-            url = urlparse(DATABASE_URL)
-            host = url.hostname
-            port = url.port or 5432
-            database = url.path[1:]
-            user = url.username
-            password = url.password
+        if not all([host, port, database_name, user, password]):
+            raise ValueError("Missing Railway database credentials")
 
-            # Create SQLAlchemy engine for Railway
-            conn_str = f"postgresql://{user}:{password}@{host}:{port}/{database}"
-            engine = sqlalchemy.create_engine(conn_str)
-            conn = engine.connect()
-            print('Connected to database successfully!')
-        else:
-            print('DATABASE_URL not found in environment variables')
-            conn = None
+    # Create SQLAlchemy engine for Railway
+    conn_str = f"postgresql://{user}:{password}@{host}:{port}/{database_name}"
+    engine = sqlalchemy.create_engine(conn_str)
+    conn = engine.connect()
+    print('Connected to database successfully!')
     return (conn,)
 
 
