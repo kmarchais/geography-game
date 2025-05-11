@@ -23,37 +23,30 @@ def _():
     return pd, plt
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
-    dropdown = mo.ui.dropdown(options=["LOCAL", "RAILWAY"], value="LOCAL")
+    dropdown = mo.ui.dropdown(options=["LOCAL", "RAILWAY"], value="LOCAL", label="Choose database:")
     dropdown
     return (dropdown,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(dropdown):
-    database = dropdown.value
-    return (database,)
-
-
-@app.cell
-def _(database):
     import os
     import sqlalchemy
     from dotenv import load_dotenv
     from urllib.parse import urlparse
 
-    # Load environment variables
     load_dotenv()
 
-    if database == "LOCAL":
+    if dropdown.value == "LOCAL":
         host = os.getenv("DB_HOST")
         port = os.getenv("DB_PORT")
         database_name = os.getenv("DB_NAME")
         user = os.getenv("DB_USER")
         password = os.getenv("DB_PASSWORD")
 
-    elif database == "RAILWAY":
+    elif dropdown.value == "RAILWAY":
         host = os.getenv("RAILWAY_HOST")
         port = os.getenv("RAILWAY_PORT")
         database_name = os.getenv("RAILWAY_DATABASE")
@@ -63,9 +56,7 @@ def _(database):
         if not all([host, port, database_name, user, password]):
             raise ValueError("Missing Railway database credentials")
 
-    # Create SQLAlchemy engine for Railway
-    conn_str = f"postgresql://{user}:{password}@{host}:{port}/{database_name}"
-    engine = sqlalchemy.create_engine(conn_str)
+    engine = sqlalchemy.create_engine(f"postgresql://{user}:{password}@{host}:{port}/{database_name}")
     conn = engine.connect()
     print('Connected to database successfully!')
     return (conn,)
@@ -74,7 +65,6 @@ def _(database):
 @app.cell
 def _(conn, pd):
     users_df = pd.read_sql("SELECT * FROM users", conn)
-    print(users_df["profile_picture_url"][0])
     users_df
     return
 
