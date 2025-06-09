@@ -14,7 +14,7 @@ repos:
         args: ['--branch', 'main']
 
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: 'v9.27.0'
+    rev: 'v9.28.0'
     hooks:
     -   id: eslint
         language_version: "23.8.0"
@@ -28,7 +28,7 @@ repos:
           - typescript@5.8.3
 
   - repo: https://github.com/thibaudcolas/pre-commit-stylelint
-    rev: v16.19.1
+    rev: v16.20.0
     hooks:
       - id: stylelint
         files: \.(scss|vue)$
