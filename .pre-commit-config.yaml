@@ -28,7 +28,7 @@ repos:
           - typescript@5.8.3
 
   - repo: https://github.com/thibaudcolas/pre-commit-stylelint
-    rev: v16.20.0
+    rev: v16.21.0
     hooks:
       - id: stylelint
         files: \.(scss|vue)$
