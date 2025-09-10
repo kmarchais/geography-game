@@ -354,6 +354,105 @@
           </v-card-text>
         </v-card>
 
+        <!-- City Districts Card -->
+        <v-card
+          class="mb-6"
+          variant="outlined"
+        >
+          <v-card-title class="text-h6 bg-teal-lighten-5 py-3 px-4">
+            <v-icon
+              start
+              color="teal-darken-2"
+              class="me-2"
+            >
+              mdi-city-variant
+            </v-icon>
+            City Districts
+          </v-card-title>
+          <v-card-text class="pt-4">
+            <v-row dense>
+              <v-col
+                cols="12"
+                md="2"
+                sm="6"
+              >
+                <v-btn
+                  block
+                  color="teal darken-1"
+                  @click="navigateTo('/paris-arrondissements')"
+                  class="mb-2"
+                  size="small"
+                >
+                  <span class="me-1">🗼</span>
+                  Paris (20)
+                </v-btn>
+                <v-btn
+                  block
+                  color="teal darken-2"
+                  @click="navigateTo('/paris-quartiers')"
+                  size="small"
+                >
+                  <span class="me-1">🏘️</span>
+                  Paris (80)
+                </v-btn>
+              </v-col>
+              <v-col
+                cols="12"
+                md="3"
+                sm="6"
+              >
+                <v-btn
+                  block
+                  color="teal darken-2"
+                  @click="navigateTo('/london-boroughs')"
+                >
+                  <span class="flag-emoji me-1">🇬🇧</span>
+                  London
+                </v-btn>
+              </v-col>
+              <v-col
+                cols="12"
+                md="3"
+                sm="6"
+              >
+                <v-btn
+                  block
+                  color="teal darken-3"
+                  @click="navigateTo('/barcelona-districts')"
+                  class="mb-2"
+                  size="small"
+                >
+                  <span class="me-1">🏛️</span>
+                  Barcelona (10)
+                </v-btn>
+                <v-btn
+                  block
+                  color="teal darken-4"
+                  @click="navigateTo('/barcelona-barrios')"
+                  size="small"
+                >
+                  <span class="me-1">🏘️</span>
+                  Barcelona (73)
+                </v-btn>
+              </v-col>
+              <v-col
+                cols="12"
+                md="4"
+                sm="6"
+              >
+                <v-btn
+                  block
+                  color="teal darken-5"
+                  @click="navigateTo('/bordeaux-quartiers')"
+                >
+                  <span class="me-1">🍷</span>
+                  Bordeaux
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+
         <!-- Flag and Capitals Cards -->
         <v-row
           dense
