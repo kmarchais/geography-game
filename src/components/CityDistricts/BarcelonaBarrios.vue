@@ -35,8 +35,12 @@ const processBarcelonaBarriosData = (
   const processedFeatures = data.features.map((feature: Feature<Geometry, GeoJSONProperties>) => {
     if (!feature.properties) feature.properties = { name: "Unknown" };
 
-    // Use the barrio name directly from NOM property
-    feature.properties.name = (feature.properties as GeoJSONProperties)[config.propertyName] as string || "Unknown";
+    // Use nameMapping if available, otherwise use raw property name
+    if (config.nameMapping) {
+      feature.properties.name = config.nameMapping(feature.properties as GeoJSONProperties);
+    } else {
+      feature.properties.name = (feature.properties as GeoJSONProperties)[config.propertyName] as string || "Unknown";
+    }
 
     return feature;
   });
