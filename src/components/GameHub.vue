@@ -29,6 +29,16 @@
           <h2>Capitals</h2>
           <p>Guess the location of capital cities</p>
         </div>
+        <div
+          class="game-option"
+          @click="selectGame('districts')"
+        >
+          <div class="option-icon">
+            🏘️
+          </div>
+          <h2>City Districts</h2>
+          <p>Find districts within major cities</p>
+        </div>
       </div>
     </div>
 
@@ -56,6 +66,7 @@ import { ref, computed } from "vue";
 import L from "leaflet";
 import WorldCountries from "./WorldCountries/WorldCountries.vue"; // Adjust path if needed
 import WorldCapitals from "../views/WorldCapitals.vue"; // Adjust path if needed
+import CityDistricts from "./CityDistricts/CityDistricts.vue";
 
 // Import useAuth to check login status
 import { useAuth } from "../composables/useAuth"; // Adjust path relative to GameHub.vue
@@ -83,6 +94,8 @@ const selectedComponent = computed(() => {
       return WorldCountries;
     case "capitals":
       return WorldCapitals;
+    case "districts":
+      return CityDistricts;
     default:
       return null;
   }

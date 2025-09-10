@@ -24,6 +24,12 @@ import ChineseProvinces from '../components/AdministrativeDivisions/ChineseProvi
 import BelgianProvinces from '../components/AdministrativeDivisions/BelgianProvinces.vue'
 import DutchProvinces from '../components/AdministrativeDivisions/DutchProvinces.vue'
 import DashboardView from '../views/DashboardView.vue'
+import ParisArrondissements from '../components/CityDistricts/ParisArrondissements.vue'
+import ParisQuartiers from '../components/CityDistricts/ParisQuartiers.vue'
+import LondonBoroughs from '../components/CityDistricts/LondonBoroughs.vue'
+import BarcelonaDistricts from '../components/CityDistricts/BarcelonaDistricts.vue'
+import BarcelonaBarrios from '../components/CityDistricts/BarcelonaBarrios.vue'
+import BordeauxQuartiers from '../components/CityDistricts/BordeauxQuartiers.vue'
 
 import { useAuth } from '../composables/useAuth'
 
@@ -54,6 +60,12 @@ const router = createRouter({
     { path: '/italian-regions', name: 'italian-regions', component: ItalianRegions },
     { path: '/flag-game', name: 'flag-game', component: FlagGame },
     { path: '/world-capitals', name: 'world-capitals', component: WorldCapitals, meta: { title: 'World Capitals Game' } },
+    { path: '/paris-arrondissements', name: 'paris-arrondissements', component: ParisArrondissements },
+    { path: '/paris-quartiers', name: 'paris-quartiers', component: ParisQuartiers },
+    { path: '/london-boroughs', name: 'london-boroughs', component: LondonBoroughs },
+    { path: '/barcelona-districts', name: 'barcelona-districts', component: BarcelonaDistricts },
+    { path: '/barcelona-barrios', name: 'barcelona-barrios', component: BarcelonaBarrios },
+    { path: '/bordeaux-quartiers', name: 'bordeaux-quartiers', component: BordeauxQuartiers },
     { path: '/dashboard', name: 'dashboard', component: DashboardView, meta: { requiresAuth: true, requiresAdmin: true } }
   ]
 })
