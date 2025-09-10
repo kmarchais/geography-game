@@ -221,6 +221,8 @@
     if (clickedEntityName === targetEntity.value) {
       handleCorrectGuess(clickedEntityName);
     } else {
+      // Capture the current target before it changes
+      const currentTarget = targetEntity.value;
       const { shouldEndRound } = handleIncorrectGuess();
       if (!shouldEndRound) {
         // Temporarily highlight the incorrectly clicked layer
@@ -235,7 +237,7 @@
         }, 1000);
       } else {
         // Round ended due to too many attempts, highlight the correct one
-        highlightTargetEntity(targetEntity.value);
+        highlightTargetEntity(currentTarget);
       }
     }
   };
@@ -264,11 +266,13 @@
     if (name === targetEntity.value) {
       handleCorrectGuess(name);
     } else {
+      // Capture the current target before it changes
+      const currentTarget = targetEntity.value;
       const { shouldEndRound } = handleIncorrectGuess();
       if (shouldEndRound) {
         // Round ended due to too many attempts, highlight the correct one
         // (Highlighting might target a polygon even if a marker was clicked)
-        highlightTargetEntity(targetEntity.value);
+        highlightTargetEntity(currentTarget);
       }
       // No temporary highlight logic for markers was present, so none added here
     }
