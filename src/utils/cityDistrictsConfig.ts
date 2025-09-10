@@ -111,11 +111,26 @@ export const barcelonaBarriosConfig: GameConfig = {
     if (!properties) return "Unknown";
 
     const barrioName = properties.NOM as string;
-    const districtName = properties.DISTRICTE as string;
+    const districtCode = properties.DISTRICTE as string;
 
     if (!barrioName) return "Unknown";
-    if (!districtName) return barrioName;
+    if (!districtCode) return barrioName;
 
+    // Map district codes to district names
+    const districtNames: Record<string, string> = {
+      "01": "Ciutat Vella",
+      "02": "Eixample",
+      "03": "Sants-Montjuïc",
+      "04": "Les Corts",
+      "05": "Sarrià-Sant Gervasi",
+      "06": "Gràcia",
+      "07": "Horta-Guinardó",
+      "08": "Nou Barris",
+      "09": "Sant Andreu",
+      "10": "Sant Martí"
+    };
+
+    const districtName = districtNames[districtCode] || `District ${districtCode}`;
     return `${barrioName} (${districtName})`;
   },
 };
