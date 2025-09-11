@@ -27,6 +27,7 @@ declare module 'vue' {
     GameHub: typeof import('./src/components/GameHub.vue')['default']
     GermanStates: typeof import('./src/components/AdministrativeDivisions/GermanStates.vue')['default']
     GoogleLoginButton: typeof import('./src/components/auth/GoogleLoginButton.vue')['default']
+    InteractiveHomePage: typeof import('./src/components/InteractiveHomePage.vue')['default']
     ItalianRegions: typeof import('./src/components/AdministrativeDivisions/ItalianRegions.vue')['default']
     LoginDropdown: typeof import('./src/components/auth/LoginDropdown.vue')['default']
     LondonBoroughs: typeof import('./src/components/CityDistricts/LondonBoroughs.vue')['default']

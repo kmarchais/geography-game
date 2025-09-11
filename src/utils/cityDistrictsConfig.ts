@@ -14,15 +14,16 @@ export const parisArondissementsConfig: GameConfig = {
   targetLabel: "Arrondissement",
   nameMapping: (properties: GeoJsonProperties) => {
     if (!properties) return "Unknown";
-    // Paris arrondissements are numbered 1-20
+
+    const arName = properties.l_aroff as string;
     const arNum = properties.c_ar as string | number;
-    if (!arNum) return "Unknown";
+
+    if (!arName || !arNum) return "Unknown";
 
     const num = typeof arNum === 'string' ? parseInt(arNum) : arNum;
-    if (isNaN(num)) return "Unknown";
+    if (isNaN(num)) return arName;
 
-    const suffix = num === 1 ? "st" : num === 2 ? "nd" : num === 3 ? "rd" : "th";
-    return `${num}${suffix} Arrondissement`;
+    return `${arName} (${num})`;
   },
 };
 
