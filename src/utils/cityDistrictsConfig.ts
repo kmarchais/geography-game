@@ -57,7 +57,7 @@ export const parisQuartiersConfig: GameConfig = {
 
 export const parisDistrictsConfig: GameConfig = {
   name: "Paris (Quartiers d'usage)",
-  dataUrl: "./data/paris_districts.geojson",
+  dataUrl: `${import.meta.env.BASE_URL}data/paris_districts.geojson`,
   mapCenter: [48.8566, 2.3522], // Paris center
   zoom: 12,
   maxBounds: [
