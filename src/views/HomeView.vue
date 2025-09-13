@@ -379,21 +379,31 @@
                 <v-btn
                   block
                   color="teal darken-1"
-                  @click="navigateTo('/paris-arrondissements')"
                   class="mb-2"
                   size="small"
+                  @click="navigateTo('/paris-arrondissements')"
                 >
                   <span class="me-1">🗼</span>
-                  Paris (20)
+                  Paris (20 arrondissements)
                 </v-btn>
                 <v-btn
                   block
                   color="teal darken-2"
-                  @click="navigateTo('/paris-quartiers')"
+                  class="mb-2"
                   size="small"
+                  @click="navigateTo('/paris-quartiers')"
                 >
                   <span class="me-1">🏘️</span>
-                  Paris (80)
+                  Paris (80 quartiers administratifs)
+                </v-btn>
+                <v-btn
+                  block
+                  color="teal darken-3"
+                  size="small"
+                  @click="navigateTo('/paris-districts')"
+                >
+                  <span class="me-1">🌟</span>
+                  Paris (44 quartiers d'usage)
                 </v-btn>
               </v-col>
               <v-col
@@ -418,9 +428,9 @@
                 <v-btn
                   block
                   color="teal darken-3"
-                  @click="navigateTo('/barcelona-districts')"
                   class="mb-2"
                   size="small"
+                  @click="navigateTo('/barcelona-districts')"
                 >
                   <span class="me-1">🏛️</span>
                   Barcelona (10)
@@ -428,8 +438,8 @@
                 <v-btn
                   block
                   color="teal darken-4"
-                  @click="navigateTo('/barcelona-barrios')"
                   size="small"
+                  @click="navigateTo('/barcelona-barrios')"
                 >
                   <span class="me-1">🏘️</span>
                   Barcelona (73)

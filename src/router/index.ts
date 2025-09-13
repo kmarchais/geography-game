@@ -26,6 +26,7 @@ import DutchProvinces from '../components/AdministrativeDivisions/DutchProvinces
 import DashboardView from '../views/DashboardView.vue'
 import ParisArrondissements from '../components/CityDistricts/ParisArrondissements.vue'
 import ParisQuartiers from '../components/CityDistricts/ParisQuartiers.vue'
+import ParisDistricts from '../components/CityDistricts/ParisDistricts.vue'
 import LondonBoroughs from '../components/CityDistricts/LondonBoroughs.vue'
 import BarcelonaDistricts from '../components/CityDistricts/BarcelonaDistricts.vue'
 import BarcelonaBarrios from '../components/CityDistricts/BarcelonaBarrios.vue'
@@ -62,6 +63,7 @@ const router = createRouter({
     { path: '/world-capitals', name: 'world-capitals', component: WorldCapitals, meta: { title: 'World Capitals Game' } },
     { path: '/paris-arrondissements', name: 'paris-arrondissements', component: ParisArrondissements },
     { path: '/paris-quartiers', name: 'paris-quartiers', component: ParisQuartiers },
+    { path: '/paris-districts', name: 'paris-districts', component: ParisDistricts },
     { path: '/london-boroughs', name: 'london-boroughs', component: LondonBoroughs },
     { path: '/barcelona-districts', name: 'barcelona-districts', component: BarcelonaDistricts },
     { path: '/barcelona-barrios', name: 'barcelona-barrios', component: BarcelonaBarrios },

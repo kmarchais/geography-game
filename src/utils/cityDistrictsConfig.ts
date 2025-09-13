@@ -28,7 +28,7 @@ export const parisArondissementsConfig: GameConfig = {
 };
 
 export const parisQuartiersConfig: GameConfig = {
-  name: "Paris Quartiers",
+  name: "Paris (Quartiers administratifs)",
   dataUrl: "https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/quartier_paris/exports/geojson",
   mapCenter: [48.8566, 2.3522], // Paris center
   zoom: 12,
@@ -53,6 +53,19 @@ export const parisQuartiersConfig: GameConfig = {
     const suffix = arNum === 1 ? "st" : arNum === 2 ? "nd" : arNum === 3 ? "rd" : "th";
     return `${quartierName} (${arNum}${suffix})`;
   },
+};
+
+export const parisDistrictsConfig: GameConfig = {
+  name: "Paris (Quartiers d'usage)",
+  dataUrl: "/geography-game/data/paris_districts.geojson",
+  mapCenter: [48.8566, 2.3522], // Paris center
+  zoom: 12,
+  maxBounds: [
+    [48.8155, 2.2241], // Southwest
+    [48.9021, 2.4699], // Northeast
+  ],
+  propertyName: "name",
+  targetLabel: "District",
 };
 
 export const londonBoroughsConfig: GameConfig = {

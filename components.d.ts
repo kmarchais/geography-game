@@ -35,6 +35,7 @@ declare module 'vue' {
     NorthAmericaMapGame: typeof import('./src/components/WorldCountries/NorthAmericaMapGame.vue')['default']
     OceaniaMapGame: typeof import('./src/components/WorldCountries/OceaniaMapGame.vue')['default']
     ParisArrondissements: typeof import('./src/components/CityDistricts/ParisArrondissements.vue')['default']
+    ParisDistricts: typeof import('./src/components/CityDistricts/ParisDistricts.vue')['default']
     ParisQuartiers: typeof import('./src/components/CityDistricts/ParisQuartiers.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
