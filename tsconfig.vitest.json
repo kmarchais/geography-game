@@ -4,7 +4,10 @@
   "compilerOptions": {
     "composite": true,
     "lib": [],
-    "types": ["node", "vitest/globals"]
+    "types": ["node", "vitest/globals"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true
   },
   "include": ["src/**/*.spec.ts", "src/**/*.test.ts", "src/**/__tests__/**"]
 }

@@ -99,6 +99,10 @@ export function useCapitalGameLogic(options: CapitalGameLogicOptions) {
 
     const randomIndex = Math.floor(Math.random() * capitalsToChooseFrom.length);
     const newTarget = capitalsToChooseFrom[randomIndex];
+    if (!newTarget) {
+      console.error("Failed to select a target capital");
+      return;
+    }
     usedCapitals.value.push(newTarget);
     targetCapital.value = newTarget;
     currentGuess.value = null;

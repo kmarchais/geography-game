@@ -142,7 +142,14 @@ const processGeojsonData = (data: FeatureCollection<Geometry, GeoJSONProperties>
 function shiftCoordinates(feature: any, offset: number) {
   if (!feature.geometry) return feature;
 
-  const shiftPoint = (coords: number[]) => [coords[0] + offset, coords[1]];
+  const shiftPoint = (coords: number[]) => {
+    const x = coords[0];
+    const y = coords[1];
+    if (x === undefined || y === undefined) {
+      throw new Error("Invalid coordinates");
+    }
+    return [x + offset, y];
+  };
 
   switch (feature.geometry.type) {
     case 'Point':

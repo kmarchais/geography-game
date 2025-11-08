@@ -92,6 +92,10 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
 
     const randomIndex = Math.floor(Math.random() * entitiesToChooseFrom.length);
     const newTarget = entitiesToChooseFrom[randomIndex];
+    if (!newTarget) {
+      console.error("Failed to select a target entity");
+      return;
+    }
     usedEntities.value.push(newTarget);
     targetEntity.value = newTarget;
     currentAttempts.value = 0;
