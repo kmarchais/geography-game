@@ -126,6 +126,19 @@ export const GAME_CONFIG_SCHEMA = {
           description: "Label for the target entity",
           examples: ["Country", "State", "District"],
         },
+        totalRounds: {
+          type: "integer",
+          minimum: 1,
+          description: "Total number of rounds for the game",
+        },
+        processors: {
+          type: "array",
+          items: {
+            type: "string",
+          },
+          description: "List of processor names to apply to GeoJSON data",
+          examples: [["worldWrapping"], ["filterEurope", "worldWrapping"]],
+        },
       },
       additionalProperties: true,
       description: "Game configuration object",

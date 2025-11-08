@@ -1,0 +1,22 @@
+{
+  "id": "europe-countries",
+  "name": "European Countries",
+  "category": "countries",
+  "route": "/game/europe-countries",
+  "icon": "mdi-map-marker",
+  "emoji": "🇪🇺",
+  "color": "green-darken-1",
+  "description": "Identify all countries in Europe",
+  "tags": ["europe", "countries", "geography", "medium"],
+  "difficulty": 2,
+  "featured": true,
+  "estimatedTime": 10,
+  "config": {
+    "dataUrl": "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson",
+    "mapCenter": [55, 15],
+    "zoom": 4,
+    "propertyName": "name",
+    "targetLabel": "Country",
+    "processors": ["filterEurope"]
+  }
+}
