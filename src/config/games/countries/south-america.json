@@ -1,0 +1,22 @@
+{
+  "id": "south-america-countries",
+  "name": "South American Countries",
+  "category": "countries",
+  "route": "/game/south-america-countries",
+  "icon": "mdi-earth",
+  "emoji": "🌎",
+  "color": "pink-darken-2",
+  "description": "Identify all countries in South America",
+  "tags": ["south-america", "countries", "geography", "continent"],
+  "difficulty": 1,
+  "featured": true,
+  "estimatedTime": 5,
+  "config": {
+    "dataUrl": "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson",
+    "mapCenter": [-20, -60],
+    "zoom": 3,
+    "propertyName": "name",
+    "targetLabel": "Country",
+    "processors": ["filterSouthAmerica"]
+  }
+}
