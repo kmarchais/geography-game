@@ -74,7 +74,7 @@ export function shiftFeatureCoordinates<G extends Geometry = Geometry>(
  * @deprecated Use shiftFeatureCoordinates instead
  */
 export function shiftCoordinatesLegacy(feature: any, offset: number): any {
-  if (!feature.geometry) return feature
+  if (!feature.geometry) {return feature}
 
   const shiftPoint = (coords: number[]) => {
     const x = coords[0]

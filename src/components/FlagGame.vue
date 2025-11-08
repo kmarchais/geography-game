@@ -345,7 +345,7 @@
     try {
       const res = await fetch("https://restcountries.com/v3.1/all");
 
-      if (!res.ok) throw new Error("Network error");
+      if (!res.ok) {throw new Error("Network error");}
 
       const data = await res.json();
 
@@ -399,7 +399,7 @@
     const hardThreshold = 200_000;
 
     filteredCountries.value = countries.value.filter((country) => {
-      if (!country.population) return false;
+      if (!country.population) {return false;}
       if (level === 'easy') {
         return country.population >= easyThreshold;
       } else if (level === 'medium') {
@@ -423,7 +423,7 @@
   }
 
   function formatPopulation(population?: number): string {
-    if (!population) return "Unknown";
+    if (!population) {return "Unknown";}
 
     if (population >= 1_000_000) {
       return `${(population / 1_000_000).toFixed(2)} million`;
@@ -489,7 +489,7 @@
   }
 
   function onGuess() {
-    if (!guess.value.trim() || !currentCountry.value || showAnswer.value) return;
+    if (!guess.value.trim() || !currentCountry.value || showAnswer.value) {return;}
 
     const userGuess = guess.value.trim().toLowerCase();
     const correctAnswer = currentCountry.value.name.toLowerCase();
@@ -547,7 +547,7 @@
     const normalizedGuess = userGuess.toLowerCase().trim();
     const normalizedAnswer = correctAnswer.toLowerCase().trim();
 
-    if (normalizedGuess === normalizedAnswer) return true;
+    if (normalizedGuess === normalizedAnswer) {return true;}
 
     if (currentCountry.value?.alternativeNames) {
       for (const altName of currentCountry.value.alternativeNames) {
@@ -560,7 +560,7 @@
     const cleanGuess = normalizedGuess.replace(/^the\s+/i, '');
     const cleanAnswer = normalizedAnswer.replace(/^the\s+/i, '');
 
-    if (cleanGuess === cleanAnswer) return true;
+    if (cleanGuess === cleanAnswer) {return true;}
 
     if (currentCountry.value?.alternativeNames) {
       for (const altName of currentCountry.value.alternativeNames) {
@@ -589,17 +589,17 @@
   }
 
   function calculateSimilarity(a: string, b: string): number {
-    if (a.length === 0 || b.length === 0) return 0;
+    if (a.length === 0 || b.length === 0) {return 0;}
 
     const matrix = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(0));
 
     for (let i = 0; i <= a.length; i++) {
       const row = matrix[i];
-      if (row) row[0] = i;
+      if (row) {row[0] = i;}
     }
     for (let j = 0; j <= b.length; j++) {
       const row = matrix[0];
-      if (row) row[j] = j;
+      if (row) {row[j] = j;}
     }
 
     for (let i = 1; i <= a.length; i++) {
@@ -607,12 +607,12 @@
         const cost = a[i - 1] === b[j - 1] ? 0 : 1;
         const currentRow = matrix[i];
         const prevRow = matrix[i - 1];
-        if (!currentRow || !prevRow) continue;
+        if (!currentRow || !prevRow) {continue;}
 
         const val1 = prevRow[j];
         const val2 = currentRow[j - 1];
         const val3 = prevRow[j - 1];
-        if (val1 === undefined || val2 === undefined || val3 === undefined) continue;
+        if (val1 === undefined || val2 === undefined || val3 === undefined) {continue;}
 
         currentRow[j] = Math.min(
           val1 + 1,
@@ -668,7 +668,7 @@
     }, 2000);
   }
 
-  function handleIncorrectAnswer(userGuess: string) {
+  function handleIncorrectAnswer(_userGuess: string) {
     feedback.value = "Incorrect!";
     feedbackType.value = "incorrect";
 
@@ -681,7 +681,7 @@
   }
 
   function showHint() {
-    if (hintsUsed.value >= maxHints.value || !currentCountry.value) return;
+    if (hintsUsed.value >= maxHints.value || !currentCountry.value) {return;}
 
     hintsUsed.value++;
     hintVisible.value = true;
@@ -754,7 +754,7 @@
   }
 
   function handleImageError(event: Event) {
-    if (!currentCountry.value) return;
+    if (!currentCountry.value) {return;}
 
     const img = event.target as HTMLImageElement;
     const code = currentCountry.value.code.toLowerCase();

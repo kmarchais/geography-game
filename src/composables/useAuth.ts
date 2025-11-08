@@ -147,7 +147,7 @@ export function useAuth() {
         try {
           // Try to parse error json, but don't fail if it's not json
           errorData = await backendResponse.json();
-        } catch (parseError) {
+        } catch (_parseError) {
           // If response isn't JSON (e.g., HTML error page, CORS block)
           errorData = {
             message: backendResponse.statusText,

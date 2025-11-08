@@ -40,7 +40,7 @@ const processBordeauxData = (
   }
 
   const processedFeatures = filteredFeatures.map((feature: Feature<Geometry, GeoJSONProperties>) => {
-    if (!feature.properties) feature.properties = { name: "Unknown" };
+    if (!feature.properties) {feature.properties = { name: "Unknown" };}
 
     // Use nameMapping if available, otherwise use raw property name
     if (config.nameMapping) {

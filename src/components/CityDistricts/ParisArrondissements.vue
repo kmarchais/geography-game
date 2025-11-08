@@ -33,7 +33,7 @@ const processParisData = (
 ): FeatureCollection<Geometry, GeoJSONProperties> => {
 
   const processedFeatures = data.features.map((feature: Feature<Geometry, GeoJSONProperties>) => {
-    if (!feature.properties) feature.properties = { name: "Unknown" };
+    if (!feature.properties) {feature.properties = { name: "Unknown" };}
 
     // Map the original name to a more readable format
     if (config.nameMapping && (feature.properties as GeoJSONProperties)[config.propertyName]) {

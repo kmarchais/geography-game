@@ -98,7 +98,7 @@ export function getStyleForAttempts(attempts: number | undefined) {
  */
 export function computeScaleFactor(bbox: SVGRect): number {
   const minDim = Math.min(bbox.width, bbox.height);
-  if (minDim === 0) return 1.2;
+  if (minDim === 0) {return 1.2;}
   if (minDim < 50) {
     return Math.min(50 / minDim, 10);
   } else if (minDim < 150) {
