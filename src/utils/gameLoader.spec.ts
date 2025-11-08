@@ -18,26 +18,33 @@ describe("gameLoader", () => {
   });
 
   describe("loadGames", () => {
-    it("should call registerGames with pilot games", () => {
+    it("should call registerGames with all games", () => {
       loadGames();
 
       expect(mockRegistry.registerGames).toHaveBeenCalledTimes(1);
       expect(mockRegistry.registerGames).toHaveBeenCalledWith(
         expect.arrayContaining([
+          // Pilot games
           expect.objectContaining({ id: "world-countries" }),
           expect.objectContaining({ id: "europe-countries" }),
           expect.objectContaining({ id: "us-states" }),
           expect.objectContaining({ id: "paris-arrondissements" }),
           expect.objectContaining({ id: "london-boroughs" }),
+          // Continent games
+          expect.objectContaining({ id: "africa-countries" }),
+          expect.objectContaining({ id: "asia-countries" }),
+          expect.objectContaining({ id: "north-america-countries" }),
+          expect.objectContaining({ id: "south-america-countries" }),
+          expect.objectContaining({ id: "oceania-countries" }),
         ])
       );
     });
 
-    it("should load exactly 5 pilot games", () => {
+    it("should load all 10 games (5 pilot + 5 continent)", () => {
       loadGames();
 
       const callArg = mockRegistry.registerGames.mock.calls[0][0];
-      expect(callArg).toHaveLength(5);
+      expect(callArg).toHaveLength(10);
     });
   });
 
@@ -135,13 +142,8 @@ describe("gameLoader", () => {
   });
 
   describe("getGameCount", () => {
-    it("should return 5", () => {
-      expect(getGameCount()).toBe(5);
-    });
-
-    it("should match pilot games length", () => {
-      const games = getPilotGames();
-      expect(getGameCount()).toBe(games.length);
+    it("should return 10 (all games)", () => {
+      expect(getGameCount()).toBe(10);
     });
   });
 });

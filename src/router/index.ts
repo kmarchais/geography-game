@@ -1,18 +1,11 @@
 import { createRouter, createWebHistory, type NavigationGuardNext, type RouteLocationNormalized } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import WorldCountries from '../components/WorldCountries/WorldCountries.vue'
-import AfricanCountries from '../components/WorldCountries/AfricanCountries.vue'
 import UsStates from '../components/AdministrativeDivisions/UsStates.vue'
 import CanadianProvinces from '../components/AdministrativeDivisions/CanadianProvinces.vue'
 import FrenchDepartments from '../components/AdministrativeDivisions/FrenchDepartments.vue'
 import SpanishCommunities from '../components/AdministrativeDivisions/SpanishCommunities.vue'
 import FlagGame from '@/components/FlagGame.vue'
 import WorldCapitals from '../views/WorldCapitals.vue'
-import EuropeMapGame from '../components/WorldCountries/EuropeMapGame.vue'
-import AsiaMapGame from '../components/WorldCountries/AsiaMapGame.vue'
-import NorthAmericaMapGame from '../components/WorldCountries/NorthAmericaMapGame.vue'
-import SouthAmericaMapGame from '../components/WorldCountries/SouthAmericaMapGame.vue'
-import OceaniaMapGame from '../components/WorldCountries/OceaniaMapGame.vue'
 import BrazilianStates from '../components/AdministrativeDivisions/BrazilianStates.vue'
 import AustralianStates from '../components/AdministrativeDivisions/AustralianStates.vue'
 import GermanStates from '../components/AdministrativeDivisions/GermanStates.vue'
@@ -24,10 +17,8 @@ import ChineseProvinces from '../components/AdministrativeDivisions/ChineseProvi
 import BelgianProvinces from '../components/AdministrativeDivisions/BelgianProvinces.vue'
 import DutchProvinces from '../components/AdministrativeDivisions/DutchProvinces.vue'
 import DashboardView from '../views/DashboardView.vue'
-import ParisArrondissements from '../components/CityDistricts/ParisArrondissements.vue'
 import ParisQuartiers from '../components/CityDistricts/ParisQuartiers.vue'
 import ParisDistricts from '../components/CityDistricts/ParisDistricts.vue'
-import LondonBoroughs from '../components/CityDistricts/LondonBoroughs.vue'
 import BarcelonaDistricts from '../components/CityDistricts/BarcelonaDistricts.vue'
 import BarcelonaBarrios from '../components/CityDistricts/BarcelonaBarrios.vue'
 import BordeauxQuartiers from '../components/CityDistricts/BordeauxQuartiers.vue'
@@ -43,19 +34,20 @@ const router = createRouter({
     // Dynamic game route (new system)
     { path: '/game/:gameId', name: 'game', component: GameView },
 
-    // Redirects from legacy routes to new dynamic routes (pilot games)
+    // Redirects from legacy routes to new dynamic routes
     { path: '/world-countries', redirect: '/game/world-countries' },
     { path: '/european-countries', redirect: '/game/europe-countries' },
+    { path: '/african-countries', redirect: '/game/africa-countries' },
+    { path: '/asian-countries', redirect: '/game/asia-countries' },
+    { path: '/north-american-countries', redirect: '/game/north-america-countries' },
+    { path: '/south-american-countries', redirect: '/game/south-america-countries' },
+    { path: '/oceanian-countries', redirect: '/game/oceania-countries' },
     { path: '/us-states', redirect: '/game/us-states' },
     { path: '/paris-arrondissements', redirect: '/game/paris-arrondissements' },
     { path: '/london-boroughs', redirect: '/game/london-boroughs' },
 
     // Legacy routes (keep temporarily until all games migrated)
-    { path: '/african-countries', name: 'african-countries', component: AfricanCountries },
-    { path: '/asian-countries', name: 'asian-countries', component: AsiaMapGame },
-    { path: '/north-american-countries', name: 'north-american-countries', component: NorthAmericaMapGame },
-    { path: '/south-american-countries', name: 'south-american-countries', component: SouthAmericaMapGame },
-    { path: '/oceanian-countries', name: 'oceanian-countries', component: OceaniaMapGame },
+    // Continent games migrated to registry - redirects above
     { path: '/russian-oblasts', name: 'russian-oblasts', component: RussianOblasts },
     { path: '/ukrainian-oblasts', name: 'ukrainian-oblasts', component: UkrainianOblasts },
     { path: '/chinese-provinces', name: 'chinese-provinces', component: ChineseProvinces },
