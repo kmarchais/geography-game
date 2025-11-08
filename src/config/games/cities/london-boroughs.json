@@ -1,0 +1,25 @@
+{
+  "id": "london-boroughs",
+  "name": "London Boroughs",
+  "category": "cities",
+  "route": "/game/london-boroughs",
+  "icon": "mdi-castle",
+  "emoji": "🏰",
+  "color": "indigo-darken-1",
+  "description": "Identify all 32 boroughs of Greater London",
+  "tags": ["london", "uk", "europe", "easy"],
+  "difficulty": 1,
+  "featured": true,
+  "estimatedTime": 6,
+  "config": {
+    "dataUrl": "https://gis2.london.gov.uk/server/rest/services/apps/webmap_context_layer/MapServer/3/query?outFields=*&where=1%3D1&f=geojson",
+    "mapCenter": [51.5074, -0.1278],
+    "zoom": 10,
+    "maxBounds": [
+      [51.2868, -0.5103],
+      [51.6918, 0.3340]
+    ],
+    "propertyName": "name",
+    "targetLabel": "Borough"
+  }
+}
