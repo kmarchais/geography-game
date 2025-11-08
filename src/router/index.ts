@@ -31,6 +31,7 @@ import LondonBoroughs from '../components/CityDistricts/LondonBoroughs.vue'
 import BarcelonaDistricts from '../components/CityDistricts/BarcelonaDistricts.vue'
 import BarcelonaBarrios from '../components/CityDistricts/BarcelonaBarrios.vue'
 import BordeauxQuartiers from '../components/CityDistricts/BordeauxQuartiers.vue'
+import GameView from '../views/GameView.vue'
 
 import { useAuth } from '../composables/useAuth'
 
@@ -38,14 +39,23 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', name: 'home', component: HomeView},
-    { path: '/world-countries', name: 'world-countries', component: WorldCountries },
+
+    // Dynamic game route (new system)
+    { path: '/game/:gameId', name: 'game', component: GameView },
+
+    // Redirects from legacy routes to new dynamic routes (pilot games)
+    { path: '/world-countries', redirect: '/game/world-countries' },
+    { path: '/european-countries', redirect: '/game/europe-countries' },
+    { path: '/us-states', redirect: '/game/us-states' },
+    { path: '/paris-arrondissements', redirect: '/game/paris-arrondissements' },
+    { path: '/london-boroughs', redirect: '/game/london-boroughs' },
+
+    // Legacy routes (keep temporarily until all games migrated)
     { path: '/african-countries', name: 'african-countries', component: AfricanCountries },
-    { path: '/european-countries', name: 'european-countries', component: EuropeMapGame },
     { path: '/asian-countries', name: 'asian-countries', component: AsiaMapGame },
     { path: '/north-american-countries', name: 'north-american-countries', component: NorthAmericaMapGame },
     { path: '/south-american-countries', name: 'south-american-countries', component: SouthAmericaMapGame },
     { path: '/oceanian-countries', name: 'oceanian-countries', component: OceaniaMapGame },
-    { path: '/us-states', name: 'us-states', component: UsStates },
     { path: '/russian-oblasts', name: 'russian-oblasts', component: RussianOblasts },
     { path: '/ukrainian-oblasts', name: 'ukrainian-oblasts', component: UkrainianOblasts },
     { path: '/chinese-provinces', name: 'chinese-provinces', component: ChineseProvinces },
@@ -61,10 +71,8 @@ const router = createRouter({
     { path: '/italian-regions', name: 'italian-regions', component: ItalianRegions },
     { path: '/flag-game', name: 'flag-game', component: FlagGame },
     { path: '/world-capitals', name: 'world-capitals', component: WorldCapitals, meta: { title: 'World Capitals Game' } },
-    { path: '/paris-arrondissements', name: 'paris-arrondissements', component: ParisArrondissements },
     { path: '/paris-quartiers', name: 'paris-quartiers', component: ParisQuartiers },
     { path: '/paris-districts', name: 'paris-districts', component: ParisDistricts },
-    { path: '/london-boroughs', name: 'london-boroughs', component: LondonBoroughs },
     { path: '/barcelona-districts', name: 'barcelona-districts', component: BarcelonaDistricts },
     { path: '/barcelona-barrios', name: 'barcelona-barrios', component: BarcelonaBarrios },
     { path: '/bordeaux-quartiers', name: 'bordeaux-quartiers', component: BordeauxQuartiers },
