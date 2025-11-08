@@ -73,7 +73,9 @@ function createShiftedGeoJSON(
       const polygonGeometry = feature.geometry as GeoJSON.Polygon;
       polygonGeometry.coordinates.forEach((ring) => {
         ring.forEach((coord) => {
-          coord[0] += longitudeShift;
+          if (coord[0] !== undefined) {
+            coord[0] += longitudeShift;
+          }
         });
       });
     } else if (feature.geometry.type === "MultiPolygon") {
@@ -81,7 +83,9 @@ function createShiftedGeoJSON(
       multiPolygonGeometry.coordinates.forEach((polygon) => {
         polygon.forEach((ring) => {
           ring.forEach((coord) => {
-            coord[0] += longitudeShift;
+            if (coord[0] !== undefined) {
+              coord[0] += longitudeShift;
+            }
           });
         });
       });

@@ -470,7 +470,12 @@
     }
 
     const randomIndex = Math.floor(Math.random() * filteredCountries.value.length);
-    currentCountry.value = filteredCountries.value[randomIndex];
+    const country = filteredCountries.value[randomIndex];
+    if (!country) {
+      console.error("Failed to select a country");
+      return;
+    }
+    currentCountry.value = country;
 
     filteredCountries.value = filteredCountries.value.filter((_, i) => i !== randomIndex);
 
@@ -588,24 +593,40 @@
 
     const matrix = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(0));
 
-    for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
-    for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+    for (let i = 0; i <= a.length; i++) {
+      const row = matrix[i];
+      if (row) row[0] = i;
+    }
+    for (let j = 0; j <= b.length; j++) {
+      const row = matrix[0];
+      if (row) row[j] = j;
+    }
 
     for (let i = 1; i <= a.length; i++) {
       for (let j = 1; j <= b.length; j++) {
         const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j - 1] + cost
+        const currentRow = matrix[i];
+        const prevRow = matrix[i - 1];
+        if (!currentRow || !prevRow) continue;
+
+        const val1 = prevRow[j];
+        const val2 = currentRow[j - 1];
+        const val3 = prevRow[j - 1];
+        if (val1 === undefined || val2 === undefined || val3 === undefined) continue;
+
+        currentRow[j] = Math.min(
+          val1 + 1,
+          val2 + 1,
+          val3 + cost
         );
       }
     }
 
-    const distance = matrix[a.length][b.length];
+    const lastRow = matrix[a.length];
+    const distance = lastRow?.[b.length] ?? 0;
     const maxLength = Math.max(a.length, b.length);
 
-    return 1 - distance / maxLength;
+    return maxLength === 0 ? 1 : 1 - distance / maxLength;
   }
 
   function handleCorrectAnswer() {
@@ -666,8 +687,9 @@
     hintVisible.value = true;
 
     const country = currentCountry.value;
+    const firstLetter = country.name[0] ?? '';
     const hints = [
-      `The country name starts with "${country.name[0]}"`,
+      `The country name starts with "${firstLetter}"`,
       `The country name has ${country.name.length} letters`,
       country.capital ? `The capital is ${country.capital}` : `This country is in ${country.continent || 'Unknown continent'}`,
       `The first three letters are "${country.name.substring(0, 3)}"`,
@@ -681,7 +703,9 @@
       randomHint = hints[Math.floor(Math.random() * hints.length)];
     } while (randomHint === currentHint.value && hints.length > 1);
 
-    currentHint.value = randomHint;
+    if (randomHint) {
+      currentHint.value = randomHint;
+    }
   }
 
   function startTimer() {
