@@ -15,7 +15,7 @@ import MapGame from '../MapGame.vue';
 import L from 'leaflet';
 import type { FeatureCollection, Geometry } from 'geojson';
 import type { GeoJSONProperties } from "../../utils/geojsonUtils";
-import { shiftCoordinatesLegacy as shiftCoordinates } from "../../utils/geo/coordinateTransforms";
+import { createWorldWrappedCollection } from "../../utils/geo/worldWrapping";
 
 const mapOptions = {
   initialCenter: [20, 0] as L.LatLngExpression,
@@ -27,33 +27,6 @@ const mapOptions = {
 };
 
 const processGeojsonData = (data: FeatureCollection<Geometry, GeoJSONProperties>) => {
-  const wrappedCollection = structuredClone(data);
-  const originalFeatures = data.features;
-
-  const eastFeatures = originalFeatures.map(feature => {
-    const clone = structuredClone(feature);
-    if (!clone.properties) clone.properties = {name: ""};
-    clone.properties.isEastCopy = true;
-
-    shiftCoordinates(clone, 360);
-    return clone;
-  });
-
-  const westFeatures = originalFeatures.map(feature => {
-    const clone = structuredClone(feature);
-    if (!clone.properties) clone.properties = {name: ""};
-    clone.properties.isWestCopy = true;
-
-    shiftCoordinates(clone, -360);
-    return clone;
-  });
-
-  wrappedCollection.features = [
-    ...originalFeatures,
-    ...eastFeatures,
-    ...westFeatures
-  ];
-
-  return wrappedCollection;
+  return createWorldWrappedCollection(data);
 };
 </script>
