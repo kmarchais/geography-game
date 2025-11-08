@@ -8,5 +8,12 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue';
 import Header from './components/AppBar.vue';
+import { loadGames } from './utils/gameLoader';
+
+// Load games into registry on app startup
+onMounted(() => {
+  loadGames();
+});
 </script>
