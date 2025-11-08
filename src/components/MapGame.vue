@@ -155,7 +155,7 @@
   };
 
   const updateAllLayerStyles = () => {
-    if (!geojsonLayer.value) return;
+    if (!geojsonLayer.value) {return;}
 
     geojsonLayer.value.eachLayer((layer) => {
       if ('feature' in layer && layer.feature) {
@@ -180,7 +180,7 @@
 
 
   const onEntityClick = (e: L.LeafletMouseEvent) => {
-    if (gameEnded.value || feedback.value) return;
+    if (gameEnded.value || feedback.value) {return;}
 
     const layer = e.target as L.GeoJSON;
     const feature = layer.feature as GeoJSONFeature | undefined;
@@ -243,7 +243,7 @@
   };
 
   const onManualMarkerClick = (name: string, latlng: L.LatLng) => {
-    if (gameEnded.value || feedback.value) return;
+    if (gameEnded.value || feedback.value) {return;}
 
     // Show popup regardless of found status
     if (leafletMap.value) {
@@ -291,7 +291,7 @@
   };
 
   const highlightTargetEntity = (entityNameToHighlight: string) => {
-    if (!geojsonLayer.value || !entityNameToHighlight) return;
+    if (!geojsonLayer.value || !entityNameToHighlight) {return;}
     let layerFound = false;
     geojsonLayer.value.eachLayer((layer) => {
       if ('feature' in layer && layer.feature) {
@@ -334,12 +334,12 @@
 
     try {
       const response = await fetch(props.geojsonUrl);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) {throw new Error(`HTTP error! status: ${response.status}`);}
       const data = await response.json();
 
       if (isFeatureCollection(data)) {
         data.features.forEach((feature: Feature) => {
-          if (!feature.properties) feature.properties = {};
+          if (!feature.properties) {feature.properties = {};}
           if (props.geojsonNameProperty in feature.properties) {
               feature.properties.name = feature.properties[props.geojsonNameProperty];
           } else {

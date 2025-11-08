@@ -155,7 +155,7 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
   };
 
   const skipEntity = () => {
-    if (gameEnded.value) return { skippedEntity: "" };
+    if (gameEnded.value) {return { skippedEntity: "" };}
     currentAttempts.value = 3;
     foundEntities.value.set(targetEntity.value, 4);
     showFeedback(

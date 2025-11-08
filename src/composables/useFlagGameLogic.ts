@@ -1,5 +1,5 @@
 // composables/useFlagGameLogic.ts
-import { ref, computed, watch } from "vue";
+import { ref } from "vue";
 
 export interface Country {
   name: string;
@@ -61,7 +61,7 @@ export function useFlagGameLogic(countriesRef: Country[]) {
   }
 
   function guessCountry(guess: string) {
-    if (!currentCountry.value) return;
+    if (!currentCountry.value) {return;}
 
     if (guess.trim().toLowerCase() === currentCountry.value.name.toLowerCase()) {
       score.value++;

@@ -81,7 +81,7 @@ const mapOptions = {
 };
 
 const navigateTo = (mapInstance: L.Map | null, region: string) => {
-  if (!mapInstance) return;
+  if (!mapInstance) {return;}
   switch (region) {
     case "mainland":
       mapInstance.setView([47, 1.9], 5.5);

@@ -71,7 +71,7 @@ import CityDistricts from "./CityDistricts/CityDistricts.vue";
 // Import useAuth to check login status
 import { useAuth } from "../composables/useAuth"; // Adjust path relative to GameHub.vue
 
-const { isLoggedIn } = useAuth(); // Get the isLoggedIn state
+const { isLoggedIn: _isLoggedIn } = useAuth(); // Get the isLoggedIn state
 
 const selectedGameMode = ref<string | null>(null);
 

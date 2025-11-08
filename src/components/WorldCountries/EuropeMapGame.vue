@@ -159,7 +159,7 @@ const filterEuropeData = (
   const cyprusFeature = data.features.find(f => f.properties?.name === "Cyprus");
   const northCyprusFeature = data.features.find(f => f.properties?.name === "N. Cyprus");
 
-  let filteredFeatures = data.features.filter((feature) => {
+  const filteredFeatures = data.features.filter((feature) => {
     // Filter for European countries or additional countries, but exclude N. Cyprus
     // as we'll be merging it with Cyprus
     return (feature.properties?.continent === "Europe" ||

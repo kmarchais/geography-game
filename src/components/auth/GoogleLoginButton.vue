@@ -6,7 +6,6 @@
   <script setup lang="ts">
   import { ref, onMounted } from "vue";
   import { useAuth } from "../../composables/useAuth"; // Adjust path if needed
-import { components } from "vuetify/dist/vuetify.js";
 
   const { handleCredentialResponse } = useAuth();
   const googleButtonContainer = ref<HTMLDivElement | null>(null);

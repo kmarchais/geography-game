@@ -68,16 +68,16 @@ export function createWorldWrappedCollectionLegacy<T extends Geometry = Geometry
 
   const eastFeatures = originalFeatures.map((feature) => {
     const clone = structuredClone(feature)
-    if (!clone.properties) clone.properties = { name: '' } as P
-    ;(clone.properties as any).isEastCopy = true
+    if (!clone.properties) {clone.properties = { name: '' } as P
+    ;}(clone.properties as any).isEastCopy = true
     shiftCoordinatesFn(clone, 360)
     return clone
   })
 
   const westFeatures = originalFeatures.map((feature) => {
     const clone = structuredClone(feature)
-    if (!clone.properties) clone.properties = { name: '' } as P
-    ;(clone.properties as any).isWestCopy = true
+    if (!clone.properties) {clone.properties = { name: '' } as P
+    ;}(clone.properties as any).isWestCopy = true
     shiftCoordinatesFn(clone, -360)
     return clone
   })

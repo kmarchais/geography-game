@@ -159,7 +159,7 @@
           try {
             const errorData = await response.json();
             errorMsg += ` - ${errorData.message || 'No specific error message from backend.'}`;
-          } catch (e) {
+          } catch (_e) {
             // Ignore if response body is not JSON
           }
           throw new Error(errorMsg);
@@ -188,21 +188,21 @@
 
     // Helper function to format date/time strings (basic example)
     const formatDateTime = (dateString: string | null | undefined): string => {
-      if (!dateString) return 'N/A';
+      if (!dateString) {return 'N/A';}
       try {
         const date = new Date(dateString);
         return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-      } catch (e) {
+      } catch (_e) {
         return 'Invalid Date';
       }
     };
     // Helper function to format date strings (basic example)
     const formatDate = (dateString: string | null | undefined): string => {
-      if (!dateString) return 'N/A';
+      if (!dateString) {return 'N/A';}
       try {
         const date = new Date(dateString);
         return date.toLocaleDateString();
-      } catch (e) {
+      } catch (_e) {
         return 'Invalid Date';
       }
     };

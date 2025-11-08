@@ -633,7 +633,7 @@ import { useAuth } from "@/composables/useAuth"; // Adjust path if needed
 polyfillCountryFlagEmojis();
 
 const router = useRouter();
-const { isLoggedIn } = useAuth(); // Get login status
+const { isLoggedIn: _isLoggedIn } = useAuth(); // Get login status
 
 const navigateTo = (path: string) => {
   router.push(path);
