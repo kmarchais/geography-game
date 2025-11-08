@@ -68,6 +68,7 @@ import MapGame from "../MapGame.vue";
 import { getStyleForAttempts } from "../../utils/geojsonUtils";
 import type { FeatureCollection, Geometry } from 'geojson';
 import type { GeoJSONProperties } from "../../utils/geojsonUtils";
+import { shiftCoordinatesLegacy as shiftCoordinates } from "../../utils/geo/coordinateTransforms";
 
 const mapOptions = {
   initialCenter: [46.603354, 1.888334] as L.LatLngExpression,
@@ -137,43 +138,6 @@ const processGeojsonData = (data: FeatureCollection<Geometry, GeoJSONProperties>
 
   return wrappedCollection;
 };
-
-// Shift coordinates by the specified offset
-function shiftCoordinates(feature: any, offset: number) {
-  if (!feature.geometry) return feature;
-
-  const shiftPoint = (coords: number[]) => {
-    const x = coords[0];
-    const y = coords[1];
-    if (x === undefined || y === undefined) {
-      throw new Error("Invalid coordinates");
-    }
-    return [x + offset, y];
-  };
-
-  switch (feature.geometry.type) {
-    case 'Point':
-      feature.geometry.coordinates = shiftPoint(feature.geometry.coordinates);
-      break;
-    case 'LineString':
-    case 'MultiPoint':
-      feature.geometry.coordinates = feature.geometry.coordinates.map(shiftPoint);
-      break;
-    case 'Polygon':
-    case 'MultiLineString':
-      feature.geometry.coordinates = feature.geometry.coordinates.map((ring: number[][]) =>
-        ring.map(shiftPoint)
-      );
-      break;
-    case 'MultiPolygon':
-      feature.geometry.coordinates = feature.geometry.coordinates.map((polygon: number[][][]) =>
-        polygon.map((ring: number[][]) => ring.map(shiftPoint))
-      );
-      break;
-  }
-
-  return feature;
-}
 
 interface Territory {
   name: string;
