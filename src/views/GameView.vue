@@ -46,6 +46,8 @@
         :total-rounds-override="totalRounds"
         :map-options="mapOptions"
         :process-geojson-data-fn="processGeoJsonData"
+        :game-id="gameDefinition.id"
+        :game-name="gameDefinition.name"
       />
     </div>
   </div>
