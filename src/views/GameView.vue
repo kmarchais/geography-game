@@ -35,7 +35,7 @@
 
     <!-- Game Content -->
     <div
-      v-else-if="gameDefinition && processedData"
+      v-else-if="gameDefinition"
       class="game-content"
     >
       <MapGame
@@ -45,6 +45,7 @@
         :geojson-name-property="gameDefinition.config.propertyName"
         :total-rounds-override="totalRounds"
         :map-options="mapOptions"
+        :processors="gameDefinition.config.processors"
         :process-geojson-data-fn="processGeoJsonData"
         :game-id="gameDefinition.id"
         :game-name="gameDefinition.name"
@@ -60,8 +61,7 @@ import { useGameRegistry } from "../composables/useGameRegistry";
 import { applyProcessors } from "../utils/geo/processors";
 import MapGame from "../components/MapGame.vue";
 import type { GameDefinition } from "../types/gameRegistry";
-import type { FeatureCollection, Geometry } from "geojson";
-import type { GeoJsonProperties } from "geojson";
+import type { FeatureCollection, Geometry, GeoJsonProperties } from "geojson";
 
 const route = useRoute();
 const router = useRouter();
@@ -70,7 +70,6 @@ const registry = useGameRegistry();
 const loading = ref(true);
 const error = ref<string | null>(null);
 const gameDefinition = ref<GameDefinition | null>(null);
-const processedData = ref<FeatureCollection | null>(null);
 
 /**
  * Map options computed from game definition
@@ -127,7 +126,6 @@ async function loadGame() {
   loading.value = true;
   error.value = null;
   gameDefinition.value = null;
-  processedData.value = null;
 
   try {
     const gameId = route.params.gameId as string;
