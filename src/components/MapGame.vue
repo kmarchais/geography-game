@@ -111,6 +111,8 @@
     type GeoJSONFeature,
     type GeoJSONProperties,
   } from "../utils/geojsonUtils";
+  import { fetchAndCacheGeoJSON } from "../utils/geo/geojsonCache";
+  import type { ProcessorName } from "../utils/geo/processors";
 
 
   interface MapOptions extends L.MapOptions {
@@ -136,6 +138,7 @@
     geojsonCodeProperty?: string;
     totalRoundsOverride?: number;
     processGeojsonDataFn?: ProcessGeoJsonFunc;
+    processors?: ProcessorName[];
     addManualMarkersFn?: AddManualMarkersFunc;
     mapOptions: MapOptions;
     gameId?: string;
@@ -179,7 +182,7 @@
 
   const currentGameStats = computed(() => {
     if (!props.gameId) return null;
-    return statsStore.getGameStats.value(props.gameId);
+    return statsStore.getGameStats(props.gameId);
   });
 
   const isNewBestScore = computed(() => {
@@ -382,9 +385,17 @@
     document.documentElement.setAttribute("data-theme", currentTheme);
 
     try {
-      const response = await fetch(props.geojsonUrl);
-      if (!response.ok) {throw new Error(`HTTP error! status: ${response.status}`);}
-      const data = await response.json();
+      // Use cached fetch if processors are provided, otherwise use direct fetch
+      let data: FeatureCollection;
+      if (props.processors && props.processors.length > 0) {
+        // Use cache with processors
+        data = await fetchAndCacheGeoJSON(props.geojsonUrl, props.processors);
+      } else {
+        // Fallback to direct fetch for backward compatibility
+        const response = await fetch(props.geojsonUrl);
+        if (!response.ok) {throw new Error(`HTTP error! status: ${response.status}`);}
+        data = await response.json();
+      }
 
       if (isFeatureCollection(data)) {
         data.features.forEach((feature: Feature) => {
@@ -400,7 +411,11 @@
           }
         });
 
-        const processedData = props.processGeojsonDataFn ? props.processGeojsonDataFn(data) : data;
+        // Apply additional processing function if provided (for backward compatibility)
+        // Note: If processors prop is used, processing is already done by the cache
+        const processedData = (props.processGeojsonDataFn && !props.processors)
+          ? props.processGeojsonDataFn(data)
+          : data;
 
         if (isFeatureCollection(processedData)) {
           availableEntities.value = processedData.features
