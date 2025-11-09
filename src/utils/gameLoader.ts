@@ -18,6 +18,18 @@ import oceaniaCountries from "../config/games/countries/oceania.json";
 
 // Divisions
 import usStates from "../config/games/divisions/us-states.json";
+import canadianProvinces from "../config/games/divisions/canadian-provinces.json";
+import spanishCommunities from "../config/games/divisions/spanish-communities.json";
+import germanStates from "../config/games/divisions/german-states.json";
+import italianRegions from "../config/games/divisions/italian-regions.json";
+import brazilianStates from "../config/games/divisions/brazilian-states.json";
+import australianStates from "../config/games/divisions/australian-states.json";
+import chineseProvinces from "../config/games/divisions/chinese-provinces.json";
+import belgianProvinces from "../config/games/divisions/belgian-provinces.json";
+import dutchProvinces from "../config/games/divisions/dutch-provinces.json";
+import ukCounties from "../config/games/divisions/uk-counties.json";
+import russianOblasts from "../config/games/divisions/russian-oblasts.json";
+import ukrainianOblasts from "../config/games/divisions/ukrainian-oblasts.json";
 
 // Cities
 import parisArrondissements from "../config/games/cities/paris-arrondissements.json";
@@ -36,7 +48,7 @@ const PILOT_GAMES: GameDefinition[] = [
 
 /**
  * All available game configurations
- * Currently includes pilot games + continent games
+ * Currently includes pilot games + continent games + division games
  */
 const ALL_GAMES: GameDefinition[] = [
   // World
@@ -52,6 +64,18 @@ const ALL_GAMES: GameDefinition[] = [
 
   // Divisions
   usStates,
+  canadianProvinces,
+  spanishCommunities,
+  germanStates,
+  italianRegions,
+  brazilianStates,
+  australianStates,
+  chineseProvinces,
+  belgianProvinces,
+  dutchProvinces,
+  ukCounties,
+  russianOblasts,
+  ukrainianOblasts,
 
   // Cities
   parisArrondissements,

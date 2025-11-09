@@ -412,6 +412,75 @@ export const PROCESSOR_REGISTRY = {
       tags: ["filter", "oceania", "geography"],
     },
   } as ProcessorEntry,
+
+  /**
+   * Filter to Canadian provinces and territories
+   */
+  filterCanada: {
+    processor: <G extends Geometry, P extends GeoJsonProperties>(
+      data: FeatureCollection<G, P>
+    ): FeatureCollection<G, P> => {
+      return {
+        ...data,
+        features: data.features.filter((feature) => {
+          const isoA2 = feature.properties?.iso_a2 as string | undefined;
+          const admin = feature.properties?.admin as string | undefined;
+          return isoA2 === "CA" || admin === "Canada";
+        }),
+      };
+    },
+    metadata: {
+      name: "Filter Canada",
+      description: "Filters features to only Canadian provinces and territories",
+      tags: ["filter", "canada", "divisions"],
+    },
+  } as ProcessorEntry,
+
+  /**
+   * Filter to Brazilian states
+   */
+  filterBrazil: {
+    processor: <G extends Geometry, P extends GeoJsonProperties>(
+      data: FeatureCollection<G, P>
+    ): FeatureCollection<G, P> => {
+      return {
+        ...data,
+        features: data.features.filter((feature) => {
+          const isoA2 = feature.properties?.iso_a2 as string | undefined;
+          const admin = feature.properties?.admin as string | undefined;
+          return isoA2 === "BR" || admin === "Brazil";
+        }),
+      };
+    },
+    metadata: {
+      name: "Filter Brazil",
+      description: "Filters features to only Brazilian states",
+      tags: ["filter", "brazil", "divisions"],
+    },
+  } as ProcessorEntry,
+
+  /**
+   * Filter to Australian states and territories
+   */
+  filterAustralia: {
+    processor: <G extends Geometry, P extends GeoJsonProperties>(
+      data: FeatureCollection<G, P>
+    ): FeatureCollection<G, P> => {
+      return {
+        ...data,
+        features: data.features.filter((feature) => {
+          const isoA2 = feature.properties?.iso_a2 as string | undefined;
+          const admin = feature.properties?.admin as string | undefined;
+          return isoA2 === "AU" || admin === "Australia";
+        }),
+      };
+    },
+    metadata: {
+      name: "Filter Australia",
+      description: "Filters features to only Australian states and territories",
+      tags: ["filter", "australia", "divisions"],
+    },
+  } as ProcessorEntry,
 } as const;
 
 /**

@@ -1,0 +1,22 @@
+{
+  "id": "russian-oblasts",
+  "name": "Russian Federal Subjects",
+  "category": "divisions",
+  "route": "/game/russian-oblasts",
+  "icon": "mdi-map-marker-radius",
+  "emoji": "🇷🇺",
+  "color": "blue-grey-darken-3",
+  "description": "Identify all federal subjects of Russia (oblasts, republics, krais, etc.)",
+  "tags": ["russia", "oblasts", "federal-subjects", "europe", "asia"],
+  "difficulty": 5,
+  "featured": false,
+  "estimatedTime": 20,
+  "config": {
+    "dataUrl": "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/russia.geojson",
+    "mapCenter": [60.0, 100.0],
+    "zoom": 3,
+    "maxBounds": [[41.0, 19.0], [82.0, 180.0]],
+    "propertyName": "name",
+    "targetLabel": "Federal Subject"
+  }
+}
