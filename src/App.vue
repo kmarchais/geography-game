@@ -13,7 +13,9 @@ import { polyfillCountryFlagEmojis } from 'country-flag-emoji-polyfill';
 import Header from './components/AppBar.vue';
 import { loadAllGames } from './utils/gameLazyLoader';
 
-<<<<<<< Updated upstream
+// Apply flag emoji polyfill globally
+polyfillCountryFlagEmojis();
+
 // Load games into registry on app startup (lazy loaded by category)
 onMounted(async () => {
   try {
@@ -21,13 +23,5 @@ onMounted(async () => {
   } catch (error) {
     console.error('[App] Failed to load games:', error);
   }
-=======
-// Apply flag emoji polyfill globally
-polyfillCountryFlagEmojis();
-
-// Load games into registry on app startup
-onMounted(() => {
-  loadGames();
->>>>>>> Stashed changes
 });
 </script>
