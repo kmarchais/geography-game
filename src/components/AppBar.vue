@@ -14,6 +14,15 @@
       Home
     </v-btn>
 
+    <!-- Stats Button (Conditional) -->
+    <v-btn
+      v-if="isLoggedIn"
+      variant="text"
+      @click="goToStats"
+    >
+      📊 Stats
+    </v-btn>
+
     <!-- Dashboard Button (Conditional) -->
     <v-btn
       v-if="isAdmin"
@@ -55,6 +64,9 @@
   });
 
   const goHome = () => router.push('/');
+
+  // Function to navigate to the stats route
+  const goToStats = () => router.push('/stats');
 
   // Function to navigate to the dashboard route
   const goToDashboard = () => router.push('/dashboard'); // Assumes you have a '/dashboard' route
