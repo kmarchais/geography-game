@@ -5,6 +5,7 @@ import FlagGame from '@/components/FlagGame.vue'
 import WorldCapitals from '../views/WorldCapitals.vue'
 import DashboardView from '../views/DashboardView.vue'
 import GameView from '../views/GameView.vue'
+import StatsView from '../views/StatsView.vue'
 
 import { useAuth } from '../composables/useAuth'
 
@@ -49,6 +50,9 @@ const router = createRouter({
     { path: '/barcelona-districts', redirect: '/game/barcelona-districts' },
     { path: '/barcelona-barrios', redirect: '/game/barcelona-barrios' },
     { path: '/bordeaux-quartiers', redirect: '/game/bordeaux-quartiers' },
+
+    // Stats view
+    { path: '/stats', name: 'stats', component: StatsView },
 
     // Legacy routes (keep temporarily until all games migrated)
     // French Departments has custom UI/markers - migrate separately
