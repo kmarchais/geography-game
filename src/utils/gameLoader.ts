@@ -34,6 +34,11 @@ import ukrainianOblasts from "../config/games/divisions/ukrainian-oblasts.json";
 // Cities
 import parisArrondissements from "../config/games/cities/paris-arrondissements.json";
 import londonBoroughs from "../config/games/cities/london-boroughs.json";
+import parisQuartiers from "../config/games/cities/paris-quartiers.json";
+import parisDistricts from "../config/games/cities/paris-districts.json";
+import barcelonaDistricts from "../config/games/cities/barcelona-districts.json";
+import barcelonaBarrios from "../config/games/cities/barcelona-barrios.json";
+import bordeauxQuartiers from "../config/games/cities/bordeaux-quartiers.json";
 
 /**
  * Pilot game configurations (original 5 games)
@@ -48,7 +53,7 @@ const PILOT_GAMES: GameDefinition[] = [
 
 /**
  * All available game configurations
- * Currently includes pilot games + continent games + division games
+ * Currently includes pilot games + continent games + division games + city games
  */
 const ALL_GAMES: GameDefinition[] = [
   // World
@@ -80,6 +85,11 @@ const ALL_GAMES: GameDefinition[] = [
   // Cities
   parisArrondissements,
   londonBoroughs,
+  parisQuartiers,
+  parisDistricts,
+  barcelonaDistricts,
+  barcelonaBarrios,
+  bordeauxQuartiers,
 ] as GameDefinition[];
 
 /**
