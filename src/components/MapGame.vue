@@ -40,6 +40,26 @@
             <div class="final-time">
               Time: {{ formattedTime }}
             </div>
+            <div
+              v-if="currentGameStats"
+              class="stats-summary"
+            >
+              <div
+                v-if="isNewBestScore"
+                class="new-record"
+              >
+                🏆 New Best Score!
+              </div>
+              <div
+                v-if="isNewBestTime"
+                class="new-record"
+              >
+                ⚡ New Best Time!
+              </div>
+              <div class="previous-best">
+                Previous Best: {{ currentGameStats.bestScore }}/{{ totalRoundsComputed }}
+              </div>
+            </div>
           </div>
           <button
             class="new-game-btn"
@@ -76,9 +96,12 @@
     watch,
     type Ref,
     shallowRef,
+    computed,
   } from "vue";
   import { useTheme } from "vuetify";
   import { useMapGameLogic } from "../composables/useMapGameLogic";
+  import { useStatsStore } from "../stores/stats";
+  import { useAuthStore } from "../stores/auth";
   import {
     animateLayer,
     defaultStyle,
@@ -115,6 +138,8 @@
     processGeojsonDataFn?: ProcessGeoJsonFunc;
     addManualMarkersFn?: AddManualMarkersFunc;
     mapOptions: MapOptions;
+    gameId?: string;
+    gameName?: string;
   }>();
 
   const mapElement = ref<HTMLElement | null>(null);
@@ -146,6 +171,29 @@
     handleCorrectGuess,
     handleIncorrectGuess,
   } = gameLogic;
+
+  // Stats tracking
+  const statsStore = useStatsStore();
+  const authStore = useAuthStore();
+  const gameHasBeenRecorded = ref(false);
+
+  const currentGameStats = computed(() => {
+    if (!props.gameId) return null;
+    return statsStore.getGameStats.value(props.gameId);
+  });
+
+  const isNewBestScore = computed(() => {
+    if (!currentGameStats.value || !gameEnded.value) return false;
+    return score.value > currentGameStats.value.bestScore;
+  });
+
+  const isNewBestTime = computed(() => {
+    if (!currentGameStats.value || !gameEnded.value) return false;
+    // Get time in seconds from formattedTime (MM:SS format)
+    const [minutes, seconds] = formattedTime.value.split(':').map(Number);
+    const timeInSeconds = minutes * 60 + seconds;
+    return timeInSeconds < currentGameStats.value.bestTime;
+  });
 
 
   const setLayerStyle = (layer: L.Layer, style: L.PathOptions) => {
@@ -286,6 +334,7 @@
   };
 
   const handleNewGame = () => {
+    gameHasBeenRecorded.value = false;
     startNewGame();
     updateAllLayerStyles();
   };
@@ -447,6 +496,41 @@
   watch(foundEntities, () => {
       updateAllLayerStyles();
   }, { deep: true });
+
+  // Watch for game end to record stats
+  watch(gameEnded, (ended) => {
+    if (ended && !gameHasBeenRecorded.value && authStore.isLoggedIn && props.gameId && props.gameName) {
+      // Parse time from formattedTime (MM:SS format)
+      const [minutes, seconds] = formattedTime.value.split(':').map(Number);
+      const timeInSeconds = minutes * 60 + seconds;
+
+      // Count correct answers (entries with attempts 1, 2, or 3)
+      let correctAnswers = 0;
+      foundEntities.value.forEach((attempts) => {
+        if (attempts >= 1 && attempts <= 3) {
+          correctAnswers++;
+        }
+      });
+
+      // Calculate accuracy
+      const accuracy = totalRoundsComputed.value > 0
+        ? Math.round((score.value / totalRoundsComputed.value) * 100)
+        : 0;
+
+      statsStore.recordGameResult({
+        gameId: props.gameId,
+        gameName: props.gameName,
+        score: score.value,
+        totalRounds: totalRoundsComputed.value,
+        correctAnswers,
+        timeInSeconds,
+        timestamp: Date.now(),
+        accuracy,
+      });
+
+      gameHasBeenRecorded.value = true;
+    }
+  });
 </script>
 
 <style>
@@ -603,6 +687,38 @@
     font-size: clamp(.9rem, 3vw, 1.1rem);
     margin-top: 5px;
     color: var(--text-color);
+  }
+
+  .stats-summary {
+    margin-top: 10px;
+    font-size: clamp(.8rem, 2.5vw, .95rem);
+    color: var(--text-color);
+  }
+
+  .new-record {
+    font-weight: 700;
+    font-size: clamp(.9rem, 3vw, 1.05rem);
+    margin: 5px 0;
+    animation: celebrate .5s ease-in-out;
+  }
+
+  .previous-best {
+    margin-top: 5px;
+    opacity: .8;
+  }
+
+  @keyframes celebrate {
+    0% {
+      transform: scale(1);
+    }
+
+    50% {
+      transform: scale(1.1);
+    }
+
+    100% {
+      transform: scale(1);
+    }
   }
 
   .leaflet-container {
