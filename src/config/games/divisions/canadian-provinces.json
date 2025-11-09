@@ -1,0 +1,23 @@
+{
+  "id": "canadian-provinces",
+  "name": "Canadian Provinces & Territories",
+  "category": "divisions",
+  "route": "/game/canadian-provinces",
+  "icon": "mdi-map-marker-radius",
+  "emoji": "🇨🇦",
+  "color": "blue-grey-darken-2",
+  "description": "Identify all provinces and territories of Canada",
+  "tags": ["canada", "provinces", "territories", "north-america"],
+  "difficulty": 2,
+  "featured": false,
+  "estimatedTime": 5,
+  "config": {
+    "dataUrl": "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_1_states_provinces_shp.geojson",
+    "mapCenter": [62, -105],
+    "zoom": 3,
+    "maxBounds": [[41, -141], [84, -52]],
+    "propertyName": "name",
+    "targetLabel": "Province/Territory",
+    "processors": ["filterCanada"]
+  }
+}

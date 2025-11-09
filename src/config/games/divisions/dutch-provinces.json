@@ -1,0 +1,22 @@
+{
+  "id": "dutch-provinces",
+  "name": "Dutch Provinces",
+  "category": "divisions",
+  "route": "/game/dutch-provinces",
+  "icon": "mdi-map-marker-radius",
+  "emoji": "🇳🇱",
+  "color": "blue-grey-darken-7",
+  "description": "Identify all provinces of the Netherlands",
+  "tags": ["netherlands", "provinces", "europe"],
+  "difficulty": 1,
+  "featured": false,
+  "estimatedTime": 3,
+  "config": {
+    "dataUrl": "https://raw.githubusercontent.com/codeforgermany/click_that_hood/refs/heads/main/public/data/the-netherlands.geojson",
+    "mapCenter": [52.2, 5.3],
+    "zoom": 7,
+    "maxBounds": [[50.7, 3.0], [53.7, 7.6]],
+    "propertyName": "name",
+    "targetLabel": "Province"
+  }
+}

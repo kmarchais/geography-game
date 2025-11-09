@@ -1,0 +1,22 @@
+{
+  "id": "italian-regions",
+  "name": "Italian Regions",
+  "category": "divisions",
+  "route": "/game/italian-regions",
+  "icon": "mdi-map-marker-radius",
+  "emoji": "🇮🇹",
+  "color": "blue-grey-darken-1",
+  "description": "Identify all regions of Italy",
+  "tags": ["italy", "regions", "europe"],
+  "difficulty": 2,
+  "featured": false,
+  "estimatedTime": 5,
+  "config": {
+    "dataUrl": "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data//italy-regions.geojson",
+    "mapCenter": [42.5, 12.5],
+    "zoom": 6,
+    "maxBounds": [[36.0, 6.0], [48.0, 19.0]],
+    "propertyName": "name",
+    "targetLabel": "Region"
+  }
+}
