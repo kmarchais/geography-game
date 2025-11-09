@@ -43,7 +43,7 @@ describe("gameLoader", () => {
     it("should load all 27 games (5 pilot + 5 continent + 12 division + 5 city)", () => {
       loadGames();
 
-      const callArg = mockRegistry.registerGames.mock.calls[0][0];
+      const callArg = mockRegistry.registerGames.mock.calls[0]?.[0];
       expect(callArg).toHaveLength(27);
     });
   });
