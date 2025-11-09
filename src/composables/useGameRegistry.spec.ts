@@ -1,6 +1,12 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import { useGameRegistry } from "./useGameRegistry";
 import type { GameDefinition } from "../types/gameRegistry";
+
+// Clear registry before tests start (handles pollution from other test files)
+const initialRegistry = useGameRegistry();
+if (initialRegistry.clearRegistry) {
+  initialRegistry.clearRegistry();
+}
 
 describe("useGameRegistry", () => {
   let registry: ReturnType<typeof useGameRegistry>;
@@ -21,8 +27,17 @@ describe("useGameRegistry", () => {
     ...overrides,
   });
 
+  beforeAll(() => {
+    // Clear any pollution from other test files
+    const reg = useGameRegistry();
+    if (reg.clearRegistry) {
+      reg.clearRegistry();
+    }
+  });
+
   beforeEach(() => {
     registry = useGameRegistry();
+    registry.clearRegistry(); // Clear singleton state between tests
   });
 
   describe("initialization", () => {

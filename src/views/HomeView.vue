@@ -1,7 +1,7 @@
 <template>
   <v-container class="fill-height d-flex align-center justify-center">
     <!-- Use a div to allow content to potentially exceed viewport height -->
-    <div style="width: 100%; max-width: 700px">
+    <div style="width: 100%; max-width: 1200px">
       <v-card
         class="pa-6"
         elevation="3"
@@ -211,6 +211,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { polyfillCountryFlagEmojis } from "country-flag-emoji-polyfill";
 import { useGameRegistry } from '@/composables/useGameRegistry';
 import GameCategorySection from '@/components/GameCategorySection.vue';
@@ -218,8 +219,14 @@ import type { GameDefinition } from '@/types/gameRegistry';
 
 polyfillCountryFlagEmojis();
 
+const router = useRouter();
 const registry = useGameRegistry();
 const searchQuery = ref('');
+
+// Navigation helper
+const navigateTo = (route: string) => {
+  router.push(route);
+};
 
 // Get all games from registry
 const allGames = computed(() => Array.from(registry.games.value.values()));
@@ -232,10 +239,11 @@ const filteredGames = computed(() => {
   return registry.searchGames(searchQuery.value);
 });
 
-// Get unique categories that have games
+// Get unique categories that have games, in preferred order
 const categoriesWithGames = computed(() => {
+  const preferredOrder = ['countries', 'divisions', 'cities', 'capitals', 'flags'];
   const categories = new Set(filteredGames.value.map(game => game.category));
-  return Array.from(categories).sort();
+  return preferredOrder.filter(cat => categories.has(cat));
 });
 
 // Get games for a specific category

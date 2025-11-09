@@ -5,14 +5,15 @@ import type {
   GameRegistry,
 } from "../types/gameRegistry";
 
+// Singleton registry state - shared across all components
+const games = ref<Map<string, GameDefinition>>(new Map());
+const initialized = ref(false);
+
 /**
  * Game registry composable for managing and accessing game definitions
  * Provides centralized access to all registered games with filtering and search
  */
 export function useGameRegistry() {
-  // Internal registry state
-  const games = ref<Map<string, GameDefinition>>(new Map());
-  const initialized = ref(false);
 
   /**
    * Games grouped by category

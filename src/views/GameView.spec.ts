@@ -153,12 +153,12 @@ describe("GameView Logic", () => {
         features: [
           {
             type: "Feature",
-            properties: { name: "France" },
+            properties: { name: "France", continent: "Europe" },
             geometry: { type: "Point", coordinates: [2, 48] },
           },
           {
             type: "Feature",
-            properties: { name: "China" },
+            properties: { name: "China", continent: "Asia" },
             geometry: { type: "Point", coordinates: [116, 40] },
           },
         ],
@@ -166,9 +166,11 @@ describe("GameView Logic", () => {
 
       const result = applyProcessors(testData, gameDefinition.config.processors!);
 
-      // filterEurope should keep only France
-      expect(result.features.length).toBe(1);
-      expect(result.features[0]?.properties?.name).toBe("France");
+      // filterEurope should keep France + add Gibraltar
+      expect(result.features.length).toBe(2);
+      const names = result.features.map(f => f.properties?.name);
+      expect(names).toContain("France");
+      expect(names).toContain("Gibraltar");
     });
 
     it("should not apply processors when not configured", () => {

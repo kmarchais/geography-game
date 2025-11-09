@@ -46,14 +46,14 @@ const categoryConfigs: Record<string, CategoryConfig> = {
     icon: 'mdi-earth',
     iconColor: 'blue',
     bgClass: 'bg-blue-lighten-5',
-    cols: 6,
+    cols: 4,
   },
   divisions: {
     title: 'Administrative Divisions',
     icon: 'mdi-map-marker-radius',
     iconColor: 'green',
     bgClass: 'bg-green-lighten-5',
-    cols: 6,
+    cols: 4,
   },
   cities: {
     title: 'City Districts',

@@ -10,9 +10,9 @@ import {
 } from "./index";
 
 describe("processors/index", () => {
-  const createTestFeature = (name: string): Feature<Point> => ({
+  const createTestFeature = (name: string, continent?: string, additionalProps?: Record<string, any>): Feature<Point> => ({
     type: "Feature",
-    properties: { name },
+    properties: { name, continent, ...additionalProps },
     geometry: { type: "Point", coordinates: [0, 0] },
   });
 
@@ -66,21 +66,26 @@ describe("processors/index", () => {
 
   describe("filterEurope processor", () => {
     it("should filter to European countries", () => {
-      const data = createTestCollection([
-        "France",
-        "Germany",
-        "China",
-        "Brazil",
-        "United Kingdom",
-      ]);
+      const data: FeatureCollection<Point> = {
+        type: "FeatureCollection",
+        features: [
+          createTestFeature("France", "Europe"),
+          createTestFeature("Germany", "Europe"),
+          createTestFeature("China", "Asia"),
+          createTestFeature("Brazil", "South America"),
+          createTestFeature("United Kingdom", "Europe"),
+        ],
+      };
 
       const result = PROCESSOR_REGISTRY.filterEurope.processor(data);
 
-      expect(result.features.length).toBe(3);
+      // 3 European countries + 1 Gibraltar (added by filter) = 4
+      expect(result.features.length).toBe(4);
       const names = result.features.map((f) => f.properties?.name);
       expect(names).toContain("France");
       expect(names).toContain("Germany");
       expect(names).toContain("United Kingdom");
+      expect(names).toContain("Gibraltar"); // Added by filter
       expect(names).not.toContain("China");
       expect(names).not.toContain("Brazil");
     });
@@ -88,25 +93,39 @@ describe("processors/index", () => {
     it("should handle empty input", () => {
       const data = createTestCollection([]);
       const result = PROCESSOR_REGISTRY.filterEurope.processor(data);
-      expect(result.features.length).toBe(0);
+      // Gibraltar is still added even with empty input
+      expect(result.features.length).toBe(1);
+      expect(result.features[0]?.properties?.name).toBe("Gibraltar");
     });
 
     it("should handle all non-European countries", () => {
-      const data = createTestCollection(["China", "Japan", "Brazil"]);
+      const data: FeatureCollection<Point> = {
+        type: "FeatureCollection",
+        features: [
+          createTestFeature("China", "Asia"),
+          createTestFeature("Japan", "Asia"),
+          createTestFeature("Brazil", "South America"),
+        ],
+      };
       const result = PROCESSOR_REGISTRY.filterEurope.processor(data);
-      expect(result.features.length).toBe(0);
+      // Gibraltar is added
+      expect(result.features.length).toBe(1);
+      expect(result.features[0]?.properties?.name).toBe("Gibraltar");
     });
   });
 
   describe("filterAsia processor", () => {
     it("should filter to Asian countries", () => {
-      const data = createTestCollection([
-        "China",
-        "Japan",
-        "India",
-        "France",
-        "Brazil",
-      ]);
+      const data: FeatureCollection<Point> = {
+        type: "FeatureCollection",
+        features: [
+          createTestFeature("China", "Asia"),
+          createTestFeature("Japan", "Asia"),
+          createTestFeature("India", "Asia"),
+          createTestFeature("France", "Europe"),
+          createTestFeature("Brazil", "South America"),
+        ],
+      };
 
       const result = PROCESSOR_REGISTRY.filterAsia.processor(data);
 
@@ -120,7 +139,12 @@ describe("processors/index", () => {
     });
 
     it("should include Russia", () => {
-      const data = createTestCollection(["Russia"]);
+      const data: FeatureCollection<Point> = {
+        type: "FeatureCollection",
+        features: [
+          createTestFeature("Russia", "Europe"), // Russia is in additionalCountries list
+        ],
+      };
       const result = PROCESSOR_REGISTRY.filterAsia.processor(data);
       expect(result.features.length).toBe(1);
     });
@@ -128,13 +152,16 @@ describe("processors/index", () => {
 
   describe("filterAfrica processor", () => {
     it("should filter to African countries", () => {
-      const data = createTestCollection([
-        "Egypt",
-        "Nigeria",
-        "South Africa",
-        "France",
-        "China",
-      ]);
+      const data: FeatureCollection<Point> = {
+        type: "FeatureCollection",
+        features: [
+          createTestFeature("Egypt", "Africa"),
+          createTestFeature("Nigeria", "Africa"),
+          createTestFeature("South Africa", "Africa"),
+          createTestFeature("France", "Europe"),
+          createTestFeature("China", "Asia"),
+        ],
+      };
 
       const result = PROCESSOR_REGISTRY.filterAfrica.processor(data);
 
@@ -148,13 +175,16 @@ describe("processors/index", () => {
 
   describe("filterNorthAmerica processor", () => {
     it("should filter to North American countries", () => {
-      const data = createTestCollection([
-        "United States",
-        "Canada",
-        "Mexico",
-        "Brazil",
-        "China",
-      ]);
+      const data: FeatureCollection<Point> = {
+        type: "FeatureCollection",
+        features: [
+          createTestFeature("United States", "North America"),
+          createTestFeature("Canada", "North America"),
+          createTestFeature("Mexico", "North America"),
+          createTestFeature("Brazil", "South America"),
+          createTestFeature("China", "Asia"),
+        ],
+      };
 
       const result = PROCESSOR_REGISTRY.filterNorthAmerica.processor(data);
 
@@ -166,7 +196,14 @@ describe("processors/index", () => {
     });
 
     it("should include Caribbean countries", () => {
-      const data = createTestCollection(["Cuba", "Jamaica", "Haiti"]);
+      const data: FeatureCollection<Point> = {
+        type: "FeatureCollection",
+        features: [
+          createTestFeature("Cuba", "North America"),
+          createTestFeature("Jamaica", "North America"),
+          createTestFeature("Haiti", "North America"),
+        ],
+      };
       const result = PROCESSOR_REGISTRY.filterNorthAmerica.processor(data);
       expect(result.features.length).toBe(3);
     });
@@ -174,13 +211,16 @@ describe("processors/index", () => {
 
   describe("filterSouthAmerica processor", () => {
     it("should filter to South American countries", () => {
-      const data = createTestCollection([
-        "Brazil",
-        "Argentina",
-        "Chile",
-        "Mexico",
-        "China",
-      ]);
+      const data: FeatureCollection<Point> = {
+        type: "FeatureCollection",
+        features: [
+          createTestFeature("Brazil", "South America"),
+          createTestFeature("Argentina", "South America"),
+          createTestFeature("Chile", "South America"),
+          createTestFeature("Mexico", "North America"),
+          createTestFeature("China", "Asia"),
+        ],
+      };
 
       const result = PROCESSOR_REGISTRY.filterSouthAmerica.processor(data);
 
@@ -194,13 +234,16 @@ describe("processors/index", () => {
 
   describe("filterOceania processor", () => {
     it("should filter to Oceania countries", () => {
-      const data = createTestCollection([
-        "Australia",
-        "New Zealand",
-        "Fiji",
-        "China",
-        "Brazil",
-      ]);
+      const data: FeatureCollection<Point> = {
+        type: "FeatureCollection",
+        features: [
+          createTestFeature("Australia", "Oceania"),
+          createTestFeature("New Zealand", "Oceania"),
+          createTestFeature("Fiji", "Oceania"),
+          createTestFeature("China", "Asia"),
+          createTestFeature("Brazil", "South America"),
+        ],
+      };
 
       const result = PROCESSOR_REGISTRY.filterOceania.processor(data);
 
@@ -230,26 +273,39 @@ describe("processors/index", () => {
 
   describe("applyProcessors", () => {
     it("should apply single processor by name", () => {
-      const data = createTestCollection(["France", "China", "Brazil"]);
+      const data: FeatureCollection<Point> = {
+        type: "FeatureCollection",
+        features: [
+          createTestFeature("France", "Europe"),
+          createTestFeature("China", "Asia"),
+          createTestFeature("Brazil", "South America"),
+        ],
+      };
       const result = applyProcessors(data, ["filterEurope"]);
 
-      expect(result.features.length).toBe(1);
-      expect(result.features[0]?.properties?.name).toBe("France");
+      // 1 France + 1 Gibraltar = 2
+      expect(result.features.length).toBe(2);
+      const names = result.features.map((f) => f.properties?.name);
+      expect(names).toContain("France");
+      expect(names).toContain("Gibraltar");
     });
 
     it("should apply multiple processors in sequence", () => {
-      const data = createTestCollection([
-        "France",
-        "Germany",
-        "China",
-        "Brazil",
-      ]);
+      const data: FeatureCollection<Point> = {
+        type: "FeatureCollection",
+        features: [
+          createTestFeature("France", "Europe"),
+          createTestFeature("Germany", "Europe"),
+          createTestFeature("China", "Asia"),
+          createTestFeature("Brazil", "South America"),
+        ],
+      };
 
-      // First filter to Europe, then wrap
+      // First filter to Europe (2 countries + Gibraltar = 3), then wrap
       const result = applyProcessors(data, ["filterEurope", "worldWrapping"]);
 
-      // 2 European countries * 3 (original + east + west) = 6
-      expect(result.features.length).toBe(6);
+      // 3 features * 3 (original + east + west) = 9
+      expect(result.features.length).toBe(9);
     });
 
     it("should apply custom processor function", () => {
@@ -267,7 +323,14 @@ describe("processors/index", () => {
     });
 
     it("should mix named and custom processors", () => {
-      const data = createTestCollection(["France", "Germany", "China"]);
+      const data: FeatureCollection<Point> = {
+        type: "FeatureCollection",
+        features: [
+          createTestFeature("France", "Europe"),
+          createTestFeature("Germany", "Europe"),
+          createTestFeature("China", "Asia"),
+        ],
+      };
 
       const customProcessor: GeoJSONProcessor = (d) => ({
         ...d,
@@ -282,7 +345,8 @@ describe("processors/index", () => {
         customProcessor,
       ]);
 
-      expect(result.features.length).toBe(2);
+      // 2 European countries + Gibraltar = 3, all with processed: true
+      expect(result.features.length).toBe(3);
       expect(result.features[0]?.properties?.processed).toBe(true);
     });
 
@@ -294,7 +358,13 @@ describe("processors/index", () => {
     });
 
     it("should preserve original data", () => {
-      const data = createTestCollection(["France", "China"]);
+      const data: FeatureCollection<Point> = {
+        type: "FeatureCollection",
+        features: [
+          createTestFeature("France", "Europe"),
+          createTestFeature("China", "Asia"),
+        ],
+      };
       const original = JSON.parse(JSON.stringify(data));
 
       applyProcessors(data, ["filterEurope"]);
@@ -319,7 +389,8 @@ describe("processors/index", () => {
 
     it("should return correct number of processors", () => {
       const names = getAllProcessorNames();
-      expect(names.length).toBe(7);
+      // worldWrapping + 6 continent filters + 3 division filters = 10
+      expect(names.length).toBe(10);
     });
   });
 
@@ -357,42 +428,49 @@ describe("processors/index", () => {
 
   describe("processor chain integration", () => {
     it("should filter and wrap European countries", () => {
-      const data = createTestCollection([
-        "France",
-        "Germany",
-        "China",
-        "Brazil",
-        "Italy",
-      ]);
+      const data: FeatureCollection<Point> = {
+        type: "FeatureCollection",
+        features: [
+          createTestFeature("France", "Europe"),
+          createTestFeature("Germany", "Europe"),
+          createTestFeature("China", "Asia"),
+          createTestFeature("Brazil", "South America"),
+          createTestFeature("Italy", "Europe"),
+        ],
+      };
 
       const result = applyProcessors(data, ["filterEurope", "worldWrapping"]);
 
-      // 3 European countries * 3 (original + copies) = 9
-      expect(result.features.length).toBe(9);
+      // 3 European countries + Gibraltar = 4, then * 3 (original + copies) = 12
+      expect(result.features.length).toBe(12);
 
       // Check that only European countries are present
       const uniqueNames = new Set(
         result.features.map((f) => f.properties?.name)
       );
-      expect(uniqueNames.size).toBe(3);
+      expect(uniqueNames.size).toBe(4);
       expect(uniqueNames.has("France")).toBe(true);
       expect(uniqueNames.has("Germany")).toBe(true);
       expect(uniqueNames.has("Italy")).toBe(true);
+      expect(uniqueNames.has("Gibraltar")).toBe(true);
       expect(uniqueNames.has("China")).toBe(false);
     });
 
     it("should apply multiple region filters", () => {
-      const data = createTestCollection([
-        "France",
-        "China",
-        "Brazil",
-        "Egypt",
-        "Australia",
-      ]);
+      const data: FeatureCollection<Point> = {
+        type: "FeatureCollection",
+        features: [
+          createTestFeature("France", "Europe"),
+          createTestFeature("China", "Asia"),
+          createTestFeature("Brazil", "South America"),
+          createTestFeature("Egypt", "Africa"),
+          createTestFeature("Australia", "Oceania"),
+        ],
+      };
 
-      // Filter to Europe first
+      // Filter to Europe (France + Gibraltar)
       const europeResult = applyProcessors(data, ["filterEurope"]);
-      expect(europeResult.features.length).toBe(1);
+      expect(europeResult.features.length).toBe(2);
 
       // Filter to Asia from original data
       const asiaResult = applyProcessors(data, ["filterAsia"]);

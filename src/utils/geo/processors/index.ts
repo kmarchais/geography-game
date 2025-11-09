@@ -71,61 +71,140 @@ export const PROCESSOR_REGISTRY = {
     processor: <G extends Geometry, P extends GeoJsonProperties>(
       data: FeatureCollection<G, P>
     ): FeatureCollection<G, P> => {
-      const europeanCountries = new Set([
-        "Albania",
-        "Andorra",
-        "Austria",
-        "Belarus",
-        "Belgium",
-        "Bosnia and Herzegovina",
-        "Bulgaria",
-        "Croatia",
-        "Cyprus",
-        "Czech Republic",
-        "Czechia",
-        "Denmark",
-        "Estonia",
-        "Finland",
-        "France",
-        "Germany",
-        "Greece",
-        "Hungary",
-        "Iceland",
-        "Ireland",
-        "Italy",
-        "Kosovo",
-        "Latvia",
-        "Liechtenstein",
-        "Lithuania",
-        "Luxembourg",
-        "Malta",
-        "Moldova",
-        "Monaco",
-        "Montenegro",
-        "Netherlands",
-        "North Macedonia",
-        "Norway",
-        "Poland",
-        "Portugal",
-        "Romania",
-        "San Marino",
-        "Serbia",
-        "Slovakia",
-        "Slovenia",
-        "Spain",
-        "Sweden",
-        "Switzerland",
-        "Ukraine",
-        "United Kingdom",
-        "Vatican City",
-      ]);
+      // Additional countries to include beyond continent=Europe
+      const additionalCountries = ["Turkey", "Cyprus", "Greenland"];
+
+      // Define latitude threshold for Svalbard
+      const SVALBARD_LATITUDE_THRESHOLD = 72;
+
+      // Check if a polygon has any point above threshold
+      const isPolygonAboveThreshold = (polygon: any[][]): boolean => {
+        return polygon.some(ring => ring.some(point => point[1] > SVALBARD_LATITUDE_THRESHOLD));
+      };
+
+      // Gibraltar feature (not in Natural Earth data)
+      const gibraltarFeature: any = {
+        type: "Feature",
+        properties: {
+          name: "Gibraltar",
+          continent: "Europe",
+          name_long: "Gibraltar",
+          admin: "United Kingdom",
+        },
+        geometry: {
+          type: "Polygon",
+          coordinates: [
+            [
+              [-5.3536, 36.1086],
+              [-5.3384, 36.1086],
+              [-5.3384, 36.1225],
+              [-5.3438, 36.1449],
+              [-5.3536, 36.1449],
+              [-5.3589, 36.1225],
+              [-5.3536, 36.1086]
+            ]
+          ]
+        }
+      };
+
+      const cyprusFeature = data.features.find(f => f.properties?.name === "Cyprus");
+      const northCyprusFeature = data.features.find(f => f.properties?.name === "N. Cyprus");
+
+      let filteredFeatures = data.features.filter((feature) => {
+        const continent = feature.properties?.continent;
+        const name = feature.properties?.name;
+
+        // Include if continent is Europe OR if it's in additional countries (but exclude N. Cyprus as we'll merge it)
+        return (continent === "Europe" ||
+               (name && additionalCountries.includes(name) && name !== "N. Cyprus"));
+      });
+
+      // Merge Cyprus and Northern Cyprus
+      if (cyprusFeature && northCyprusFeature) {
+        const cyprusIndex = filteredFeatures.findIndex(f => f.properties?.name === "Cyprus");
+        if (cyprusIndex !== -1) {
+          let combinedCoordinates: any[] = [];
+
+          // Handle Cyprus coordinates
+          if (cyprusFeature.geometry.type === "Polygon") {
+            combinedCoordinates.push((cyprusFeature.geometry as any).coordinates);
+          } else if (cyprusFeature.geometry.type === "MultiPolygon") {
+            combinedCoordinates = [...combinedCoordinates, ...(cyprusFeature.geometry as any).coordinates];
+          }
+
+          // Handle Northern Cyprus coordinates
+          if (northCyprusFeature.geometry.type === "Polygon") {
+            combinedCoordinates.push((northCyprusFeature.geometry as any).coordinates);
+          } else if (northCyprusFeature.geometry.type === "MultiPolygon") {
+            combinedCoordinates = [...combinedCoordinates, ...(northCyprusFeature.geometry as any).coordinates];
+          }
+
+          filteredFeatures[cyprusIndex] = {
+            type: "Feature",
+            properties: {
+              ...cyprusFeature.properties,
+              name: "Cyprus",
+              name_long: "Republic of Cyprus",
+            },
+            geometry: {
+              type: "MultiPolygon",
+              coordinates: combinedCoordinates
+            }
+          } as any;
+        }
+      }
+
+      // Add Gibraltar
+      filteredFeatures.push(gibraltarFeature);
+
+      // Split Norway and create Svalbard
+      const norwayFeature = data.features.find(f => f.properties?.name === "Norway");
+      if (norwayFeature && norwayFeature.geometry.type === "MultiPolygon") {
+        const mainlandPolygons: any[] = [];
+        const svalbardPolygons: any[] = [];
+
+        for (const polygon of (norwayFeature.geometry as any).coordinates) {
+          if (isPolygonAboveThreshold(polygon)) {
+            svalbardPolygons.push(polygon);
+          } else {
+            mainlandPolygons.push(polygon);
+          }
+        }
+
+        // Update Norway to mainland only
+        const norwayIndex = filteredFeatures.findIndex(f => f.properties?.name === "Norway");
+        if (norwayIndex !== -1 && mainlandPolygons.length > 0) {
+          filteredFeatures[norwayIndex] = {
+            type: "Feature",
+            properties: { ...norwayFeature.properties },
+            geometry: {
+              type: "MultiPolygon",
+              coordinates: mainlandPolygons
+            }
+          } as any;
+        }
+
+        // Add Svalbard as separate territory
+        if (svalbardPolygons.length > 0) {
+          filteredFeatures.push({
+            type: "Feature",
+            properties: {
+              ...norwayFeature.properties,
+              name: "Svalbard",
+              name_long: "Svalbard and Jan Mayen",
+              admin: "Norway",
+            },
+            geometry: {
+              type: "MultiPolygon",
+              coordinates: svalbardPolygons
+            }
+          } as any);
+        }
+      }
 
       return {
         ...data,
-        features: data.features.filter((feature) => {
-          const name = feature.properties?.name as string | undefined;
-          return name && europeanCountries.has(name);
-        }),
+        features: filteredFeatures,
       };
     },
     metadata: {
@@ -142,63 +221,16 @@ export const PROCESSOR_REGISTRY = {
     processor: <G extends Geometry, P extends GeoJsonProperties>(
       data: FeatureCollection<G, P>
     ): FeatureCollection<G, P> => {
-      const asianCountries = new Set([
-        "Afghanistan",
-        "Armenia",
-        "Azerbaijan",
-        "Bahrain",
-        "Bangladesh",
-        "Bhutan",
-        "Brunei",
-        "Cambodia",
-        "China",
-        "Georgia",
-        "India",
-        "Indonesia",
-        "Iran",
-        "Iraq",
-        "Israel",
-        "Japan",
-        "Jordan",
-        "Kazakhstan",
-        "Kuwait",
-        "Kyrgyzstan",
-        "Laos",
-        "Lebanon",
-        "Malaysia",
-        "Maldives",
-        "Mongolia",
-        "Myanmar",
-        "Nepal",
-        "North Korea",
-        "Oman",
-        "Pakistan",
-        "Palestine",
-        "Philippines",
-        "Qatar",
-        "Russia",
-        "Saudi Arabia",
-        "Singapore",
-        "South Korea",
-        "Sri Lanka",
-        "Syria",
-        "Taiwan",
-        "Tajikistan",
-        "Thailand",
-        "Timor-Leste",
-        "Turkey",
-        "Turkmenistan",
-        "United Arab Emirates",
-        "Uzbekistan",
-        "Vietnam",
-        "Yemen",
-      ]);
+      // Additional countries to include beyond continent=Asia
+      const additionalCountries = ["Russia"];
 
       return {
         ...data,
         features: data.features.filter((feature) => {
-          const name = feature.properties?.name as string | undefined;
-          return name && asianCountries.has(name);
+          const continent = feature.properties?.continent;
+          const name = feature.properties?.name;
+
+          return continent === "Asia" || (name && additionalCountries.includes(name));
         }),
       };
     },
@@ -216,68 +248,10 @@ export const PROCESSOR_REGISTRY = {
     processor: <G extends Geometry, P extends GeoJsonProperties>(
       data: FeatureCollection<G, P>
     ): FeatureCollection<G, P> => {
-      const africanCountries = new Set([
-        "Algeria",
-        "Angola",
-        "Benin",
-        "Botswana",
-        "Burkina Faso",
-        "Burundi",
-        "Cameroon",
-        "Cape Verde",
-        "Central African Republic",
-        "Chad",
-        "Comoros",
-        "Congo",
-        "Democratic Republic of the Congo",
-        "Djibouti",
-        "Egypt",
-        "Equatorial Guinea",
-        "Eritrea",
-        "Eswatini",
-        "Ethiopia",
-        "Gabon",
-        "Gambia",
-        "Ghana",
-        "Guinea",
-        "Guinea-Bissau",
-        "Ivory Coast",
-        "Kenya",
-        "Lesotho",
-        "Liberia",
-        "Libya",
-        "Madagascar",
-        "Malawi",
-        "Mali",
-        "Mauritania",
-        "Mauritius",
-        "Morocco",
-        "Mozambique",
-        "Namibia",
-        "Niger",
-        "Nigeria",
-        "Rwanda",
-        "Sao Tome and Principe",
-        "Senegal",
-        "Seychelles",
-        "Sierra Leone",
-        "Somalia",
-        "South Africa",
-        "South Sudan",
-        "Sudan",
-        "Tanzania",
-        "Togo",
-        "Tunisia",
-        "Uganda",
-        "Zambia",
-        "Zimbabwe",
-      ]);
-
       return {
         ...data,
         features: data.features.filter((feature) => {
-          const name = feature.properties?.name as string | undefined;
-          return name && africanCountries.has(name);
+          return feature.properties?.continent === "Africa";
         }),
       };
     },
@@ -295,38 +269,10 @@ export const PROCESSOR_REGISTRY = {
     processor: <G extends Geometry, P extends GeoJsonProperties>(
       data: FeatureCollection<G, P>
     ): FeatureCollection<G, P> => {
-      const northAmericanCountries = new Set([
-        "Antigua and Barbuda",
-        "Bahamas",
-        "Barbados",
-        "Belize",
-        "Canada",
-        "Costa Rica",
-        "Cuba",
-        "Dominica",
-        "Dominican Republic",
-        "El Salvador",
-        "Grenada",
-        "Guatemala",
-        "Haiti",
-        "Honduras",
-        "Jamaica",
-        "Mexico",
-        "Nicaragua",
-        "Panama",
-        "Saint Kitts and Nevis",
-        "Saint Lucia",
-        "Saint Vincent and the Grenadines",
-        "Trinidad and Tobago",
-        "United States",
-        "United States of America",
-      ]);
-
       return {
         ...data,
         features: data.features.filter((feature) => {
-          const name = feature.properties?.name as string | undefined;
-          return name && northAmericanCountries.has(name);
+          return feature.properties?.continent === "North America";
         }),
       };
     },
@@ -344,26 +290,10 @@ export const PROCESSOR_REGISTRY = {
     processor: <G extends Geometry, P extends GeoJsonProperties>(
       data: FeatureCollection<G, P>
     ): FeatureCollection<G, P> => {
-      const southAmericanCountries = new Set([
-        "Argentina",
-        "Bolivia",
-        "Brazil",
-        "Chile",
-        "Colombia",
-        "Ecuador",
-        "Guyana",
-        "Paraguay",
-        "Peru",
-        "Suriname",
-        "Uruguay",
-        "Venezuela",
-      ]);
-
       return {
         ...data,
         features: data.features.filter((feature) => {
-          const name = feature.properties?.name as string | undefined;
-          return name && southAmericanCountries.has(name);
+          return feature.properties?.continent === "South America";
         }),
       };
     },
@@ -381,28 +311,10 @@ export const PROCESSOR_REGISTRY = {
     processor: <G extends Geometry, P extends GeoJsonProperties>(
       data: FeatureCollection<G, P>
     ): FeatureCollection<G, P> => {
-      const oceaniaCountries = new Set([
-        "Australia",
-        "Fiji",
-        "Kiribati",
-        "Marshall Islands",
-        "Micronesia",
-        "Nauru",
-        "New Zealand",
-        "Palau",
-        "Papua New Guinea",
-        "Samoa",
-        "Solomon Islands",
-        "Tonga",
-        "Tuvalu",
-        "Vanuatu",
-      ]);
-
       return {
         ...data,
         features: data.features.filter((feature) => {
-          const name = feature.properties?.name as string | undefined;
-          return name && oceaniaCountries.has(name);
+          return feature.properties?.continent === "Oceania";
         }),
       };
     },

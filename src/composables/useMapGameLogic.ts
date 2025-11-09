@@ -43,9 +43,9 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
   const startTimer = () => {
     stopTimer();
     timer.value = 0;
-    timerInterval.value = window.setInterval(() => {
+    timerInterval.value = setInterval(() => {
       timer.value++;
-    }, 1000);
+    }, 1000) as unknown as number;
   };
 
   const showFeedback = (isCorrect: boolean, customMsg?: string) => {
