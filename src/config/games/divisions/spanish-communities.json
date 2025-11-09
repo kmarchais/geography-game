@@ -1,0 +1,22 @@
+{
+  "id": "spanish-communities",
+  "name": "Spanish Autonomous Communities",
+  "category": "divisions",
+  "route": "/game/spanish-communities",
+  "icon": "mdi-map-marker-radius",
+  "emoji": "🇪🇸",
+  "color": "blue-grey",
+  "description": "Identify all autonomous communities of Spain",
+  "tags": ["spain", "communities", "europe"],
+  "difficulty": 2,
+  "featured": false,
+  "estimatedTime": 5,
+  "config": {
+    "dataUrl": "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/spain-communities.geojson",
+    "mapCenter": [40.0, -4.0],
+    "zoom": 6,
+    "maxBounds": [[35.0, -10.0], [45.0, 5.0]],
+    "propertyName": "name",
+    "targetLabel": "Community"
+  }
+}
