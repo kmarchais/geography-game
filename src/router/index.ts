@@ -4,11 +4,6 @@ import FrenchDepartments from '../components/AdministrativeDivisions/FrenchDepar
 import FlagGame from '@/components/FlagGame.vue'
 import WorldCapitals from '../views/WorldCapitals.vue'
 import DashboardView from '../views/DashboardView.vue'
-import ParisQuartiers from '../components/CityDistricts/ParisQuartiers.vue'
-import ParisDistricts from '../components/CityDistricts/ParisDistricts.vue'
-import BarcelonaDistricts from '../components/CityDistricts/BarcelonaDistricts.vue'
-import BarcelonaBarrios from '../components/CityDistricts/BarcelonaBarrios.vue'
-import BordeauxQuartiers from '../components/CityDistricts/BordeauxQuartiers.vue'
 import GameView from '../views/GameView.vue'
 
 import { useAuth } from '../composables/useAuth'
@@ -49,17 +44,17 @@ const router = createRouter({
     // Cities
     { path: '/paris-arrondissements', redirect: '/game/paris-arrondissements' },
     { path: '/london-boroughs', redirect: '/game/london-boroughs' },
+    { path: '/paris-quartiers', redirect: '/game/paris-quartiers' },
+    { path: '/paris-districts', redirect: '/game/paris-districts' },
+    { path: '/barcelona-districts', redirect: '/game/barcelona-districts' },
+    { path: '/barcelona-barrios', redirect: '/game/barcelona-barrios' },
+    { path: '/bordeaux-quartiers', redirect: '/game/bordeaux-quartiers' },
 
     // Legacy routes (keep temporarily until all games migrated)
     // French Departments has custom UI/markers - migrate separately
     { path: '/french-departments', name: 'french-departments', component: FrenchDepartments },
     { path: '/flag-game', name: 'flag-game', component: FlagGame },
     { path: '/world-capitals', name: 'world-capitals', component: WorldCapitals, meta: { title: 'World Capitals Game' } },
-    { path: '/paris-quartiers', name: 'paris-quartiers', component: ParisQuartiers },
-    { path: '/paris-districts', name: 'paris-districts', component: ParisDistricts },
-    { path: '/barcelona-districts', name: 'barcelona-districts', component: BarcelonaDistricts },
-    { path: '/barcelona-barrios', name: 'barcelona-barrios', component: BarcelonaBarrios },
-    { path: '/bordeaux-quartiers', name: 'bordeaux-quartiers', component: BordeauxQuartiers },
     { path: '/dashboard', name: 'dashboard', component: DashboardView, meta: { requiresAuth: true, requiresAdmin: true } }
   ]
 })

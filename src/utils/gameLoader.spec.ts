@@ -40,11 +40,11 @@ describe("gameLoader", () => {
       );
     });
 
-    it("should load all 22 games (5 pilot + 5 continent + 12 division)", () => {
+    it("should load all 27 games (5 pilot + 5 continent + 12 division + 5 city)", () => {
       loadGames();
 
       const callArg = mockRegistry.registerGames.mock.calls[0][0];
-      expect(callArg).toHaveLength(22);
+      expect(callArg).toHaveLength(27);
     });
   });
 
@@ -142,8 +142,8 @@ describe("gameLoader", () => {
   });
 
   describe("getGameCount", () => {
-    it("should return 22 (all games)", () => {
-      expect(getGameCount()).toBe(22);
+    it("should return 27 (all games)", () => {
+      expect(getGameCount()).toBe(27);
     });
   });
 });

@@ -1,0 +1,22 @@
+{
+  "id": "paris-districts",
+  "name": "Paris Quartiers d'Usage",
+  "category": "cities",
+  "route": "/game/paris-districts",
+  "icon": "mdi-city",
+  "emoji": "🌟",
+  "color": "teal-darken-3",
+  "description": "Identify the 44 common usage districts (quartiers d'usage) of Paris",
+  "tags": ["paris", "france", "districts", "city", "europe"],
+  "difficulty": 2,
+  "featured": false,
+  "estimatedTime": 10,
+  "config": {
+    "dataUrl": "./data/paris_districts.geojson",
+    "mapCenter": [48.8566, 2.3522],
+    "zoom": 12,
+    "maxBounds": [[48.8155, 2.2241], [48.9021, 2.4699]],
+    "propertyName": "name",
+    "targetLabel": "District"
+  }
+}
