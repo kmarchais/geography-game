@@ -10,10 +10,14 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import Header from './components/AppBar.vue';
-import { loadGames } from './utils/gameLoader';
+import { loadAllGames } from './utils/gameLazyLoader';
 
-// Load games into registry on app startup
-onMounted(() => {
-  loadGames();
+// Load games into registry on app startup (lazy loaded by category)
+onMounted(async () => {
+  try {
+    await loadAllGames();
+  } catch (error) {
+    console.error('[App] Failed to load games:', error);
+  }
 });
 </script>
