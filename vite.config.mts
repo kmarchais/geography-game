@@ -6,6 +6,7 @@ import ViteFonts from 'unplugin-fonts/vite'
 import Components from 'unplugin-vue-components/vite'
 import VueRouter from 'unplugin-vue-router/vite'
 import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 // Utilities
 import { fileURLToPath, URL } from 'node:url'
@@ -65,6 +66,14 @@ export default defineConfig({
         ],
       },
     }),
+    // Bundle analyzer - generates stats.html
+    visualizer({
+      filename: 'dist/stats.html',
+      open: false,
+      gzipSize: true,
+      brotliSize: true,
+      template: 'treemap', // 'sunburst', 'treemap', 'network'
+    }) as any,
   ],
   define: { 'process.env': {} }, // Keep this if your client-side code needs it
   resolve: {
@@ -91,6 +100,52 @@ export default defineConfig({
       },
       scss: {
         // additionalData: `@import "@/styles/variables.scss";`
+      },
+    },
+  },
+  build: {
+    // Target modern browsers for smaller bundles
+    target: 'es2020',
+
+    // Source maps for production debugging (optional)
+    sourcemap: false,
+
+    // Chunk size warning limit
+    chunkSizeWarningLimit: 600,
+
+    rollupOptions: {
+      output: {
+        // Manual chunking for better code splitting
+        manualChunks: {
+          // Vendor chunks
+          'vue-core': ['vue', 'vue-router', 'pinia'],
+          'vuetify': ['vuetify', 'vuetify/components', 'vuetify/directives'],
+          'leaflet': ['leaflet'],
+
+          // App chunks (already split by dynamic imports)
+          // Game configs are automatically chunked via dynamic imports
+        },
+
+        // Consistent chunk naming for better caching
+        chunkFileNames: (chunkInfo) => {
+          // Game config chunks use descriptive names
+          if (chunkInfo.name.includes('config/games/')) {
+            const gameName = chunkInfo.name.split('/').pop()?.replace('.json', '') || 'game';
+            return `assets/${gameName}-[hash].js`;
+          }
+          // Regular chunks
+          return 'assets/[name]-[hash].js';
+        },
+      },
+    },
+
+    // Minification
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false, // Keep console logs for debugging
+        drop_debugger: true,
+        pure_funcs: ['console.debug'], // Remove console.debug only
       },
     },
   },
