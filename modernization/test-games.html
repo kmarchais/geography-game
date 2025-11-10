@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Data Loading Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .game-test {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+        .pending {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        .summary {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #0056b3;
+        }
+        pre {
+            font-size: 12px;
+            overflow-x: auto;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🗺️ Game Data Loading Test</h1>
+    <p>This page tests all game GeoJSON URLs to verify they load correctly in the browser.</p>
+
+    <button onclick="runTests()">Run Tests</button>
+
+    <div id="summary" class="summary" style="display:none;">
+        <h2>Summary</h2>
+        <p><strong>Total Games:</strong> <span id="total">0</span></p>
+        <p><strong>✅ Successful:</strong> <span id="success">0</span></p>
+        <p><strong>❌ Failed:</strong> <span id="failed">0</span></p>
+        <p><strong>⏳ Testing:</strong> <span id="pending">0</span></p>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        const games = [
+            { name: "World Countries", url: "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson", property: "name" },
+            { name: "Europe Countries", url: "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson", property: "name" },
+            { name: "Africa Countries", url: "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson", property: "name" },
+            { name: "Asia Countries", url: "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson", property: "name" },
+            { name: "North America Countries", url: "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson", property: "name" },
+            { name: "South America Countries", url: "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson", property: "name" },
+            { name: "Oceania Countries", url: "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson", property: "name" },
+            { name: "US States", url: "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_admin_1_states_provinces_shp.geojson", property: "name" },
+            { name: "Canadian Provinces", url: "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_1_states_provinces_shp.geojson", property: "name" },
+            { name: "Spanish Communities", url: "https://cdn.jsdelivr.net/gh/codeforamerica/click_that_hood@master/public/data/spain-communities.geojson", property: "name" },
+            { name: "German States", url: "https://cdn.jsdelivr.net/gh/codeforamerica/click_that_hood@master/public/data/germany.geojson", property: "name" },
+            { name: "Italian Regions", url: "https://cdn.jsdelivr.net/gh/codeforamerica/click_that_hood@master/public/data//italy-regions.geojson", property: "name" },
+            { name: "Brazilian States", url: "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_1_states_provinces_shp.geojson", property: "name" },
+            { name: "Australian States", url: "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_1_states_provinces_shp.geojson", property: "name" },
+            { name: "Chinese Provinces", url: "https://cdn.jsdelivr.net/gh/codeforamerica/click_that_hood@master/public/data/china.geojson", property: "name" },
+            { name: "Belgian Provinces", url: "./data/belgium.json", property: "name" },
+            { name: "Dutch Provinces", url: "https://cdn.jsdelivr.net/gh/codeforgermany/click_that_hood@main/public/data/the-netherlands.geojson", property: "name" },
+            { name: "UK Counties", url: "https://cdn.jsdelivr.net/gh/codeforamerica/click_that_hood@master/public/data/united-kingdom.geojson", property: "name" },
+            { name: "Russian Oblasts", url: "https://cdn.jsdelivr.net/gh/codeforamerica/click_that_hood@master/public/data/russia.geojson", property: "name" },
+            { name: "Ukrainian Oblasts", url: "./data/ukraine-oblasts.geojson", property: "name:en" },
+            { name: "Paris Arrondissements", url: "https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/arrondissements/exports/geojson", property: "c_ar" },
+            { name: "London Boroughs", url: "https://gis2.london.gov.uk/server/rest/services/apps/webmap_context_layer/MapServer/3/query?outFields=*&where=1%3D1&f=geojson", property: "name" },
+            { name: "Paris Quartiers", url: "https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/quartier_paris/exports/geojson", property: "l_qu" },
+            { name: "Paris Districts", url: "./data/paris_districts.geojson", property: "name" },
+            { name: "Barcelona Districts", url: "https://cdn.jsdelivr.net/gh/martgnz/bcn-geodata@master/districtes/districtes.geojson", property: "NOM" },
+            { name: "Barcelona Barrios", url: "https://cdn.jsdelivr.net/gh/martgnz/bcn-geodata@master/barris/barris.geojson", property: "N_Barri" },
+            { name: "Bordeaux Quartiers", url: "https://opendata.bordeaux-metropole.fr/api/explore/v2.1/catalog/datasets/se_quart_s/exports/geojson", property: "libquart" },
+        ];
+
+        function updateSummary() {
+            const success = document.querySelectorAll('.success').length;
+            const failed = document.querySelectorAll('.error').length;
+            const pending = document.querySelectorAll('.pending').length;
+
+            document.getElementById('total').textContent = games.length;
+            document.getElementById('success').textContent = success;
+            document.getElementById('failed').textContent = failed;
+            document.getElementById('pending').textContent = pending;
+            document.getElementById('summary').style.display = 'block';
+        }
+
+        async function testGame(game) {
+            const resultDiv = document.getElementById(`result-${game.name.replace(/\s+/g, '-')}`);
+
+            try {
+                resultDiv.className = 'game-test pending';
+                resultDiv.innerHTML = `<strong>${game.name}</strong><br>⏳ Testing URL: ${game.url}`;
+                updateSummary();
+
+                const response = await fetch(game.url);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (!data.type || data.type !== 'FeatureCollection') {
+                    throw new Error('Invalid GeoJSON: missing FeatureCollection type');
+                }
+
+                if (!Array.isArray(data.features) || data.features.length === 0) {
+                    throw new Error('Invalid GeoJSON: no features found');
+                }
+
+                const firstFeature = data.features[0];
+                if (!firstFeature.properties || !(game.property in firstFeature.properties)) {
+                    throw new Error(`Property "${game.property}" not found in features`);
+                }
+
+                resultDiv.className = 'game-test success';
+                resultDiv.innerHTML = `
+                    <strong>✅ ${game.name}</strong><br>
+                    Features: ${data.features.length}<br>
+                    Property "${game.property}": ${firstFeature.properties[game.property]}<br>
+                    <small>URL: ${game.url}</small>
+                `;
+            } catch (error) {
+                resultDiv.className = 'game-test error';
+                resultDiv.innerHTML = `
+                    <strong>❌ ${game.name}</strong><br>
+                    <strong>Error:</strong> ${error.message}<br>
+                    <small>URL: ${game.url}</small>
+                `;
+            }
+
+            updateSummary();
+        }
+
+        async function runTests() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            // Create result divs
+            games.forEach(game => {
+                const div = document.createElement('div');
+                div.id = `result-${game.name.replace(/\s+/g, '-')}`;
+                div.className = 'game-test pending';
+                div.innerHTML = `<strong>${game.name}</strong><br>⏳ Waiting to test...`;
+                resultsDiv.appendChild(div);
+            });
+
+            updateSummary();
+
+            // Test all games in parallel
+            await Promise.all(games.map(game => testGame(game)));
+        }
+    </script>
+</body>
+</html>
