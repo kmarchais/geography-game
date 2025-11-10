@@ -139,14 +139,7 @@ export default defineConfig({
       },
     },
 
-    // Minification
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: false, // Keep console logs for debugging
-        drop_debugger: true,
-        pure_funcs: ['console.debug'], // Remove console.debug only
-      },
-    },
+    // Minification - using esbuild for faster builds
+    minify: 'esbuild',
   },
 })
