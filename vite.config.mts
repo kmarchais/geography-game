@@ -66,14 +66,14 @@ export default defineConfig({
         ],
       },
     }),
-    // Bundle analyzer - generates stats.html
-    visualizer({
-      filename: 'dist/stats.html',
-      open: false,
-      gzipSize: true,
-      brotliSize: true,
-      template: 'treemap', // 'sunburst', 'treemap', 'network'
-    }) as any,
+    // Bundle analyzer - TEMPORARILY DISABLED (causing CI hangs)
+    // visualizer({
+    //   filename: 'dist/stats.html',
+    //   open: false,
+    //   gzipSize: true,
+    //   brotliSize: true,
+    //   template: 'treemap', // 'sunburst', 'treemap', 'network'
+    // }) as any,
   ],
   define: { 'process.env': {} }, // Keep this if your client-side code needs it
   resolve: {
