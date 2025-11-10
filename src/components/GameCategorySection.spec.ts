@@ -62,7 +62,7 @@ const getCategoryConfig = (category: string): CategoryConfig => {
 describe("GameCategorySection", () => {
   describe("categoryConfigs", () => {
     it("should have config for countries category", () => {
-      const config = categoryConfigs.countries;
+      const config = categoryConfigs.countries!;
       expect(config.title).toBe("Country Maps");
       expect(config.icon).toBe("mdi-earth");
       expect(config.iconColor).toBe("blue");
@@ -71,7 +71,7 @@ describe("GameCategorySection", () => {
     });
 
     it("should have config for divisions category", () => {
-      const config = categoryConfigs.divisions;
+      const config = categoryConfigs.divisions!;
       expect(config.title).toBe("Administrative Divisions");
       expect(config.icon).toBe("mdi-map-marker-radius");
       expect(config.iconColor).toBe("green");
@@ -80,7 +80,7 @@ describe("GameCategorySection", () => {
     });
 
     it("should have config for cities category", () => {
-      const config = categoryConfigs.cities;
+      const config = categoryConfigs.cities!;
       expect(config.title).toBe("City Districts");
       expect(config.icon).toBe("mdi-city");
       expect(config.iconColor).toBe("orange");
@@ -89,7 +89,7 @@ describe("GameCategorySection", () => {
     });
 
     it("should have config for capitals category", () => {
-      const config = categoryConfigs.capitals;
+      const config = categoryConfigs.capitals!;
       expect(config.title).toBe("Capitals");
       expect(config.icon).toBe("mdi-office-building-marker");
       expect(config.iconColor).toBe("purple");
@@ -98,7 +98,7 @@ describe("GameCategorySection", () => {
     });
 
     it("should have config for flags category", () => {
-      const config = categoryConfigs.flags;
+      const config = categoryConfigs.flags!;
       expect(config.title).toBe("Flags");
       expect(config.icon).toBe("mdi-flag");
       expect(config.iconColor).toBe("red");
@@ -109,9 +109,9 @@ describe("GameCategorySection", () => {
 
   describe("getCategoryConfig", () => {
     it("should return config for known categories", () => {
-      expect(getCategoryConfig("countries")).toEqual(categoryConfigs.countries);
-      expect(getCategoryConfig("divisions")).toEqual(categoryConfigs.divisions);
-      expect(getCategoryConfig("cities")).toEqual(categoryConfigs.cities);
+      expect(getCategoryConfig("countries")).toEqual(categoryConfigs.countries!);
+      expect(getCategoryConfig("divisions")).toEqual(categoryConfigs.divisions!);
+      expect(getCategoryConfig("cities")).toEqual(categoryConfigs.cities!);
     });
 
     it("should return default config for unknown category", () => {
@@ -137,9 +137,9 @@ describe("GameCategorySection", () => {
 
   describe("category-specific styling", () => {
     it("should use different columns for cities category", () => {
-      expect(categoryConfigs.cities.cols).toBe(4);
-      expect(categoryConfigs.countries.cols).toBe(6);
-      expect(categoryConfigs.divisions.cols).toBe(6);
+      expect(categoryConfigs.cities!.cols).toBe(4);
+      expect(categoryConfigs.countries!.cols).toBe(6);
+      expect(categoryConfigs.divisions!.cols).toBe(6);
     });
 
     it("should use unique background classes for each category", () => {

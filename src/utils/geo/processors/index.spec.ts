@@ -18,7 +18,7 @@ describe("processors/index", () => {
 
   const createTestCollection = (names: string[]): FeatureCollection<Point> => ({
     type: "FeatureCollection",
-    features: names.map(createTestFeature),
+    features: names.map(name => createTestFeature(name)),
   });
 
   describe("PROCESSOR_REGISTRY", () => {

@@ -115,7 +115,7 @@ describe("HomeView", () => {
     it("should return games for divisions category", () => {
       const divisionGames = getGamesByCategory(mockGames, "divisions");
       expect(divisionGames).toHaveLength(1);
-      expect(divisionGames[0].id).toBe("us-states");
+      expect(divisionGames[0]!.id).toBe("us-states");
     });
 
     it("should return games for cities category", () => {
@@ -157,7 +157,7 @@ describe("HomeView", () => {
     it("should filter games by name", () => {
       const results = searchGames(mockGames, "World");
       expect(results).toHaveLength(1);
-      expect(results[0].id).toBe("world-countries");
+      expect(results[0]!.id).toBe("world-countries");
     });
 
     it("should filter games by category", () => {
@@ -172,7 +172,7 @@ describe("HomeView", () => {
     it("should be case insensitive", () => {
       const results = searchGames(mockGames, "PARIS");
       expect(results).toHaveLength(1);
-      expect(results[0].id).toBe("paris-arrondissements");
+      expect(results[0]!.id).toBe("paris-arrondissements");
     });
 
     it("should return all games for empty query", () => {
@@ -188,13 +188,13 @@ describe("HomeView", () => {
     it("should handle partial matches", () => {
       const results = searchGames(mockGames, "Euro");
       expect(results).toHaveLength(1);
-      expect(results[0].id).toBe("europe-countries");
+      expect(results[0]!.id).toBe("europe-countries");
     });
 
     it("should search across multiple fields", () => {
       const results = searchGames(mockGames, "States");
       expect(results).toHaveLength(1);
-      expect(results[0].id).toBe("us-states");
+      expect(results[0]!.id).toBe("us-states");
     });
   });
 
@@ -218,7 +218,7 @@ describe("HomeView", () => {
 
       expect(categories).toEqual(["cities"]);
       expect(cityGames).toHaveLength(1);
-      expect(cityGames[0].id).toBe("london-boroughs");
+      expect(cityGames[0]!.id).toBe("london-boroughs");
     });
   });
 

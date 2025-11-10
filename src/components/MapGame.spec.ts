@@ -368,7 +368,7 @@ describe.skip("MapGame.vue", () => {
       wrapper = mountComponent({
         ...defaultProps,
         totalRoundsOverride: 5,
-      });
+      } as any);
       await nextTick();
       await nextTick(); // Wait for async operations
 
@@ -382,7 +382,7 @@ describe.skip("MapGame.vue", () => {
       wrapper = mountComponent({
         ...defaultProps,
         processGeojsonDataFn: processGeoJsonFn,
-      });
+      } as any);
       await nextTick();
       await nextTick();
 
@@ -411,7 +411,7 @@ describe.skip("MapGame.vue", () => {
       wrapper = mountComponent({
         ...defaultProps,
         geojsonCodeProperty: "code",
-      });
+      } as any);
       await nextTick();
       await nextTick();
 

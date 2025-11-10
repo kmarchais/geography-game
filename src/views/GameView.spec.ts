@@ -75,7 +75,7 @@ describe("GameView Logic", () => {
       const gameDefinition: GameDefinition | null = null;
 
       const mapOptions = computed(() => {
-        if (!gameDefinition?.config) {
+        if (!(gameDefinition as GameDefinition | null)?.config) {
           return {
             initialCenter: [0, 0] as [number, number],
             initialZoom: 2,
@@ -84,7 +84,7 @@ describe("GameView Logic", () => {
           };
         }
 
-        const config = gameDefinition.config;
+        const config = (gameDefinition as unknown as GameDefinition).config;
         return {
           initialCenter: config.mapCenter as [number, number],
           initialZoom: config.zoom,
