@@ -23,19 +23,19 @@
 
     <!-- Tooltip -->
     <div
-      v-if="hoveredSegment !== null"
+      v-if="currentSegment"
       class="chart-tooltip"
     >
       <div class="tooltip-header">
-        {{ segments[hoveredSegment].label }}
-        <span class="tooltip-count">{{ segments[hoveredSegment].count }}/{{ totalRounds }}</span>
+        {{ currentSegment.label }}
+        <span class="tooltip-count">{{ currentSegment.count }}/{{ totalRounds }}</span>
       </div>
       <div
-        v-if="segments[hoveredSegment].territories.length > 0"
+        v-if="currentSegment.territories.length > 0"
         class="tooltip-territories"
       >
         <div
-          v-for="territory in segments[hoveredSegment].territories"
+          v-for="territory in currentSegment.territories"
           :key="territory"
           class="territory-item"
         >
@@ -176,6 +176,12 @@ const segments = computed(() => {
         path,
       };
     });
+});
+
+// Get the currently hovered segment safely
+const currentSegment = computed(() => {
+  if (hoveredSegment.value === null) return null;
+  return segments.value[hoveredSegment.value];
 });
 </script>
 

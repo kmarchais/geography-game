@@ -26,7 +26,7 @@ export async function register(config?: ServiceWorkerConfig): Promise<void> {
     return;
   }
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (import.meta.env.MODE !== 'production') {
     console.log('[SW Registration] Skipping registration in development mode');
     return;
   }

@@ -67,7 +67,7 @@ const SVALBARD_LATITUDE_THRESHOLD = 72;
 // Function to check if a polygon has any point above threshold
 const isPolygonAboveThreshold = (polygon: Position[][]): boolean => {
   // Check if any point in any ring is above the threshold
-  return polygon.some(ring => ring.some(point => point[1] > SVALBARD_LATITUDE_THRESHOLD));
+  return polygon.some(ring => ring.some(point => point[1] !== undefined && point[1] > SVALBARD_LATITUDE_THRESHOLD));
 };
 
 // Function to split Norway into mainland and Svalbard

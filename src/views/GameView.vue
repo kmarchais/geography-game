@@ -45,7 +45,6 @@
         :geojson-name-property="gameDefinition.config.propertyName"
         :total-rounds-override="totalRounds"
         :map-options="mapOptions"
-        :processors="gameDefinition.config.processors"
         :process-geojson-data-fn="processGeoJsonData"
         :game-id="gameDefinition.id"
         :game-name="gameDefinition.name"
@@ -61,7 +60,8 @@ import { useGameRegistry } from "../composables/useGameRegistry";
 import { applyProcessors } from "../utils/geo/processors";
 import MapGame from "../components/MapGame.vue";
 import type { GameDefinition } from "../types/gameRegistry";
-import type { FeatureCollection, Geometry, GeoJsonProperties } from "geojson";
+import type { FeatureCollection, Geometry } from "geojson";
+import type { GeoJSONProperties } from "../utils/geojsonUtils";
 
 const route = useRoute();
 const router = useRouter();
@@ -141,14 +141,14 @@ const totalRounds = computed(() => {
  * Process GeoJSON data using configured processors
  */
 function processGeoJsonData(
-  data: FeatureCollection<Geometry, GeoJsonProperties>
-): FeatureCollection<Geometry, GeoJsonProperties> {
+  data: FeatureCollection<Geometry, GeoJSONProperties>
+): FeatureCollection<Geometry, GeoJSONProperties> {
   if (!gameDefinition.value?.config.processors) {
     return data;
   }
 
   try {
-    return applyProcessors(data, gameDefinition.value.config.processors);
+    return applyProcessors(data, gameDefinition.value.config.processors) as FeatureCollection<Geometry, GeoJSONProperties>;
   } catch (err) {
     console.error("Error processing GeoJSON data:", err);
     return data;

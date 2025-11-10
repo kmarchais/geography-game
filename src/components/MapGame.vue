@@ -174,14 +174,18 @@
     if (!properties) return undefined;
     const value = properties[props.geojsonNameProperty];
     // Convert numbers to strings (e.g., Paris arrondissements use numeric IDs)
-    return typeof value === 'number' ? String(value) : value;
+    if (typeof value === 'number') return String(value);
+    if (typeof value === 'string') return value;
+    return undefined;
   };
 
   // Helper to extract entity code from feature properties
   const getEntityCode = (properties: GeoJSONProperties | undefined): string | undefined => {
     if (!properties || !props.geojsonCodeProperty) return undefined;
     const value = properties[props.geojsonCodeProperty];
-    return typeof value === 'number' ? String(value) : value;
+    if (typeof value === 'number') return String(value);
+    if (typeof value === 'string') return value;
+    return undefined;
   };
 
   const {
@@ -221,7 +225,9 @@
   const isNewBestTime = computed(() => {
     if (!currentGameStats.value || !gameEnded.value) return false;
     // Get time in seconds from formattedTime (MM:SS format)
-    const [minutes, seconds] = formattedTime.value.split(':').map(Number);
+    const parts = formattedTime.value.split(':').map(Number);
+    const minutes = parts[0] ?? 0;
+    const seconds = parts[1] ?? 0;
     const timeInSeconds = minutes * 60 + seconds;
     return timeInSeconds < currentGameStats.value.bestTime;
   });
@@ -546,7 +552,9 @@
   watch(gameEnded, (ended) => {
     if (ended && !gameHasBeenRecorded.value && authStore.isLoggedIn && props.gameId && props.gameName) {
       // Parse time from formattedTime (MM:SS format)
-      const [minutes, seconds] = formattedTime.value.split(':').map(Number);
+      const parts = formattedTime.value.split(':').map(Number);
+      const minutes = parts[0] ?? 0;
+      const seconds = parts[1] ?? 0;
       const timeInSeconds = minutes * 60 + seconds;
 
       // Count correct answers (entries with attempts 1, 2, or 3)

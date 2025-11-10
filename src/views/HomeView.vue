@@ -215,7 +215,7 @@ import { useRouter } from 'vue-router';
 import { polyfillCountryFlagEmojis } from "country-flag-emoji-polyfill";
 import { useGameRegistry } from '@/composables/useGameRegistry';
 import GameCategorySection from '@/components/GameCategorySection.vue';
-import type { GameDefinition } from '@/types/gameRegistry';
+import type { GameDefinition, GameCategory } from '@/types/gameRegistry';
 
 polyfillCountryFlagEmojis();
 
@@ -241,9 +241,9 @@ const filteredGames = computed(() => {
 
 // Get unique categories that have games, in preferred order
 const categoriesWithGames = computed(() => {
-  const preferredOrder = ['countries', 'divisions', 'cities', 'capitals', 'flags'];
+  const preferredOrder = ['countries', 'divisions', 'cities', 'capitals', 'flags'] as const;
   const categories = new Set(filteredGames.value.map(game => game.category));
-  return preferredOrder.filter(cat => categories.has(cat));
+  return preferredOrder.filter((cat): cat is GameCategory => categories.has(cat));
 });
 
 // Get games for a specific category
