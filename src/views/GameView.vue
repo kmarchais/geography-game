@@ -41,7 +41,7 @@
       <MapGame
         :entity-name-singular="gameDefinition.config.targetLabel"
         :entity-name-plural="`${gameDefinition.config.targetLabel}s`"
-        :geojson-url="gameDefinition.config.dataUrl"
+        :geojson-url="resolvedDataUrl"
         :geojson-name-property="gameDefinition.config.propertyName"
         :total-rounds-override="totalRounds"
         :map-options="mapOptions"
@@ -92,6 +92,37 @@ const mapOptions = computed(() => {
     maxZoom: config.zoom + 6,
     maxBounds: config.maxBounds as [[number, number], [number, number]] | undefined,
   };
+});
+
+/**
+ * Resolve data URL - handle both absolute URLs and relative paths
+ * Relative paths (starting with ./) are resolved using BASE_URL
+ */
+const resolvedDataUrl = computed(() => {
+  if (!gameDefinition.value?.config.dataUrl) {
+    return '';
+  }
+
+  const dataUrl = gameDefinition.value.config.dataUrl;
+
+  // If it's an absolute URL (http:// or https://), use as-is
+  if (dataUrl.startsWith('http://') || dataUrl.startsWith('https://')) {
+    return dataUrl;
+  }
+
+  // If it's a relative path, prepend BASE_URL
+  if (dataUrl.startsWith('./')) {
+    const relativePath = dataUrl.substring(2); // Remove './'
+    return `${import.meta.env.BASE_URL}${relativePath}`;
+  }
+
+  // If it starts with '/', it's root-relative, prepend BASE_URL
+  if (dataUrl.startsWith('/')) {
+    return `${import.meta.env.BASE_URL}${dataUrl.substring(1)}`;
+  }
+
+  // Otherwise, treat as relative and prepend BASE_URL
+  return `${import.meta.env.BASE_URL}${dataUrl}`;
 });
 
 /**
