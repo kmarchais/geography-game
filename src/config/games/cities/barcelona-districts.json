@@ -12,7 +12,7 @@
   "featured": false,
   "estimatedTime": 3,
   "config": {
-    "dataUrl": "https://raw.githubusercontent.com/martgnz/bcn-geodata/master/districtes/districtes.geojson",
+    "dataUrl": "https://cdn.jsdelivr.net/gh/martgnz/bcn-geodata@master/districtes/districtes.geojson",
     "mapCenter": [41.3851, 2.1734],
     "zoom": 11,
     "maxBounds": [[41.3200, 2.0534], [41.4695, 2.2280]],

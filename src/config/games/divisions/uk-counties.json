@@ -12,7 +12,7 @@
   "featured": false,
   "estimatedTime": 12,
   "config": {
-    "dataUrl": "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/united-kingdom.geojson",
+    "dataUrl": "https://cdn.jsdelivr.net/gh/codeforamerica/click_that_hood@master/public/data/united-kingdom.geojson",
     "mapCenter": [54.5, -3.5],
     "zoom": 5,
     "maxBounds": [[49.0, -11.0], [61.0, 2.0]],

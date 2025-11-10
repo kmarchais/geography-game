@@ -12,7 +12,7 @@
   "featured": false,
   "estimatedTime": 5,
   "config": {
-    "dataUrl": "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/spain-communities.geojson",
+    "dataUrl": "https://cdn.jsdelivr.net/gh/codeforamerica/click_that_hood@master/public/data/spain-communities.geojson",
     "mapCenter": [40.0, -4.0],
     "zoom": 6,
     "maxBounds": [[35.0, -10.0], [45.0, 5.0]],

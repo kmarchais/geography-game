@@ -12,7 +12,7 @@
   "featured": false,
   "estimatedTime": 10,
   "config": {
-    "dataUrl": "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/china.geojson",
+    "dataUrl": "https://cdn.jsdelivr.net/gh/codeforamerica/click_that_hood@master/public/data/china.geojson",
     "mapCenter": [35.0, 105.0],
     "zoom": 4,
     "maxBounds": [[18.0, 73.0], [54.0, 135.0]],

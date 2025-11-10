@@ -12,7 +12,7 @@
   "featured": false,
   "estimatedTime": 3,
   "config": {
-    "dataUrl": "https://raw.githubusercontent.com/codeforgermany/click_that_hood/refs/heads/main/public/data/the-netherlands.geojson",
+    "dataUrl": "https://cdn.jsdelivr.net/gh/codeforgermany/click_that_hood@refs/heads/main/public/data/the-netherlands.geojson",
     "mapCenter": [52.2, 5.3],
     "zoom": 7,
     "maxBounds": [[50.7, 3.0], [53.7, 7.6]],

@@ -112,7 +112,7 @@ async function loadDivisionGames(): Promise<GameDefinition[]> {
     dutchProvinces,
     ukCounties,
     russianOblasts,
-    ukrainianOblasts,
+    // ukrainianOblasts - TEMPORARILY DISABLED: Data source no longer available (404 from GitHub)
   ] = await Promise.all([
     import("../config/games/divisions/us-states.json"),
     import("../config/games/divisions/canadian-provinces.json"),
@@ -126,7 +126,7 @@ async function loadDivisionGames(): Promise<GameDefinition[]> {
     import("../config/games/divisions/dutch-provinces.json"),
     import("../config/games/divisions/uk-counties.json"),
     import("../config/games/divisions/russian-oblasts.json"),
-    import("../config/games/divisions/ukrainian-oblasts.json"),
+    // import("../config/games/divisions/ukrainian-oblasts.json"), - DISABLED
   ]);
 
   return [
@@ -142,7 +142,7 @@ async function loadDivisionGames(): Promise<GameDefinition[]> {
     dutchProvinces.default,
     ukCounties.default,
     russianOblasts.default,
-    ukrainianOblasts.default,
+    // ukrainianOblasts.default, - DISABLED
   ] as GameDefinition[];
 }
 

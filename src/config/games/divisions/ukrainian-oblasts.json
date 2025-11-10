@@ -12,7 +12,7 @@
   "featured": false,
   "estimatedTime": 8,
   "config": {
-    "dataUrl": "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/ukraine.geojson",
+    "dataUrl": "https://cdn.jsdelivr.net/gh/codeforamerica/click_that_hood@master/public/data/ukraine.geojson",
     "mapCenter": [49.0, 31.0],
     "zoom": 6,
     "maxBounds": [[44.0, 22.0], [53.0, 40.0]],

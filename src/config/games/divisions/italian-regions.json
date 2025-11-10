@@ -12,7 +12,7 @@
   "featured": false,
   "estimatedTime": 5,
   "config": {
-    "dataUrl": "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data//italy-regions.geojson",
+    "dataUrl": "https://cdn.jsdelivr.net/gh/codeforamerica/click_that_hood@master/public/data//italy-regions.geojson",
     "mapCenter": [42.5, 12.5],
     "zoom": 6,
     "maxBounds": [[36.0, 6.0], [48.0, 19.0]],
