@@ -113,31 +113,24 @@ export default defineConfig({
     // Chunk size warning limit
     chunkSizeWarningLimit: 600,
 
-    rollupOptions: {
-      output: {
-        // Manual chunking for better code splitting
-        manualChunks: {
-          // Vendor chunks
-          'vue-core': ['vue', 'vue-router', 'pinia'],
-          'vuetify': ['vuetify', 'vuetify/components', 'vuetify/directives'],
-          'leaflet': ['leaflet'],
-
-          // App chunks (already split by dynamic imports)
-          // Game configs are automatically chunked via dynamic imports
-        },
-
-        // Consistent chunk naming for better caching
-        chunkFileNames: (chunkInfo) => {
-          // Game config chunks use descriptive names
-          if (chunkInfo.name.includes('config/games/')) {
-            const gameName = chunkInfo.name.split('/').pop()?.replace('.json', '') || 'game';
-            return `assets/${gameName}-[hash].js`;
-          }
-          // Regular chunks
-          return 'assets/[name]-[hash].js';
-        },
-      },
-    },
+    // Simplified rollup options for CI compatibility
+    // Manual chunking disabled to avoid CI hanging issues
+    // rollupOptions: {
+    //   output: {
+    //     manualChunks: {
+    //       'vue-core': ['vue', 'vue-router', 'pinia'],
+    //       'vuetify': ['vuetify', 'vuetify/components', 'vuetify/directives'],
+    //       'leaflet': ['leaflet'],
+    //     },
+    //     chunkFileNames: (chunkInfo) => {
+    //       if (chunkInfo.name.includes('config/games/')) {
+    //         const gameName = chunkInfo.name.split('/').pop()?.replace('.json', '') || 'game';
+    //         return `assets/${gameName}-[hash].js`;
+    //       }
+    //       return 'assets/[name]-[hash].js';
+    //     },
+    //   },
+    // },
 
     // Minification - using esbuild for faster builds
     minify: 'esbuild',
