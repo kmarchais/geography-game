@@ -33,12 +33,26 @@
       </button>
     </div>
 
+    <!-- Difficulty Selection Dialog -->
+    <v-dialog
+      v-model="showDifficultySelector"
+      :persistent="true"
+      max-width="900px"
+    >
+      <DifficultySelector
+        :default-difficulty="selectedDifficulty"
+        @select="onDifficultySelected"
+        @cancel="goHome"
+      />
+    </v-dialog>
+
     <!-- Game Content -->
     <div
-      v-else-if="gameDefinition"
+      v-if="gameDefinition && selectedDifficulty"
       class="game-content"
     >
       <MapGame
+        :key="`${gameDefinition.id}-${selectedDifficulty}`"
         :entity-name-singular="gameDefinition.config.targetLabel"
         :entity-name-plural="`${gameDefinition.config.targetLabel}s`"
         :geojson-url="resolvedDataUrl"
@@ -48,6 +62,7 @@
         :process-geojson-data-fn="processGeoJsonData"
         :game-id="gameDefinition.id"
         :game-name="gameDefinition.name"
+        :difficulty="selectedDifficulty"
       />
     </div>
   </div>
@@ -59,9 +74,11 @@ import { useRoute, useRouter } from "vue-router";
 import { useGameRegistry } from "../composables/useGameRegistry";
 import { applyProcessors } from "../utils/geo/processors";
 import MapGame from "../components/MapGame.vue";
+import DifficultySelector from "../components/DifficultySelector.vue";
 import type { GameDefinition } from "../types/gameRegistry";
 import type { FeatureCollection, Geometry } from "geojson";
 import type { GeoJSONProperties } from "../utils/geojsonUtils";
+import type { DifficultyMode } from "../types/difficulty";
 
 const route = useRoute();
 const router = useRouter();
@@ -70,6 +87,15 @@ const registry = useGameRegistry();
 const loading = ref(true);
 const error = ref<string | null>(null);
 const gameDefinition = ref<GameDefinition | null>(null);
+
+// Difficulty selection
+const showDifficultySelector = ref(false);
+const selectedDifficulty = ref<DifficultyMode | undefined>(undefined);
+
+function onDifficultySelected(difficulty: DifficultyMode) {
+  selectedDifficulty.value = difficulty;
+  showDifficultySelector.value = false;
+}
 
 /**
  * Map options computed from game definition
@@ -179,6 +205,9 @@ async function loadGame() {
 
     gameDefinition.value = game;
     loading.value = false;
+
+    // Show difficulty selector after game loads
+    showDifficultySelector.value = true;
   } catch (err) {
     error.value = err instanceof Error ? err.message : "Unknown error occurred";
     loading.value = false;

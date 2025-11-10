@@ -7,6 +7,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { useAuthStore } from './auth'
+import type { DifficultyMode } from '../types/difficulty'
 
 // LocalStorage key
 const STATS_KEY = 'app_userStats'
@@ -22,6 +23,8 @@ export interface GameResult {
   timestamp: number // Unix timestamp
   accuracy: number // Percentage (0-100)
   rawScorePercentage?: number // Exact percentage for leaderboard tiebreaking (with full precision)
+  difficulty?: DifficultyMode // Difficulty mode used (easy/medium/hard)
+  baseScore?: number // Score before difficulty multiplier (for comparison)
 }
 
 export interface GameStats {
@@ -36,6 +39,14 @@ export interface GameStats {
   totalRounds: number
   lastPlayed: number // Unix timestamp
   highestAccuracy: number
+  // Difficulty-specific best scores
+  bestScoreEasy?: number
+  bestScoreMedium?: number
+  bestScoreHard?: number
+  // Track plays per difficulty
+  playsEasy?: number
+  playsMedium?: number
+  playsHard?: number
 }
 
 export interface UserStats {
@@ -198,6 +209,20 @@ export const useStatsStore = defineStore('stats', () => {
     gameStats.totalRounds += result.totalRounds
     gameStats.lastPlayed = result.timestamp
     gameStats.highestAccuracy = Math.max(gameStats.highestAccuracy, result.accuracy)
+
+    // Track difficulty-specific stats
+    if (result.difficulty) {
+      const diffKey = `plays${result.difficulty.charAt(0).toUpperCase()}${result.difficulty.slice(1)}` as keyof GameStats
+      const scoreKey = `bestScore${result.difficulty.charAt(0).toUpperCase()}${result.difficulty.slice(1)}` as keyof GameStats
+
+      // Increment plays for this difficulty
+      const currentPlays = (gameStats[diffKey] as number) || 0
+      ;(gameStats[diffKey] as number) = currentPlays + 1
+
+      // Update best score for this difficulty
+      const currentBest = (gameStats[scoreKey] as number) || 0
+      ;(gameStats[scoreKey] as number) = Math.max(currentBest, result.score)
+    }
 
     // Calculate new averages
     gameStats.averageScore = Math.round(

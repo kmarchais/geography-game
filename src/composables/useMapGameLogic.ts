@@ -1,4 +1,6 @@
 import { ref, computed, onScopeDispose, type Ref } from "vue";
+import type { DifficultyMode } from "../types/difficulty";
+import { calculateDifficultyScore, getTimeLimit, isTimedMode } from "../types/difficulty";
 
 // Scoring weights - higher weight for better performance
 export const SCORE_WEIGHTS = {
@@ -14,10 +16,11 @@ export interface MapGameLogicOptions {
   entityNamePlural: string;
   availableEntities: Ref<string[]>;
   totalRounds: Ref<number>;
+  difficulty?: Ref<DifficultyMode | undefined>;
 }
 
 export function useMapGameLogic(options: MapGameLogicOptions) {
-  const { entityNameSingular, availableEntities, totalRounds } = options;
+  const { entityNameSingular, availableEntities, totalRounds, difficulty } = options;
 
   const score = ref(0);
   const currentRound = ref(1);
@@ -36,6 +39,21 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
     return `${minutes.toString().padStart(2, "0")}:${seconds
       .toString()
       .padStart(2, "0")}`;
+  });
+
+  // Countdown timer for difficulty-based time limits
+  const roundTimeLeft = ref(0);
+  const roundTimerInterval = ref<number | null>(null);
+  const isRoundTimedOut = ref(false);
+
+  // Check if current difficulty has time limits
+  const hasTimeLimit = computed(() => {
+    return difficulty?.value ? isTimedMode(difficulty.value) : false;
+  });
+
+  // Get time limit for current difficulty
+  const roundTimeLimit = computed(() => {
+    return difficulty?.value ? getTimeLimit(difficulty.value) : 0;
   });
 
   // Game completion statistics with territory names
@@ -107,6 +125,18 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
     return Math.floor(rawScorePercentage.value);
   });
 
+  // Final score with difficulty multiplier applied
+  const finalScore = computed(() => {
+    const baseScore = weightedScore.value;
+    if (difficulty?.value) {
+      return calculateDifficultyScore(baseScore, difficulty.value);
+    }
+    return baseScore;
+  });
+
+  // Base score (before difficulty multiplier) - for stats tracking
+  const baseScore = computed(() => weightedScore.value);
+
   const feedback = ref("");
   const feedbackType = ref("");
 
@@ -124,6 +154,57 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
     timerInterval.value = setInterval(() => {
       timer.value++;
     }, 1000) as unknown as number;
+  };
+
+  // Stop countdown timer for round
+  const stopRoundTimer = () => {
+    if (roundTimerInterval.value !== null) {
+      clearInterval(roundTimerInterval.value);
+      roundTimerInterval.value = null;
+    }
+  };
+
+  // Start countdown timer for round
+  const startRoundTimer = () => {
+    stopRoundTimer();
+    isRoundTimedOut.value = false;
+
+    if (!hasTimeLimit.value) {
+      return; // No timer for non-timed modes
+    }
+
+    roundTimeLeft.value = roundTimeLimit.value;
+
+    roundTimerInterval.value = setInterval(() => {
+      roundTimeLeft.value--;
+
+      if (roundTimeLeft.value <= 0) {
+        stopRoundTimer();
+        isRoundTimedOut.value = true;
+        handleRoundTimeout();
+      }
+    }, 1000) as unknown as number;
+  };
+
+  // Handle timeout - mark as failed and move to next round
+  const handleRoundTimeout = () => {
+    if (!gameEnded.value && targetEntity.value) {
+      foundEntities.value.set(targetEntity.value, 4); // Mark as failed (4 attempts)
+      showFeedback(false, `Time's up! The correct ${entityNameSingular} was ${targetEntity.value}`);
+
+      setTimeout(() => {
+        currentRound.value++;
+        if (currentRound.value <= totalRounds.value) {
+          selectNewTargetEntity();
+          currentAttempts.value = 0;
+          startRoundTimer(); // Start timer for next round
+        } else {
+          gameEnded.value = true;
+          stopTimer();
+          stopRoundTimer();
+        }
+      }, 1500);
+    }
   };
 
   const showFeedback = (isCorrect: boolean, customMsg?: string) => {
@@ -181,17 +262,22 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
   };
 
   const advanceRound = () => {
+    stopRoundTimer(); // Stop timer for completed round
+    currentAttempts.value = 0; // Reset attempts for new round
+
     if (currentRound.value >= totalRounds.value) {
       endGame();
     } else {
       currentRound.value++;
       selectNewTargetEntity();
+      startRoundTimer(); // Start timer for new round
     }
   };
 
   const endGame = () => {
     gameEnded.value = true;
     stopTimer();
+    stopRoundTimer();
     clearFeedback();
   };
 
@@ -205,6 +291,7 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
     clearFeedback();
     selectNewTargetEntity();
     startTimer();
+    startRoundTimer(); // Start countdown for first round
   };
 
   const handleCorrectGuess = (guessedEntity: string) => {
@@ -247,6 +334,7 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
 
   onScopeDispose(() => {
     stopTimer();
+    stopRoundTimer();
   });
 
   return {
@@ -260,12 +348,18 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
     timer,
     feedback,
     feedbackType,
+    roundTimeLeft,
+    isRoundTimedOut,
 
     // Computed Refs
     formattedTime,
     gameStats,
     weightedScore,
     rawScorePercentage,
+    finalScore,
+    baseScore,
+    hasTimeLimit,
+    roundTimeLimit,
 
     // Methods
     startNewGame,

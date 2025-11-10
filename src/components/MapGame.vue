@@ -15,6 +15,12 @@
           <div class="timer-display">
             Time: {{ formattedTime }}
           </div>
+          <div
+            v-if="hasTimeLimit"
+            :class="['countdown-display', { 'countdown-warning': roundTimeLeft <= 5 && roundTimeLeft > 0 }]"
+          >
+            ⏱️ {{ roundTimeLeft }}s
+          </div>
         </div>
         <div class="target-entity">
           Find: {{ targetEntity }}
@@ -36,7 +42,13 @@
       <template v-else>
         <div class="game-end">
           <div class="final-score">
-            Final Score: {{ weightedScore }} points
+            Final Score: {{ finalScore }} points
+            <div
+              v-if="props.difficulty && finalScore !== baseScore"
+              class="base-score-info"
+            >
+              (Base: {{ baseScore }}, Difficulty: {{ props.difficulty }})
+            </div>
             <div class="final-time">
               Time: {{ formattedTime }}
             </div>
@@ -122,6 +134,7 @@
   import { fetchAndCacheGeoJSON } from "../utils/geo/geojsonCache";
   import type { ProcessorName } from "../utils/geo/processors";
   import StatsChart from "./StatsChart.vue";
+  import type { DifficultyMode } from "../types/difficulty";
 
 
   interface MapOptions extends L.MapOptions {
@@ -152,6 +165,7 @@
     mapOptions: MapOptions;
     gameId?: string;
     gameName?: string;
+    difficulty?: DifficultyMode;
   }>();
 
   const mapElement = ref<HTMLElement | null>(null);
@@ -167,6 +181,7 @@
     entityNamePlural: props.entityNamePlural,
     availableEntities: availableEntities,
     totalRounds: totalRoundsComputed,
+    difficulty: computed(() => props.difficulty),
   });
 
   // Helper to extract entity name from feature properties
@@ -201,6 +216,12 @@
     gameStats,
     weightedScore,
     rawScorePercentage,
+    finalScore,
+    baseScore,
+    roundTimeLeft,
+    isRoundTimedOut,
+    hasTimeLimit,
+    roundTimeLimit,
     startNewGame,
     skipEntity,
     handleCorrectGuess,
@@ -219,7 +240,7 @@
 
   const isNewBestScore = computed(() => {
     if (!currentGameStats.value || !gameEnded.value) return false;
-    return weightedScore.value > currentGameStats.value.bestScore;
+    return finalScore.value > currentGameStats.value.bestScore;
   });
 
   const isNewBestTime = computed(() => {
@@ -565,20 +586,23 @@
         }
       });
 
-      // Use weighted score (out of 100 points)
-      const finalScore = weightedScore.value;
+      // Use final score (with difficulty multiplier applied)
+      const scoreToRecord = finalScore.value;
       const rawScore = rawScorePercentage.value;
+      const baseScoreValue = baseScore.value;
 
       statsStore.recordGameResult({
         gameId: props.gameId,
         gameName: props.gameName,
-        score: finalScore,
+        score: scoreToRecord,
         totalRounds: totalRoundsComputed.value,
         correctAnswers,
         timeInSeconds,
         timestamp: Date.now(),
-        accuracy: finalScore, // accuracy is now the same as score
+        accuracy: scoreToRecord, // accuracy is now the same as score
         rawScorePercentage: rawScore, // Store exact percentage for leaderboard tiebreaking
+        difficulty: props.difficulty, // Store difficulty mode
+        baseScore: baseScoreValue, // Store base score before multiplier
       });
 
       gameHasBeenRecorded.value = true;
@@ -666,6 +690,35 @@
     gap: 15px;
     color: var(--text-color);
     font-size: clamp(.8rem, 2.5vw, 1rem);
+  }
+
+  .countdown-display {
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background-color: rgba(74, 144, 226, 0.2);
+    transition: all 0.3s ease;
+  }
+
+  .countdown-warning {
+    background-color: rgba(230, 126, 34, 0.3);
+    animation: pulse-warning 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse-warning {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+
+  .base-score-info {
+    font-size: clamp(0.7rem, 2vw, 0.85rem);
+    font-weight: 400;
+    opacity: 0.7;
+    margin-top: 4px;
   }
 
   .target-entity {
