@@ -7,15 +7,34 @@
   "emoji": "🏘️",
   "color": "teal-darken-4",
   "description": "Identify all 73 neighborhoods (barris) of Barcelona",
-  "tags": ["barcelona", "spain", "barrios", "neighborhoods", "city", "europe"],
+  "tags": [
+    "barcelona",
+    "spain",
+    "barrios",
+    "neighborhoods",
+    "city",
+    "europe"
+  ],
   "difficulty": 4,
   "featured": false,
   "estimatedTime": 18,
   "config": {
     "dataUrl": "https://cdn.jsdelivr.net/gh/martgnz/bcn-geodata@master/barris/barris.geojson",
-    "mapCenter": [41.3851, 2.1734],
+    "mapCenter": [
+      41.3851,
+      2.1734
+    ],
     "zoom": 12,
-    "maxBounds": [[41.3200, 2.0534], [41.4695, 2.2280]],
+    "maxBounds": [
+      [
+        41.32,
+        2.0534
+      ],
+      [
+        41.4695,
+        2.228
+      ]
+    ],
     "propertyName": "NOM",
     "targetLabel": "Barrio"
   }

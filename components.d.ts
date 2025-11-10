@@ -19,5 +19,6 @@ declare module 'vue' {
     MapGame: typeof import('./src/components/MapGame.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    StatsChart: typeof import('./src/components/StatsChart.vue')['default']
   }
 }

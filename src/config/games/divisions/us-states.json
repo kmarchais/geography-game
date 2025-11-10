@@ -7,17 +7,31 @@
   "emoji": "🇺🇸",
   "color": "red-darken-1",
   "description": "Identify all 50 states of the United States",
-  "tags": ["usa", "states", "north-america", "easy"],
+  "tags": [
+    "usa",
+    "states",
+    "north-america",
+    "easy"
+  ],
   "difficulty": 2,
   "featured": true,
   "estimatedTime": 8,
   "config": {
     "dataUrl": "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_admin_1_states_provinces_shp.geojson",
-    "mapCenter": [39.8283, -98.5795],
+    "mapCenter": [
+      39.8283,
+      -98.5795
+    ],
     "zoom": 4,
     "maxBounds": [
-      [18, -130],
-      [50, -65]
+      [
+        18,
+        -130
+      ],
+      [
+        50,
+        -65
+      ]
     ],
     "propertyName": "name",
     "targetLabel": "State"

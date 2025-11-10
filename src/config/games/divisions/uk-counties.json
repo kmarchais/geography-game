@@ -7,15 +7,33 @@
   "emoji": "🇬🇧",
   "color": "blue-grey-darken-2",
   "description": "Identify all counties and regions of the United Kingdom",
-  "tags": ["uk", "united-kingdom", "counties", "regions", "europe"],
+  "tags": [
+    "uk",
+    "united-kingdom",
+    "counties",
+    "regions",
+    "europe"
+  ],
   "difficulty": 4,
   "featured": false,
   "estimatedTime": 12,
   "config": {
     "dataUrl": "https://cdn.jsdelivr.net/gh/codeforamerica/click_that_hood@master/public/data/united-kingdom.geojson",
-    "mapCenter": [54.5, -3.5],
+    "mapCenter": [
+      54.5,
+      -3.5
+    ],
     "zoom": 5,
-    "maxBounds": [[49.0, -11.0], [61.0, 2.0]],
+    "maxBounds": [
+      [
+        49,
+        -11
+      ],
+      [
+        61,
+        2
+      ]
+    ],
     "propertyName": "name",
     "targetLabel": "Region"
   }

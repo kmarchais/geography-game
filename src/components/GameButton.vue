@@ -18,14 +18,14 @@
 
           <span class="game-name text-truncate">{{ displayName }}</span>
 
-          <v-chip
-            v-if="game.difficulty"
-            size="x-small"
-            class="ml-2 flex-shrink-0"
-            :color="getDifficultyColor(game.difficulty)"
+          <!-- Entity count badge - integrated into button -->
+          <div
+            v-if="game.difficulty && entityCount"
+            class="entity-badge"
+            :class="`badge-difficulty-${game.difficulty}`"
           >
-            {{ getDifficultyLabel(game.difficulty) }}
-          </v-chip>
+            {{ entityCount }}
+          </div>
         </div>
       </v-btn>
     </template>
@@ -133,6 +133,13 @@ const displayEmoji = computed(() => {
   return props.game.emoji;
 });
 
+/**
+ * Get entity count for display
+ */
+const entityCount = computed(() => {
+  return props.game.config?.totalRounds || null;
+});
+
 const navigateToGame = () => {
   router.push(props.game.route);
 };
@@ -140,11 +147,6 @@ const navigateToGame = () => {
 const getDifficultyColor = (difficulty: number): string => {
   const colors = ['green', 'light-green', 'orange', 'deep-orange', 'red'];
   return colors[difficulty - 1] || 'grey';
-};
-
-const getDifficultyLabel = (difficulty: number): string => {
-  const labels = ['Easy', 'Medium', 'Hard', 'Expert', 'Extreme'];
-  return labels[difficulty - 1] || '';
 };
 </script>
 
@@ -174,5 +176,40 @@ const getDifficultyLabel = (difficulty: number): string => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Entity count badge - clean, modern design */
+.entity-badge {
+  margin-left: auto;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+  min-width: 40px;
+  text-align: center;
+  flex-shrink: 0;
+  opacity: 0.95;
+}
+
+/* Difficulty color variations - solid colors for clean look */
+.badge-difficulty-1 {
+  background-color: #4caf50;
+}
+
+.badge-difficulty-2 {
+  background-color: #8bc34a;
+}
+
+.badge-difficulty-3 {
+  background-color: #ff9800;
+}
+
+.badge-difficulty-4 {
+  background-color: #ff5722;
+}
+
+.badge-difficulty-5 {
+  background-color: #d32f2f;
 }
 </style>

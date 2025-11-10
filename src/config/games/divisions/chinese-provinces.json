@@ -7,15 +7,31 @@
   "emoji": "🇨🇳",
   "color": "blue-grey-darken-5",
   "description": "Identify all provinces, autonomous regions, and municipalities of China",
-  "tags": ["china", "provinces", "asia"],
+  "tags": [
+    "china",
+    "provinces",
+    "asia"
+  ],
   "difficulty": 4,
   "featured": false,
   "estimatedTime": 10,
   "config": {
     "dataUrl": "https://cdn.jsdelivr.net/gh/codeforamerica/click_that_hood@master/public/data/china.geojson",
-    "mapCenter": [35.0, 105.0],
+    "mapCenter": [
+      35,
+      105
+    ],
     "zoom": 4,
-    "maxBounds": [[18.0, 73.0], [54.0, 135.0]],
+    "maxBounds": [
+      [
+        18,
+        73
+      ],
+      [
+        54,
+        135
+      ]
+    ],
     "propertyName": "name",
     "targetLabel": "Province"
   }

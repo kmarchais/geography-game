@@ -7,15 +7,31 @@
   "emoji": "🇳🇱",
   "color": "blue-grey-darken-7",
   "description": "Identify all provinces of the Netherlands",
-  "tags": ["netherlands", "provinces", "europe"],
+  "tags": [
+    "netherlands",
+    "provinces",
+    "europe"
+  ],
   "difficulty": 1,
   "featured": false,
   "estimatedTime": 3,
   "config": {
     "dataUrl": "https://cdn.jsdelivr.net/gh/codeforgermany/click_that_hood@refs/heads/main/public/data/the-netherlands.geojson",
-    "mapCenter": [52.2, 5.3],
+    "mapCenter": [
+      52.2,
+      5.3
+    ],
     "zoom": 7,
-    "maxBounds": [[50.7, 3.0], [53.7, 7.6]],
+    "maxBounds": [
+      [
+        50.7,
+        3
+      ],
+      [
+        53.7,
+        7.6
+      ]
+    ],
     "propertyName": "name",
     "targetLabel": "Province"
   }

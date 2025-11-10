@@ -25,3 +25,33 @@ onMounted(async () => {
   }
 });
 </script>
+
+<style>
+/* Global layout reset */
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+#app {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.v-application {
+  min-height: 100%;
+}
+
+.v-main {
+  flex: 1;
+}
+
+/* Make v-main__wrap flexible */
+.v-main__wrap {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+</style>

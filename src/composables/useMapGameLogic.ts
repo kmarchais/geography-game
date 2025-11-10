@@ -1,5 +1,14 @@
 import { ref, computed, onScopeDispose, type Ref } from "vue";
 
+// Scoring weights - higher weight for better performance
+export const SCORE_WEIGHTS = {
+  FIRST_TRY: 4,
+  SECOND_TRY: 2,
+  THIRD_TRY: 1,
+  FAILED: 0,
+  SKIPPED: 0,
+} as const;
+
 export interface MapGameLogicOptions {
   entityNameSingular: string;
   entityNamePlural: string;
@@ -27,6 +36,75 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
     return `${minutes.toString().padStart(2, "0")}:${seconds
       .toString()
       .padStart(2, "0")}`;
+  });
+
+  // Game completion statistics with territory names
+  const gameStats = computed(() => {
+    const stats = {
+      foundOnAttempt1: 0,
+      foundOnAttempt2: 0,
+      foundOnAttempt3: 0,
+      failed: 0,
+      skipped: 0,
+      territoriesAttempt1: [] as string[],
+      territoriesAttempt2: [] as string[],
+      territoriesAttempt3: [] as string[],
+      territoriesFailed: [] as string[],
+      territoriesSkipped: [] as string[],
+    };
+
+    foundEntities.value.forEach((attempts, name) => {
+      if (attempts === 1) {
+        stats.foundOnAttempt1++;
+        stats.territoriesAttempt1.push(name);
+      } else if (attempts === 2) {
+        stats.foundOnAttempt2++;
+        stats.territoriesAttempt2.push(name);
+      } else if (attempts === 3) {
+        stats.foundOnAttempt3++;
+        stats.territoriesAttempt3.push(name);
+      } else if (attempts === 4) {
+        stats.failed++;
+        stats.territoriesFailed.push(name);
+      } else if (attempts === 5) {
+        stats.skipped++;
+        stats.territoriesSkipped.push(name);
+      }
+    });
+
+    // Sort territory lists alphabetically
+    stats.territoriesAttempt1.sort();
+    stats.territoriesAttempt2.sort();
+    stats.territoriesAttempt3.sort();
+    stats.territoriesFailed.sort();
+    stats.territoriesSkipped.sort();
+
+    return stats;
+  });
+
+  // Raw score percentage (with full precision for tiebreaking)
+  const rawScorePercentage = computed(() => {
+    const stats = gameStats.value;
+
+    // Calculate points earned
+    const pointsEarned =
+      (stats.foundOnAttempt1 * SCORE_WEIGHTS.FIRST_TRY) +
+      (stats.foundOnAttempt2 * SCORE_WEIGHTS.SECOND_TRY) +
+      (stats.foundOnAttempt3 * SCORE_WEIGHTS.THIRD_TRY) +
+      (stats.failed * SCORE_WEIGHTS.FAILED) +
+      (stats.skipped * SCORE_WEIGHTS.SKIPPED);
+
+    // Maximum possible points (all territories on first try)
+    const maxPoints = totalRounds.value * SCORE_WEIGHTS.FIRST_TRY;
+
+    // Calculate exact percentage (keep full precision for tiebreaking)
+    if (maxPoints === 0) return 0;
+    return (pointsEarned / maxPoints) * 100;
+  });
+
+  // Weighted score (0-100 points, floored for display)
+  const weightedScore = computed(() => {
+    return Math.floor(rawScorePercentage.value);
   });
 
   const feedback = ref("");
@@ -144,7 +222,7 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
     const isOutOfAttempts = currentAttempts.value >= 3;
 
     if (isOutOfAttempts) {
-      foundEntities.value.set(targetEntity.value, 4);
+      foundEntities.value.set(targetEntity.value, 4); // 4 = failed after 3 attempts
       showFeedback(false);
       advanceRound();
       return { shouldEndRound: true };
@@ -157,7 +235,7 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
   const skipEntity = () => {
     if (gameEnded.value) {return { skippedEntity: "" };}
     currentAttempts.value = 3;
-    foundEntities.value.set(targetEntity.value, 4);
+    foundEntities.value.set(targetEntity.value, 5); // 5 = skipped
     showFeedback(
       false,
       `Skipped! The correct ${entityNameSingular} was ${targetEntity.value}`
@@ -185,6 +263,9 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
 
     // Computed Refs
     formattedTime,
+    gameStats,
+    weightedScore,
+    rawScorePercentage,
 
     // Methods
     startNewGame,

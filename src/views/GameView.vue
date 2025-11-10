@@ -85,12 +85,17 @@ const mapOptions = computed(() => {
   }
 
   const config = gameDefinition.value.config;
+
+  // Enable world copy jump if worldWrapping processor is used
+  const hasWorldWrapping = config.processors?.includes('worldWrapping') ?? false;
+
   return {
     initialCenter: config.mapCenter as [number, number],
     initialZoom: config.zoom,
     minZoom: config.zoom - 2,
     maxZoom: config.zoom + 6,
     maxBounds: config.maxBounds as [[number, number], [number, number]] | undefined,
+    worldCopyJump: hasWorldWrapping,
   };
 });
 
@@ -211,8 +216,10 @@ watch(
 <style scoped>
 .game-view {
   width: 100%;
-  height: 100vh;
+  /* Fill viewport minus header (64px) */
+  height: calc(100vh - 64px);
   position: relative;
+  overflow: hidden;
 }
 
 .loading-container,
@@ -221,7 +228,7 @@ watch(
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
+  height: calc(100vh - 64px);
   padding: 20px;
 }
 

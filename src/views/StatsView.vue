@@ -119,7 +119,7 @@
                   >
                     <v-list-item-title>{{ game.gameName }}</v-list-item-title>
                     <v-list-item-subtitle>
-                      Played {{ game.timesPlayed }} times · Best: {{ game.bestScore }} · Avg: {{ game.averageScore }}
+                      Played {{ game.timesPlayed }} times · Best: {{ game.bestScore }} pts · Avg: {{ game.averageScore }} pts
                     </v-list-item-subtitle>
                   </v-list-item>
                 </v-list>
@@ -147,7 +147,7 @@
                   >
                     <v-list-item-title>{{ game.gameName }}</v-list-item-title>
                     <v-list-item-subtitle>
-                      Best Score: {{ game.bestScore }} · Best Time: {{ formatTime(game.bestTime) }} · Accuracy: {{ game.highestAccuracy }}%
+                      Best Score: {{ game.bestScore }} pts · Best Time: {{ formatTime(game.bestTime) }}
                     </v-list-item-subtitle>
                   </v-list-item>
                 </v-list>
@@ -175,9 +175,8 @@
                   >
                     <v-list-item-title>{{ game.gameName }}</v-list-item-title>
                     <v-list-item-subtitle>
-                      Score: {{ game.score }}/{{ game.totalRounds }} ·
+                      Score: {{ game.score }} pts ·
                       Time: {{ formatTime(game.timeInSeconds) }} ·
-                      Accuracy: {{ game.accuracy }}% ·
                       {{ formatDate(game.timestamp) }}
                     </v-list-item-subtitle>
                   </v-list-item>

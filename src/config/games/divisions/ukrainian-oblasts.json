@@ -7,16 +7,33 @@
   "emoji": "🇺🇦",
   "color": "blue-grey-darken-4",
   "description": "Identify all oblasts (provinces) of Ukraine",
-  "tags": ["ukraine", "oblasts", "provinces", "europe"],
+  "tags": [
+    "ukraine",
+    "oblasts",
+    "provinces",
+    "europe"
+  ],
   "difficulty": 3,
   "featured": false,
   "estimatedTime": 8,
   "config": {
-    "dataUrl": "https://cdn.jsdelivr.net/gh/codeforamerica/click_that_hood@master/public/data/ukraine.geojson",
-    "mapCenter": [49.0, 31.0],
+    "dataUrl": "./data/ukraine-oblasts.geojson",
+    "mapCenter": [
+      49,
+      31
+    ],
     "zoom": 6,
-    "maxBounds": [[44.0, 22.0], [53.0, 40.0]],
-    "propertyName": "name",
+    "maxBounds": [
+      [
+        44,
+        22
+      ],
+      [
+        53,
+        40
+      ]
+    ],
+    "propertyName": "name:en",
     "targetLabel": "Oblast"
   }
 }

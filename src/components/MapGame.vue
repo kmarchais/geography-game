@@ -36,10 +36,18 @@
       <template v-else>
         <div class="game-end">
           <div class="final-score">
-            Final Score: {{ score }}/{{ totalRoundsComputed }}
+            Final Score: {{ weightedScore }} points
             <div class="final-time">
               Time: {{ formattedTime }}
             </div>
+
+            <!-- Performance breakdown with chart -->
+            <StatsChart
+              :stats="gameStats"
+              :total-rounds="totalRoundsComputed"
+              :size="220"
+            />
+
             <div
               v-if="currentGameStats"
               class="stats-summary"
@@ -57,7 +65,7 @@
                 ⚡ New Best Time!
               </div>
               <div class="previous-best">
-                Previous Best: {{ currentGameStats.bestScore }}/{{ totalRoundsComputed }}
+                Previous Best: {{ currentGameStats.bestScore }} points
               </div>
             </div>
           </div>
@@ -113,6 +121,7 @@
   } from "../utils/geojsonUtils";
   import { fetchAndCacheGeoJSON } from "../utils/geo/geojsonCache";
   import type { ProcessorName } from "../utils/geo/processors";
+  import StatsChart from "./StatsChart.vue";
 
 
   interface MapOptions extends L.MapOptions {
@@ -159,6 +168,22 @@
     availableEntities: availableEntities,
     totalRounds: totalRoundsComputed,
   });
+
+  // Helper to extract entity name from feature properties
+  const getEntityName = (properties: GeoJSONProperties | undefined): string | undefined => {
+    if (!properties) return undefined;
+    const value = properties[props.geojsonNameProperty];
+    // Convert numbers to strings (e.g., Paris arrondissements use numeric IDs)
+    return typeof value === 'number' ? String(value) : value;
+  };
+
+  // Helper to extract entity code from feature properties
+  const getEntityCode = (properties: GeoJSONProperties | undefined): string | undefined => {
+    if (!properties || !props.geojsonCodeProperty) return undefined;
+    const value = properties[props.geojsonCodeProperty];
+    return typeof value === 'number' ? String(value) : value;
+  };
+
   const {
     score,
     currentRound,
@@ -169,6 +194,9 @@
     formattedTime,
     feedback,
     feedbackType,
+    gameStats,
+    weightedScore,
+    rawScorePercentage,
     startNewGame,
     skipEntity,
     handleCorrectGuess,
@@ -187,7 +215,7 @@
 
   const isNewBestScore = computed(() => {
     if (!currentGameStats.value || !gameEnded.value) return false;
-    return score.value > currentGameStats.value.bestScore;
+    return weightedScore.value > currentGameStats.value.bestScore;
   });
 
   const isNewBestTime = computed(() => {
@@ -240,8 +268,8 @@
         console.warn("Clicked layer is missing feature properties:", layer);
         return;
     }
-    const clickedEntityName = feature.properties.name;
-    const clickedEntityCode = feature.properties.code;
+    const clickedEntityName = getEntityName(feature.properties);
+    const clickedEntityCode = getEntityCode(feature.properties);
 
     if (!clickedEntityName || clickedEntityName === 'Unknown') {
       console.warn("Clicked feature has invalid name property:", feature);
@@ -419,7 +447,7 @@
 
         if (isFeatureCollection(processedData)) {
           availableEntities.value = processedData.features
-            .map((feature) => feature.properties?.name)
+            .map((feature) => getEntityName(feature.properties))
             .filter((name): name is string => typeof name === "string" && name.trim() !== "" && name !== 'Unknown');
 
           if (availableEntities.value.length === 0) {
@@ -434,13 +462,14 @@
             style: defaultStyle,
             onEachFeature: (feature, layer) => {
               const feat = feature as GeoJSONFeature | undefined;
-              if (feat?.properties?.name && feat.properties.name !== 'Unknown') {
+              const entityName = getEntityName(feat?.properties);
+              if (entityName && entityName !== 'Unknown') {
                   layer.on({
                     click: onEntityClick,
                     mouseover: (e) => {
                       const geoLayer = e.target as L.GeoJSON;
                       const feat = geoLayer.feature as GeoJSONFeature | undefined;
-                      const entityName = feat?.properties.name;
+                      const entityName = getEntityName(feat?.properties);
                       if (entityName && !foundEntities.value.has(entityName)) {
                         setLayerStyle(layer, { ...defaultStyle, fillOpacity: 0.7 });
                       }
@@ -448,7 +477,7 @@
                     mouseout: (e) => {
                       const geoLayer = e.target as L.GeoJSON;
                       const feat = geoLayer.feature as GeoJSONFeature | undefined;
-                      const entityName = feat?.properties.name;
+                      const entityName = getEntityName(feat?.properties);
                       if (entityName && !foundEntities.value.has(entityName)) {
                         if (leafletMap.value?.hasLayer(layer)) {
                             setLayerStyle(layer, defaultStyle);
@@ -460,7 +489,8 @@
             },
             filter: (feature) => {
                 const feat = feature as GeoJSONFeature | undefined;
-                return feat?.properties?.name !== 'Unknown';
+                const entityName = getEntityName(feat?.properties);
+                return entityName !== 'Unknown';
             }
           }).addTo(map);
 
@@ -527,20 +557,20 @@
         }
       });
 
-      // Calculate accuracy
-      const accuracy = totalRoundsComputed.value > 0
-        ? Math.round((score.value / totalRoundsComputed.value) * 100)
-        : 0;
+      // Use weighted score (out of 100 points)
+      const finalScore = weightedScore.value;
+      const rawScore = rawScorePercentage.value;
 
       statsStore.recordGameResult({
         gameId: props.gameId,
         gameName: props.gameName,
-        score: score.value,
+        score: finalScore,
         totalRounds: totalRoundsComputed.value,
         correctAnswers,
         timeInSeconds,
         timestamp: Date.now(),
-        accuracy,
+        accuracy: finalScore, // accuracy is now the same as score
+        rawScorePercentage: rawScore, // Store exact percentage for leaderboard tiebreaking
       });
 
       gameHasBeenRecorded.value = true;
@@ -591,7 +621,7 @@
   .map-container {
     position: relative;
     width: 100%;
-    height: 100vh;
+    height: 100%;
     display: flex;
     flex-direction: column;
     overflow: hidden;

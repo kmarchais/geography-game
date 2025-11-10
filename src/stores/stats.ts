@@ -21,6 +21,7 @@ export interface GameResult {
   timeInSeconds: number
   timestamp: number // Unix timestamp
   accuracy: number // Percentage (0-100)
+  rawScorePercentage?: number // Exact percentage for leaderboard tiebreaking (with full precision)
 }
 
 export interface GameStats {

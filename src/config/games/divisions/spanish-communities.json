@@ -7,15 +7,31 @@
   "emoji": "🇪🇸",
   "color": "blue-grey",
   "description": "Identify all autonomous communities of Spain",
-  "tags": ["spain", "communities", "europe"],
+  "tags": [
+    "spain",
+    "communities",
+    "europe"
+  ],
   "difficulty": 2,
   "featured": false,
   "estimatedTime": 5,
   "config": {
     "dataUrl": "https://cdn.jsdelivr.net/gh/codeforamerica/click_that_hood@master/public/data/spain-communities.geojson",
-    "mapCenter": [40.0, -4.0],
+    "mapCenter": [
+      40,
+      -4
+    ],
     "zoom": 6,
-    "maxBounds": [[35.0, -10.0], [45.0, 5.0]],
+    "maxBounds": [
+      [
+        35,
+        -10
+      ],
+      [
+        45,
+        5
+      ]
+    ],
     "propertyName": "name",
     "targetLabel": "Community"
   }

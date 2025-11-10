@@ -259,11 +259,12 @@ const getGamesByCategory = (category: string): GameDefinition[] => {
   vertical-align: middle;
 }
 
-/* Ensure container allows scrolling if content overflows */
+/* Home page should scroll naturally */
 .v-container.fill-height {
-  align-items: flex-start; /* Align items to top */
-  overflow-y: auto; /* Allow vertical scroll */
-  padding-top: 40px; /* Add some padding at the top */
-  padding-bottom: 40px; /* Add some padding at the bottom */
+  align-items: flex-start;
+  min-height: 100%;
+  height: auto;
+  padding-top: 40px;
+  padding-bottom: 40px;
 }
 </style>

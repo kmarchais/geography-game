@@ -28,7 +28,7 @@ import belgianProvinces from '../../config/games/divisions/belgian-provinces.jso
 import dutchProvinces from '../../config/games/divisions/dutch-provinces.json';
 import ukCounties from '../../config/games/divisions/uk-counties.json';
 import russianOblasts from '../../config/games/divisions/russian-oblasts.json';
-// import ukrainianOblasts from '../../config/games/divisions/ukrainian-oblasts.json'; // DISABLED - Data no longer available
+import ukrainianOblasts from '../../config/games/divisions/ukrainian-oblasts.json';
 
 import parisArrondissements from '../../config/games/cities/paris-arrondissements.json';
 import londonBoroughs from '../../config/games/cities/london-boroughs.json';
@@ -61,7 +61,7 @@ const ALL_GAMES: Array<{ name: string; config: GameDefinition }> = [
   { name: 'Dutch Provinces', config: dutchProvinces as GameDefinition },
   { name: 'UK Counties', config: ukCounties as GameDefinition },
   { name: 'Russian Oblasts', config: russianOblasts as GameDefinition },
-  // { name: 'Ukrainian Oblasts', config: ukrainianOblasts as GameDefinition }, // DISABLED
+  { name: 'Ukrainian Oblasts', config: ukrainianOblasts as GameDefinition },
 
   // Cities
   { name: 'Paris Arrondissements', config: parisArrondissements as GameDefinition },

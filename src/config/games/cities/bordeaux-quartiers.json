@@ -7,15 +7,33 @@
   "emoji": "🍷",
   "color": "teal-darken-5",
   "description": "Identify quartiers of Bordeaux metropolitan area (8 cities)",
-  "tags": ["bordeaux", "france", "quartiers", "city", "europe"],
+  "tags": [
+    "bordeaux",
+    "france",
+    "quartiers",
+    "city",
+    "europe"
+  ],
   "difficulty": 3,
   "featured": false,
   "estimatedTime": 12,
   "config": {
     "dataUrl": "https://opendata.bordeaux-metropole.fr/api/explore/v2.1/catalog/datasets/se_quart_s/exports/geojson",
-    "mapCenter": [44.8500, -0.5900],
+    "mapCenter": [
+      44.85,
+      -0.59
+    ],
     "zoom": 9,
-    "maxBounds": [[44.7200, -0.7500], [44.9800, -0.4000]],
+    "maxBounds": [
+      [
+        44.72,
+        -0.75
+      ],
+      [
+        44.98,
+        -0.4
+      ]
+    ],
     "propertyName": "nom",
     "targetLabel": "Quartier"
   }
