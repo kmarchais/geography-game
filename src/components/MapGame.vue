@@ -452,7 +452,14 @@
           : data;
 
         if (isFeatureCollection(processedData)) {
+          // Extract entity names, filtering out world-wrapped copies to avoid duplicates
+          // World wrapping creates 3 copies: original, isEastCopy, isWestCopy
           availableEntities.value = processedData.features
+            .filter((feature) => {
+              // Only include original features (not wrapped copies)
+              const props = feature.properties as any;
+              return !props?.isEastCopy && !props?.isWestCopy;
+            })
             .map((feature) => getEntityName(feature.properties))
             .filter((name): name is string => typeof name === "string" && name.trim() !== "" && name !== 'Unknown');
 
