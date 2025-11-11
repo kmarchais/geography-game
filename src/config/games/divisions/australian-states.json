@@ -37,6 +37,7 @@
     "targetLabel": "State/Territory",
     "processors": [
       "filterAustralia"
-    ]
+    ],
+    "totalRounds": 9
   }
 }

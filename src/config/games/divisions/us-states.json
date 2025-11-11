@@ -34,6 +34,7 @@
       ]
     ],
     "propertyName": "name",
-    "targetLabel": "State"
+    "targetLabel": "State",
+    "totalRounds": 51
   }
 }

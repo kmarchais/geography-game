@@ -33,6 +33,7 @@
       ]
     ],
     "propertyName": "name",
-    "targetLabel": "Region"
+    "targetLabel": "Region",
+    "totalRounds": 20
   }
 }

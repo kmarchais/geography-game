@@ -35,6 +35,7 @@
       ]
     ],
     "propertyName": "NOM",
-    "targetLabel": "District"
+    "targetLabel": "District",
+    "totalRounds": 10
   }
 }

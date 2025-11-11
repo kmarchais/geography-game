@@ -36,6 +36,7 @@
     "targetLabel": "State",
     "processors": [
       "filterBrazil"
-    ]
+    ],
+    "totalRounds": 27
   }
 }

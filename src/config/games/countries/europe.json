@@ -27,6 +27,7 @@
     "targetLabel": "Country",
     "processors": [
       "filterEurope"
-    ]
+    ],
+    "totalRounds": 55
   }
 }

@@ -36,6 +36,7 @@
       ]
     ],
     "propertyName": "NOM",
-    "targetLabel": "Barrio"
+    "targetLabel": "Barrio",
+    "totalRounds": 73
   }
 }

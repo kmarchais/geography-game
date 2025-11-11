@@ -35,6 +35,7 @@
       ]
     ],
     "propertyName": "nom",
-    "targetLabel": "Quartier"
+    "targetLabel": "Quartier",
+    "totalRounds": 75
   }
 }

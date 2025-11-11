@@ -34,6 +34,7 @@
       ]
     ],
     "propertyName": "name:en",
-    "targetLabel": "Oblast"
+    "targetLabel": "Oblast",
+    "totalRounds": 25
   }
 }
