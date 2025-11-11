@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { applyProcessors } from '../../../utils/geo/processors'
-import gameConfig from './world.json'
+import gameConfig from './barcelona-districts.json'
 import type { FeatureCollection, Geometry } from 'geojson'
 import type { GeoJSONProperties } from '../../../utils/geo/../geojsonUtils'
 
-describe('World Countries Game Configuration', () => {
+describe('Barcelona Districts Game Configuration', () => {
   let processedData: FeatureCollection<Geometry, GeoJSONProperties>
 
   beforeAll(async () => {
@@ -23,7 +23,7 @@ describe('World Countries Game Configuration', () => {
     }
   }, 30000) // 30 second timeout for network request
 
-  it('should have exactly 241 unique territories', () => {
+  it('should have exactly 10 unique territories', () => {
     // Extract unique entity names by filtering out world-wrapped copies
     const uniqueEntities = processedData.features
       .filter((feature) => {
@@ -40,27 +40,11 @@ describe('World Countries Game Configuration', () => {
         typeof name === 'string' && name.trim() !== '' && name !== 'Unknown'
       )
 
-    expect(uniqueEntities).toHaveLength(241)
+    expect(uniqueEntities).toHaveLength(10)
   })
 
-  it('should have 723 total features after world wrapping (241 × 3)', () => {
-    expect(processedData.features).toHaveLength(723)
-  })
-
-  it('should mark wrapped copies with isEastCopy and isWestCopy', () => {
-    const eastCopies = processedData.features.filter(
-      (f) => (f.properties as any)?.isEastCopy
-    )
-    const westCopies = processedData.features.filter(
-      (f) => (f.properties as any)?.isWestCopy
-    )
-    const originals = processedData.features.filter(
-      (f) => !(f.properties as any)?.isEastCopy && !(f.properties as any)?.isWestCopy
-    )
-
-    expect(originals).toHaveLength(241)
-    expect(eastCopies).toHaveLength(241)
-    expect(westCopies).toHaveLength(241)
+  it('should have 10 total features', () => {
+    expect(processedData.features).toHaveLength(10)
   })
 
   it('should have all entities with valid names', () => {
@@ -83,8 +67,8 @@ describe('World Countries Game Configuration', () => {
   })
 
   it('should have correct game metadata', () => {
-    expect(gameConfig.id).toBe('world-countries')
-    expect(gameConfig.name).toBe('World Countries')
-    expect(gameConfig.category).toBe('countries')
+    expect(gameConfig.id).toBe('barcelona-districts')
+    expect(gameConfig.name).toBe('Barcelona Districts')
+    expect(gameConfig.category).toBe('cities')
   })
 })
