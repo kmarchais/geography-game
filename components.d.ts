@@ -9,9 +9,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     AppBar: typeof import('./src/components/AppBar.vue')['default']
     CapitalGame: typeof import('./src/components/CapitalGame.vue')['default']
-    EuropeMapGame: typeof import('./src/components/WorldCountries/EuropeMapGame.vue')['default']
     FlagGame: typeof import('./src/components/FlagGame.vue')['default']
-    FrenchDepartments: typeof import('./src/components/AdministrativeDivisions/FrenchDepartments.vue')['default']
     GameButton: typeof import('./src/components/GameButton.vue')['default']
     GameCategorySection: typeof import('./src/components/GameCategorySection.vue')['default']
     GoogleLoginButton: typeof import('./src/components/auth/GoogleLoginButton.vue')['default']

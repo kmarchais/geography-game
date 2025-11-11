@@ -1,0 +1,34 @@
+{
+  "id": "french-departments",
+  "name": "French Departments",
+  "category": "divisions",
+  "route": "/game/french-departments",
+  "icon": "mdi-map-marker-radius",
+  "emoji": "🇫🇷",
+  "color": "blue-darken-2",
+  "description": "Identify all 101 departments of metropolitan and overseas France, plus 8 overseas territories",
+  "tags": [
+    "france",
+    "departments",
+    "europe",
+    "overseas-territories"
+  ],
+  "difficulty": 4,
+  "featured": true,
+  "estimatedTime": 20,
+  "config": {
+    "dataUrl": "https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements-avec-outre-mer.geojson",
+    "mapCenter": [
+      46.603354,
+      1.888334
+    ],
+    "zoom": 5,
+    "propertyName": "nom",
+    "targetLabel": "Department/Territory",
+    "totalRounds": 109,
+    "processors": [
+      "worldWrapping"
+    ],
+    "markerFunction": "frenchTerritories"
+  }
+}
