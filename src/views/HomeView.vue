@@ -14,6 +14,11 @@
           Select a category to explore different geography challenges
         </v-card-text>
 
+        <!-- Daily Challenge Card -->
+        <DailyChallengeCard class="mb-6" />
+
+        <v-divider class="mb-6" />
+
         <!-- Search Bar -->
         <v-text-field
           v-model="searchQuery"
@@ -215,6 +220,7 @@ import { useRouter } from 'vue-router';
 import { polyfillCountryFlagEmojis } from "country-flag-emoji-polyfill";
 import { useGameRegistry } from '@/composables/useGameRegistry';
 import GameCategorySection from '@/components/GameCategorySection.vue';
+import DailyChallengeCard from '@/components/DailyChallengeCard.vue';
 import type { GameDefinition, GameCategory } from '@/types/gameRegistry';
 
 polyfillCountryFlagEmojis();

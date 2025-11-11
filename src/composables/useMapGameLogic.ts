@@ -14,10 +14,15 @@ export interface MapGameLogicOptions {
   entityNamePlural: string;
   availableEntities: Ref<string[]>;
   totalRounds: Ref<number>;
+  /**
+   * Optional pre-defined entity order for daily challenges.
+   * If provided, entities will be selected in this exact order instead of randomly.
+   */
+  predefinedEntityOrder?: Ref<string[]>;
 }
 
 export function useMapGameLogic(options: MapGameLogicOptions) {
-  const { entityNameSingular, availableEntities, totalRounds } = options;
+  const { entityNameSingular, availableEntities, totalRounds, predefinedEntityOrder } = options;
 
   const score = ref(0);
   const currentRound = ref(1);
@@ -157,6 +162,23 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
       return;
     }
 
+    // For daily challenges with predefined order, select sequentially
+    if (predefinedEntityOrder?.value && predefinedEntityOrder.value.length > 0) {
+      const nextIndex = usedEntities.value.length;
+      if (nextIndex < predefinedEntityOrder.value.length) {
+        const newTarget = predefinedEntityOrder.value[nextIndex];
+        if (newTarget) {
+          usedEntities.value.push(newTarget);
+          targetEntity.value = newTarget;
+          return;
+        }
+      }
+      // Fallback if we've exhausted the predefined list
+      console.warn("Exhausted predefined entity order, game should have ended");
+      return;
+    }
+
+    // Regular random selection for normal games
     const remainingEntities = availableEntities.value.filter(
       (entity) => !usedEntities.value.includes(entity)
     );

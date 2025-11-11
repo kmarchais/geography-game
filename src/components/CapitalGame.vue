@@ -167,6 +167,7 @@
       maxBounds?: L.LatLngBoundsExpression;
       maxBoundsViscosity?: number;
     };
+    predefinedCapitals?: Capital[];
   }>();
 
   const mapElement = ref<HTMLElement | null>(null);
@@ -204,6 +205,7 @@
   const gameLogic = useCapitalGameLogic({
     availableCapitals: capitals,
     totalRounds: totalRoundsComputed,
+    predefinedCapitalOrder: props.predefinedCapitals ? ref(props.predefinedCapitals) : undefined,
   });
 
   const {
@@ -326,7 +328,8 @@
 
   // Load capital cities data
   const loadCapitalsData = async () => {
-    capitals.value = [...worldCapitals];
+    // Use predefined capitals if provided (for daily challenges), otherwise use all world capitals
+    capitals.value = props.predefinedCapitals ? [...props.predefinedCapitals] : [...worldCapitals];
 
     // Set total rounds based on props or default to available capitals
     totalRoundsComputed.value = props.totalRoundsOverride !== undefined

@@ -6,6 +6,7 @@ import WorldCapitals from '../views/WorldCapitals.vue'
 import DashboardView from '../views/DashboardView.vue'
 import GameView from '../views/GameView.vue'
 import StatsView from '../views/StatsView.vue'
+import DailyChallengeView from '../views/DailyChallengeView.vue'
 
 import { useAuth } from '../composables/useAuth'
 
@@ -13,6 +14,9 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', name: 'home', component: HomeView},
+
+    // Daily Challenge
+    { path: '/daily-challenge', name: 'daily-challenge', component: DailyChallengeView },
 
     // Dynamic game route (new system)
     { path: '/game/:gameId', name: 'game', component: GameView },

@@ -11,10 +11,15 @@ export interface Capital {
 export interface CapitalGameLogicOptions {
   availableCapitals: Ref<Capital[]>;
   totalRounds: Ref<number>;
+  /**
+   * Optional pre-defined capital order for daily challenges.
+   * If provided, capitals will be selected in this exact order instead of randomly.
+   */
+  predefinedCapitalOrder?: Ref<Capital[]>;
 }
 
 export function useCapitalGameLogic(options: CapitalGameLogicOptions) {
-  const { availableCapitals, totalRounds } = options;
+  const { availableCapitals, totalRounds, predefinedCapitalOrder } = options;
 
   const score = ref(0);
   const currentRound = ref(1);
@@ -86,6 +91,23 @@ export function useCapitalGameLogic(options: CapitalGameLogicOptions) {
       return;
     }
 
+    // For daily challenges with predefined order, select sequentially
+    if (predefinedCapitalOrder?.value && predefinedCapitalOrder.value.length > 0) {
+      const nextIndex = usedCapitals.value.length;
+      if (nextIndex < predefinedCapitalOrder.value.length) {
+        const newTarget = predefinedCapitalOrder.value[nextIndex];
+        if (newTarget) {
+          usedCapitals.value.push(newTarget);
+          targetCapital.value = newTarget;
+          return;
+        }
+      }
+      // Fallback if we've exhausted the predefined list
+      console.warn("Exhausted predefined capital order, game should have ended");
+      return;
+    }
+
+    // Regular random selection for normal games
     const remainingCapitals = availableCapitals.value.filter(
       (capital) => !usedCapitals.value.some(used => used.name === capital.name)
     );

@@ -7,12 +7,26 @@ export interface Country {
   flag: string;
 }
 
-export function useFlagGameLogic(countriesRef: Country[]) {
+export interface FlagGameLogicOptions {
+  countries: Country[];
+  /**
+   * Optional pre-defined country order for daily challenges.
+   * If provided, countries will be selected in this exact order instead of randomly.
+   */
+  predefinedCountryOrder?: Country[];
+}
+
+export function useFlagGameLogic(options: FlagGameLogicOptions | Country[]) {
+  // Support both old signature (array) and new signature (options object) for backwards compatibility
+  const countriesRef = Array.isArray(options) ? options : options.countries;
+  const predefinedCountryOrder = Array.isArray(options) ? undefined : options.predefinedCountryOrder;
+
   const score = ref(0);
   const currentRound = ref(1);
   const totalRounds = ref(10);
   const gameEnded = ref(false);
   const usedIndices = ref<number[]>([]);
+  const usedCountries = ref<Country[]>([]);
   const currentCountry = ref<Country | null>(null);
   const feedback = ref("");
   const feedbackType = ref(""); // "correct" | "incorrect"
@@ -29,6 +43,26 @@ export function useFlagGameLogic(countriesRef: Country[]) {
       return;
     }
 
+    // For daily challenges with predefined order, select sequentially
+    if (predefinedCountryOrder && predefinedCountryOrder.length > 0) {
+      const nextIndex = usedCountries.value.length;
+      if (nextIndex < predefinedCountryOrder.length) {
+        const country = predefinedCountryOrder[nextIndex];
+        if (country) {
+          usedCountries.value.push(country);
+          currentCountry.value = country;
+          feedback.value = "";
+          feedbackType.value = "";
+          return;
+        }
+      }
+      // Fallback if we've exhausted the predefined list
+      console.warn("Exhausted predefined country order, game should have ended");
+      gameEnded.value = true;
+      return;
+    }
+
+    // Regular random selection for normal games
     let idx: number;
     do {
       idx = Math.floor(Math.random() * countriesRef.length);
