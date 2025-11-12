@@ -155,15 +155,20 @@ describe('Game Data Loading Integration Tests', () => {
         const firstFeature = data.features[0];
 
         expect(
-          firstFeature.properties,
+          firstFeature,
+          `${name} has no first feature`
+        ).toBeDefined();
+
+        expect(
+          firstFeature?.properties,
           `${name} first feature has no properties`
         ).toBeDefined();
 
-        const hasProperty = firstFeature.properties && propertyName in firstFeature.properties;
+        const hasProperty = firstFeature && firstFeature.properties && propertyName in firstFeature.properties;
 
         if (!hasProperty) {
           // Log available properties for debugging
-          const availableProps = firstFeature.properties
+          const availableProps = firstFeature?.properties
             ? Object.keys(firstFeature.properties).join(', ')
             : 'none';
           console.error(`[${name}] ❌ Property "${propertyName}" not found. Available: ${availableProps}`);
@@ -215,8 +220,8 @@ describe('Game Data Loading Integration Tests', () => {
 
       // Sort by status (failed first)
       results.sort((a, b) => {
-        if (a.status === 'failed' && b.status === 'success') return -1;
-        if (a.status === 'success' && b.status === 'failed') return 1;
+        if (a.status === 'failed' && b.status === 'success') {return -1;}
+        if (a.status === 'success' && b.status === 'failed') {return 1;}
         return 0;
       });
 

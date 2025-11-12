@@ -44,16 +44,16 @@ describe('worldWrapping', () => {
       expect(wrapped.features).toHaveLength(3)
 
       // Original should not have markers
-      expect(wrapped.features[0].properties?.isEastCopy).toBeUndefined()
-      expect(wrapped.features[0].properties?.isWestCopy).toBeUndefined()
+      expect(wrapped.features[0]?.properties?.isEastCopy).toBeUndefined()
+      expect(wrapped.features[0]?.properties?.isWestCopy).toBeUndefined()
 
       // East copy should be marked
-      expect(wrapped.features[1].properties?.isEastCopy).toBe(true)
-      expect(wrapped.features[1].properties?.isWestCopy).toBeUndefined()
+      expect(wrapped.features[1]?.properties?.isEastCopy).toBe(true)
+      expect(wrapped.features[1]?.properties?.isWestCopy).toBeUndefined()
 
       // West copy should be marked
-      expect(wrapped.features[2].properties?.isEastCopy).toBeUndefined()
-      expect(wrapped.features[2].properties?.isWestCopy).toBe(true)
+      expect(wrapped.features[2]?.properties?.isEastCopy).toBeUndefined()
+      expect(wrapped.features[2]?.properties?.isWestCopy).toBe(true)
     })
 
     it('should shift coordinates correctly', () => {
@@ -71,13 +71,13 @@ describe('worldWrapping', () => {
       const wrapped = createWorldWrappedCollection(data)
 
       // Original coordinates unchanged
-      expect(wrapped.features[0].geometry.coordinates).toEqual([10, 20])
+      expect(wrapped.features[0]?.geometry.coordinates).toEqual([10, 20])
 
       // East copy shifted +360°
-      expect(wrapped.features[1].geometry.coordinates).toEqual([370, 20])
+      expect(wrapped.features[1]?.geometry.coordinates).toEqual([370, 20])
 
       // West copy shifted -360°
-      expect(wrapped.features[2].geometry.coordinates).toEqual([-350, 20])
+      expect(wrapped.features[2]?.geometry.coordinates).toEqual([-350, 20])
     })
 
     it('should allow extracting unique entity names by filtering copies', () => {

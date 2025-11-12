@@ -144,11 +144,18 @@ describe('Game Configuration Validation', () => {
     ALL_GAMES.forEach(({ name, config }) => {
       if (config.config.processors && config.config.processors.length > 0) {
         it(`${name} has valid processors`, () => {
-          config.config.processors!.forEach((processorName: string) => {
-            expect(
-              PROCESSOR_REGISTRY[processorName as keyof typeof PROCESSOR_REGISTRY],
-              `${name} has invalid processor: ${processorName}`
-            ).toBeDefined();
+          config.config.processors!.forEach((processor) => {
+            // Processors can be either string names or GeoJSONProcessor functions
+            if (typeof processor === 'string') {
+              expect(
+                PROCESSOR_REGISTRY[processor as keyof typeof PROCESSOR_REGISTRY],
+                `${name} has invalid processor: ${processor}`
+              ).toBeDefined();
+            } else {
+              // If it's a function, just check that it's defined
+              expect(processor, `${name} has undefined processor function`).toBeDefined();
+              expect(typeof processor, `${name} processor must be a function`).toBe('function');
+            }
           });
         });
       }
@@ -228,8 +235,8 @@ describe('Game Configuration Validation', () => {
       console.log('\nGames by category:');
 
       const byCategory = report.reduce((acc, game) => {
-        if (!acc[game.category]) acc[game.category] = [];
-        acc[game.category].push(game);
+        if (!acc[game.category]) {acc[game.category] = [];}
+        acc[game.category]!.push(game);
         return acc;
       }, {} as Record<string, typeof report>);
 

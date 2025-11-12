@@ -9,5 +9,5 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "src/**/*.spec.ts", "src/**/*.test.ts"]
+  "include": ["env.d.ts", "src/**/*.ts", "src/**/*.vue", "src/**/*.spec.ts", "src/**/*.test.ts"]
 }
