@@ -7,6 +7,9 @@ const gameConfig = gameConfigJson as GameDefinition
 import type { FeatureCollection, Geometry } from 'geojson'
 import type { GeoJSONProperties } from '../../../utils/geo/../geojsonUtils'
 
+// Import the marker function module to count territories
+import * as frenchTerritoriesModule from '../../../utils/markers/frenchTerritories'
+
 // Skipped due to CORS issues with GitHub raw content in test environment
 describe.skip('French Departments Game Configuration', () => {
   let processedData: FeatureCollection<Geometry, GeoJSONProperties>
@@ -27,7 +30,10 @@ describe.skip('French Departments Game Configuration', () => {
     }
   }, 30000) // 30 second timeout for network request
 
-  it('should have exactly 101 unique territories', () => {
+  it('should have exactly 101 unique territories from GeoJSON', () => {
+    // Note: The full game has 109 territories (101 from GeoJSON + 8 from frenchTerritories marker function)
+    // This test only validates the GeoJSON data
+
     // Extract unique entity names by filtering out world-wrapped copies
     const uniqueEntities = processedData.features
       .filter((feature) => {
@@ -90,5 +96,55 @@ describe.skip('French Departments Game Configuration', () => {
     expect(gameConfig.id).toBe('french-departments')
     expect(gameConfig.name).toBe('French Departments')
     expect(gameConfig.category).toBe('divisions')
+  })
+
+  it('should have totalRounds set to 109 (101 from GeoJSON + 8 from marker function)', () => {
+    // The game uses 101 territories from the GeoJSON file
+    // plus 8 additional overseas territories added via the frenchTerritories marker function:
+    // Saint Pierre et Miquelon, Wallis et Futuna, Polynésie Française,
+    // Nouvelle-Calédonie, Terres Australes et Antarctiques Françaises,
+    // Saint-Martin, Saint-Barthélemy, Île de Clipperton
+    expect(gameConfig.config.totalRounds).toBe(109)
+  })
+})
+
+describe('French Territories Marker Function', () => {
+  it('should define exactly 8 additional overseas territories', () => {
+    expect(frenchTerritoriesModule.additionalTerritories).toHaveLength(8)
+  })
+
+  it('should have all territories with valid names, coordinates, and codes', () => {
+    frenchTerritoriesModule.additionalTerritories.forEach((territory) => {
+      expect(territory.name).toBeTruthy()
+      expect(typeof territory.name).toBe('string')
+      expect(territory.name.length).toBeGreaterThan(0)
+
+      expect(typeof territory.lat).toBe('number')
+      expect(territory.lat).toBeGreaterThanOrEqual(-90)
+      expect(territory.lat).toBeLessThanOrEqual(90)
+
+      expect(typeof territory.lng).toBe('number')
+      expect(territory.lng).toBeGreaterThanOrEqual(-180)
+      expect(territory.lng).toBeLessThanOrEqual(180)
+
+      expect(territory.code).toBeTruthy()
+      expect(typeof territory.code).toBe('string')
+    })
+  })
+
+  it('should match the expected 8 overseas territories', () => {
+    const expectedNames = [
+      'Saint Pierre et Miquelon',
+      'Wallis et Futuna',
+      'Polynésie Française',
+      'Nouvelle-Calédonie',
+      'Terres Australes et Antarctiques Françaises',
+      'Saint-Martin',
+      'Saint-Barthélemy',
+      'Île de Clipperton'
+    ]
+
+    const actualNames = frenchTerritoriesModule.additionalTerritories.map(t => t.name)
+    expect(actualNames).toEqual(expectedNames)
   })
 })

@@ -14,7 +14,7 @@ interface Territory {
   code: string
 }
 
-const additionalTerritories: Territory[] = [
+export const additionalTerritories: Territory[] = [
   { name: 'Saint Pierre et Miquelon', lat: 46.83, lng: -56.33, code: '975' },
   { name: 'Wallis et Futuna', lat: -13.77, lng: -177.15, code: '986' },
   { name: 'Polynésie Française', lat: -17.68, lng: -149.45, code: '987' },

@@ -6,7 +6,7 @@
   "icon": "mdi-map-marker-radius",
   "emoji": "🇫🇷",
   "color": "blue-darken-2",
-  "description": "Identify all 101 departments of metropolitan and overseas France, plus 8 overseas territories",
+  "description": "Identify all 101 departments of metropolitan and overseas France plus 8 additional overseas territories (109 total)",
   "tags": [
     "france",
     "departments",
@@ -25,7 +25,7 @@
     "zoom": 5,
     "propertyName": "nom",
     "targetLabel": "Department/Territory",
-    "totalRounds": 101,
+    "totalRounds": 109,
     "processors": [
       "worldWrapping"
     ],
