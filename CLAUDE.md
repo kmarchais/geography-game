@@ -27,6 +27,13 @@ bun run type-check  # Run TypeScript type checker (vue-tsc)
 bun run lint        # Run ESLint with auto-fix
 ```
 
+### Maintenance & Scripts
+```bash
+bun run update-total-rounds  # Update totalRounds in all game configs
+```
+
+**Note:** The `totalRounds` field in game configs is automatically updated before each build via the `prebuild` script. The script extracts entity counts from test files and updates the JSON configs accordingly. This ensures `totalRounds` stays in sync with actual GeoJSON data without manual counting.
+
 ## Architecture
 
 ### Core Game System
