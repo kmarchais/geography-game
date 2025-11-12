@@ -1,6 +1,10 @@
+/// <reference types="node" />
 import { describe, it, expect, beforeAll } from 'vitest'
 import { applyProcessors } from '../../../utils/geo/processors'
-import gameConfig from './ukrainian-oblasts.json'
+import gameConfigJson from './ukrainian-oblasts.json'
+import type { GameDefinition } from '../../../types/gameRegistry'
+
+const gameConfig = gameConfigJson as GameDefinition
 import type { FeatureCollection, Geometry } from 'geojson'
 import type { GeoJSONProperties } from '../../../utils/geo/../geojsonUtils'
 
@@ -17,7 +21,7 @@ describe('Ukrainian Oblasts Game Configuration', () => {
 
     // Apply processors as configured
     if (gameConfig.config.processors) {
-      processedData = applyProcessors(data, gameConfig.config.processors)
+      processedData = applyProcessors(data, gameConfig.config.processors) as FeatureCollection<Geometry, GeoJSONProperties>
     } else {
       processedData = data
     }
