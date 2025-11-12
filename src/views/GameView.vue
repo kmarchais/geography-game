@@ -38,18 +38,20 @@
       v-else-if="gameDefinition"
       class="game-content"
     >
-      <MapGame
-        :entity-name-singular="gameDefinition.config.targetLabel"
-        :entity-name-plural="`${gameDefinition.config.targetLabel}s`"
-        :geojson-url="resolvedDataUrl"
-        :geojson-name-property="gameDefinition.config.propertyName"
-        :total-rounds-override="totalRounds"
-        :map-options="mapOptions"
-        :process-geojson-data-fn="processGeoJsonData"
-        :add-manual-markers-fn="markerFunction"
-        :game-id="gameDefinition.id"
-        :game-name="gameDefinition.name"
-      />
+      <ErrorBoundary>
+        <MapGame
+          :entity-name-singular="gameDefinition.config.targetLabel"
+          :entity-name-plural="`${gameDefinition.config.targetLabel}s`"
+          :geojson-url="resolvedDataUrl"
+          :geojson-name-property="gameDefinition.config.propertyName"
+          :total-rounds-override="totalRounds"
+          :map-options="mapOptions"
+          :process-geojson-data-fn="processGeoJsonData"
+          :add-manual-markers-fn="markerFunction"
+          :game-id="gameDefinition.id"
+          :game-name="gameDefinition.name"
+        />
+      </ErrorBoundary>
     </div>
   </div>
 </template>
@@ -61,6 +63,7 @@ import { useGameRegistry } from "../composables/useGameRegistry";
 import { applyProcessors } from "../utils/geo/processors";
 import { getMarkerFunction } from "../utils/markers";
 import MapGame from "../components/MapGame.vue";
+import ErrorBoundary from "../components/ErrorBoundary.vue";
 import type { GameDefinition } from "../types/gameRegistry";
 import type { FeatureCollection, Geometry } from "geojson";
 import type { GeoJSONProperties } from "../utils/geojsonUtils";
