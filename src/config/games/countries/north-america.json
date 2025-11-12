@@ -27,6 +27,7 @@
     "targetLabel": "Country",
     "processors": [
       "filterNorthAmerica"
-    ]
+    ],
+    "totalRounds": 38
   }
 }

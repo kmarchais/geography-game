@@ -27,6 +27,7 @@
     "targetLabel": "Country",
     "processors": [
       "worldWrapping"
-    ]
+    ],
+    "totalRounds": 241
   }
 }

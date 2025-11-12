@@ -33,6 +33,7 @@
       ]
     ],
     "propertyName": "name",
-    "targetLabel": "Province"
+    "targetLabel": "Province",
+    "totalRounds": 11
   }
 }

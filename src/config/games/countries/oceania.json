@@ -29,6 +29,7 @@
     "processors": [
       "filterOceania",
       "worldWrapping"
-    ]
+    ],
+    "totalRounds": 24
   }
 }

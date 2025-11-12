@@ -34,6 +34,7 @@
       ]
     ],
     "propertyName": "c_ar",
-    "targetLabel": "Arrondissement"
+    "targetLabel": "Arrondissement",
+    "totalRounds": 20
   }
 }

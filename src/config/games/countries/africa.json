@@ -27,6 +27,7 @@
     "targetLabel": "Country",
     "processors": [
       "filterAfrica"
-    ]
+    ],
+    "totalRounds": 54
   }
 }

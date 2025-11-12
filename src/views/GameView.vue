@@ -46,6 +46,7 @@
         :total-rounds-override="totalRounds"
         :map-options="mapOptions"
         :process-geojson-data-fn="processGeoJsonData"
+        :add-manual-markers-fn="markerFunction"
         :game-id="gameDefinition.id"
         :game-name="gameDefinition.name"
       />
@@ -58,6 +59,7 @@ import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useGameRegistry } from "../composables/useGameRegistry";
 import { applyProcessors } from "../utils/geo/processors";
+import { getMarkerFunction } from "../utils/markers";
 import MapGame from "../components/MapGame.vue";
 import type { GameDefinition } from "../types/gameRegistry";
 import type { FeatureCollection, Geometry } from "geojson";
@@ -135,6 +137,17 @@ const resolvedDataUrl = computed(() => {
  */
 const totalRounds = computed(() => {
   return gameDefinition.value?.config.totalRounds || undefined;
+});
+
+/**
+ * Marker function for manual marker placement (if specified)
+ */
+const markerFunction = computed(() => {
+  const markerFnName = gameDefinition.value?.config.markerFunction;
+  if (!markerFnName) {
+    return undefined;
+  }
+  return getMarkerFunction(markerFnName);
 });
 
 /**

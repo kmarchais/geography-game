@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory, type NavigationGuardNext, type RouteLocationNormalized } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import FrenchDepartments from '../components/AdministrativeDivisions/FrenchDepartments.vue'
 import FlagGame from '@/components/FlagGame.vue'
 import WorldCapitals from '../views/WorldCapitals.vue'
 import DashboardView from '../views/DashboardView.vue'
@@ -30,6 +29,7 @@ const router = createRouter({
     // Divisions
     { path: '/us-states', redirect: '/game/us-states' },
     { path: '/canadian-provinces', redirect: '/game/canadian-provinces' },
+    { path: '/french-departments', redirect: '/game/french-departments' },
     { path: '/spanish-communities', redirect: '/game/spanish-communities' },
     { path: '/german-states', redirect: '/game/german-states' },
     { path: '/italian-regions', redirect: '/game/italian-regions' },
@@ -54,9 +54,7 @@ const router = createRouter({
     // Stats view
     { path: '/stats', name: 'stats', component: StatsView },
 
-    // Legacy routes (keep temporarily until all games migrated)
-    // French Departments has custom UI/markers - migrate separately
-    { path: '/french-departments', name: 'french-departments', component: FrenchDepartments },
+    // Legacy routes (not yet migrated to game registry)
     { path: '/flag-game', name: 'flag-game', component: FlagGame },
     { path: '/world-capitals', name: 'world-capitals', component: WorldCapitals, meta: { title: 'World Capitals Game' } },
     { path: '/dashboard', name: 'dashboard', component: DashboardView, meta: { requiresAuth: true, requiresAdmin: true } }

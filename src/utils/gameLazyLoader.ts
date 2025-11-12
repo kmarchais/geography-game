@@ -102,6 +102,7 @@ async function loadDivisionGames(): Promise<GameDefinition[]> {
   const [
     usStates,
     canadianProvinces,
+    frenchDepartments,
     spanishCommunities,
     germanStates,
     italianRegions,
@@ -116,6 +117,7 @@ async function loadDivisionGames(): Promise<GameDefinition[]> {
   ] = await Promise.all([
     import("../config/games/divisions/us-states.json"),
     import("../config/games/divisions/canadian-provinces.json"),
+    import("../config/games/divisions/french-departments.json"),
     import("../config/games/divisions/spanish-communities.json"),
     import("../config/games/divisions/german-states.json"),
     import("../config/games/divisions/italian-regions.json"),
@@ -132,6 +134,7 @@ async function loadDivisionGames(): Promise<GameDefinition[]> {
   return [
     usStates.default,
     canadianProvinces.default,
+    frenchDepartments.default,
     spanishCommunities.default,
     germanStates.default,
     italianRegions.default,

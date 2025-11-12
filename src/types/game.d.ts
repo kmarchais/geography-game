@@ -84,4 +84,11 @@ export interface GameConfig {
    * Optional function called after map and layers are initialized
    */
   postInitialization?: (map: L.Map, layer: L.GeoJSON) => void;
+
+  /**
+   * Name of marker function to use for manual marker placement
+   * References function registered in src/utils/markers/index.ts
+   * @example "frenchTerritories"
+   */
+  markerFunction?: string;
 }

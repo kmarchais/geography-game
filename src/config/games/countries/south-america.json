@@ -27,6 +27,7 @@
     "targetLabel": "Country",
     "processors": [
       "filterSouthAmerica"
-    ]
+    ],
+    "totalRounds": 13
   }
 }
