@@ -112,7 +112,6 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
 
   const stopTimer = () => {
     if (timerInterval.value !== null) {
-      console.log("Clearing timer interval from composable scope dispose.");
       clearInterval(timerInterval.value);
       timerInterval.value = null;
     }
@@ -163,7 +162,6 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
 
     let entitiesToChooseFrom = remainingEntities;
     if (remainingEntities.length === 0) {
-      console.log("All entities used, starting over selection.");
       usedEntities.value = [];
       entitiesToChooseFrom = availableEntities.value;
     }

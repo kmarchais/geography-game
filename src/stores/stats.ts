@@ -108,7 +108,6 @@ export const useStatsStore = defineStore('stats', () => {
       try {
         const parsed = JSON.parse(storedStats) as UserStats
         stats.value = parsed
-        console.log('User stats loaded from localStorage')
       } catch (e) {
         console.error('Error parsing stored user stats:', e)
         clearStats()
@@ -213,7 +212,6 @@ export const useStatsStore = defineStore('stats', () => {
       stats.value.recentGames = stats.value.recentGames.slice(0, 20)
     }
 
-    console.log(`Game result recorded for ${result.gameName}`)
   }
 
   function resetStats() {
@@ -229,7 +227,6 @@ export const useStatsStore = defineStore('stats', () => {
 
     clearStats()
     localStorage.removeItem(storageKey)
-    console.log('User stats reset')
   }
 
   function exportStats(): string {
@@ -240,7 +237,6 @@ export const useStatsStore = defineStore('stats', () => {
     try {
       const imported = JSON.parse(jsonData) as UserStats
       stats.value = imported
-      console.log('Stats imported successfully')
       return true
     } catch (e) {
       console.error('Error importing stats:', e)

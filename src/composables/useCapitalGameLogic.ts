@@ -92,7 +92,6 @@ export function useCapitalGameLogic(options: CapitalGameLogicOptions) {
 
     let capitalsToChooseFrom = remainingCapitals;
     if (remainingCapitals.length === 0) {
-      console.log("All capitals used, starting over selection.");
       usedCapitals.value = [];
       capitalsToChooseFrom = availableCapitals.value;
     }
