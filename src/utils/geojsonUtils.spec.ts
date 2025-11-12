@@ -69,8 +69,12 @@ describe('geojsonUtils', () => {
       expect(getStyleForAttempts(0)).toBe(defaultStyle)
     })
 
-    it('should return defaultStyle for attempts > 4', () => {
-      expect(getStyleForAttempts(5)).toBe(defaultStyle)
+    it('should return failedStyle for attempt 5 (skipped)', () => {
+      expect(getStyleForAttempts(5)).toBe(failedStyle)
+    })
+
+    it('should return defaultStyle for attempts > 5', () => {
+      expect(getStyleForAttempts(6)).toBe(defaultStyle)
     })
   })
 
