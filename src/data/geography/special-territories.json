@@ -1,0 +1,25 @@
+{
+  "gibraltar": {
+    "type": "Feature",
+    "properties": {
+      "name": "Gibraltar",
+      "continent": "Europe",
+      "name_long": "Gibraltar",
+      "admin": "United Kingdom"
+    },
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [-5.3536, 36.1086],
+          [-5.3384, 36.1086],
+          [-5.3384, 36.1225],
+          [-5.3438, 36.1449],
+          [-5.3536, 36.1449],
+          [-5.3589, 36.1225],
+          [-5.3536, 36.1086]
+        ]
+      ]
+    }
+  }
+}

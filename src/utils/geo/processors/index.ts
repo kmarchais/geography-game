@@ -1,5 +1,6 @@
 import type { FeatureCollection, Geometry, GeoJsonProperties } from "geojson";
 import { createWorldWrappedCollection } from "../worldWrapping";
+import specialTerritories from "@/data/geography/special-territories.json";
 
 /**
  * Processor function that transforms a GeoJSON FeatureCollection
@@ -82,30 +83,8 @@ export const PROCESSOR_REGISTRY = {
         return polygon.some(ring => ring.some(point => point[1] > SVALBARD_LATITUDE_THRESHOLD));
       };
 
-      // Gibraltar feature (not in Natural Earth data)
-      const gibraltarFeature: any = {
-        type: "Feature",
-        properties: {
-          name: "Gibraltar",
-          continent: "Europe",
-          name_long: "Gibraltar",
-          admin: "United Kingdom",
-        },
-        geometry: {
-          type: "Polygon",
-          coordinates: [
-            [
-              [-5.3536, 36.1086],
-              [-5.3384, 36.1086],
-              [-5.3384, 36.1225],
-              [-5.3438, 36.1449],
-              [-5.3536, 36.1449],
-              [-5.3589, 36.1225],
-              [-5.3536, 36.1086]
-            ]
-          ]
-        }
-      };
+      // Gibraltar feature (from special territories data)
+      const gibraltarFeature: any = specialTerritories.gibraltar;
 
       const cyprusFeature = data.features.find(f => f.properties?.name === "Cyprus");
       const northCyprusFeature = data.features.find(f => f.properties?.name === "N. Cyprus");
