@@ -142,7 +142,6 @@
       if (!BASE_API_URL) {
          console.warn("VITE_BACKEND_API_URL is not set. Using fallback /api/users.");
       }
-      console.log(`Fetching users from: ${USERS_ENDPOINT_URL}`);
 
       try {
         const response = await fetch(USERS_ENDPOINT_URL, {
@@ -175,8 +174,6 @@
             last_login: row[5],
             is_admin: row[6]
         }));
-        console.log('User object structure:', users.value[0]); // Log the first user object
-        console.log(`Successfully fetched ${users.value.length} users.`);
 
       } catch (err: any) {
         console.error('Error fetching users:', err);

@@ -413,7 +413,6 @@
     });
 
     if (filteredCountries.value.length < totalRounds.value * 2) {
-      console.log("Not enough countries for selected difficulty, using all countries");
       filteredCountries.value = countries.value;
     }
   }

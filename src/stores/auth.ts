@@ -42,8 +42,6 @@ const AUTH_ENDPOINT_URL = BASE_API_URL
   ? `${BASE_API_URL}/auth/google`
   : '/api/auth/google'
 
-console.log(`Using backend auth endpoint: ${AUTH_ENDPOINT_URL}`)
-
 export const useAuthStore = defineStore('auth', () => {
   // State
   const isLoggedIn = ref(false)
@@ -125,10 +123,8 @@ export const useAuthStore = defineStore('auth', () => {
       return
     }
 
-    console.log('Encoded JWT ID token received from Google:', response.credential)
 
     try {
-      console.log(`Attempting to fetch: ${AUTH_ENDPOINT_URL}`)
       const backendResponse = await fetch(AUTH_ENDPOINT_URL, {
         method: 'POST',
         headers: {
@@ -157,7 +153,6 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       const backendData = (await backendResponse.json()) as BackendAuthResponse
-      console.log('Backend response:', backendData)
 
       // Update state from backend response
       if (backendData.user && backendData.access_token) {
@@ -165,7 +160,6 @@ export const useAuthStore = defineStore('auth', () => {
         accessToken.value = backendData.access_token
         isLoggedIn.value = true
 
-        console.log('User logged in. Profile and access token updated from backend.')
       } else {
         console.error(
           'Backend response missing user data or access token:',
@@ -196,7 +190,6 @@ export const useAuthStore = defineStore('auth', () => {
     userProfile.value = null
     accessToken.value = null
 
-    console.log('User logged out (local state, profile, and access token cleared)')
   }
 
   // Initialize on store creation
