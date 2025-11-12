@@ -214,6 +214,95 @@ Typical limits:
 - Firefox: ~50% of disk space
 - Safari: ~1 GB
 
+## Cache Invalidation Strategy
+
+### When Caches Are Cleared
+
+Caches are automatically cleared in the following scenarios:
+
+1. **On Service Worker Update (New Deployment)**
+   - When `CACHE_VERSION` is incremented (e.g., `v1` → `v2`)
+   - Old caches deleted in `activate` event handler
+   - Ensures users get latest assets after deployment
+   - Happens automatically, no user action required
+
+   ```javascript
+   // In activate event
+   caches.keys().then(names =>
+     names
+       .filter(name => name !== CACHE_NAME && name !== DATA_CACHE_NAME)
+       .map(name => caches.delete(name))
+   );
+   ```
+
+2. **Manual Clear via DevTools**
+   - Application → Storage → Clear site data
+   - Or: Application → Cache Storage → Delete individual caches
+   - Useful for testing and debugging
+
+3. **Manual Clear via API**
+   ```typescript
+   import { clearCaches } from '@/utils/serviceWorkerRegistration';
+   await clearCaches();
+   ```
+
+4. **Browser Storage Limits**
+   - Browser automatically evicts caches using LRU (Least Recently Used)
+   - Happens when device storage is low
+   - Typically: Chrome/Edge ~60% of disk, Firefox ~50%, Safari ~1GB
+
+### Cache Persistence
+
+Different cache strategies have different persistence behaviors:
+
+| Asset Type | Strategy | Persistence | TTL | Background Update |
+|------------|----------|-------------|-----|-------------------|
+| **Static Assets** (CSS, JS, images) | Cache-First | Until new deployment | No TTL | No |
+| **GeoJSON Data** | Stale-While-Revalidate | Indefinite | No TTL | Yes (always) |
+| **Navigation** (HTML) | Network-First | Fallback only | No TTL | No |
+
+**Key Points:**
+- **Static assets** persist until `CACHE_VERSION` changes (new deployment)
+- **GeoJSON data** persists indefinitely but always fetches in background to stay fresh
+- **No time-based expiration** - caches don't expire after X hours
+- **Browser manages storage** - will evict oldest caches if space needed
+
+### Cache Update Behavior
+
+**Static Assets:**
+```
+First Request → Network → Cache + Serve
+Future Requests → Cache (instant) until new version deployed
+```
+
+**GeoJSON Data (Stale-While-Revalidate):**
+```
+First Request → Network → Cache + Serve
+Future Requests → Cache (instant) + Network (background update)
+```
+
+This means:
+- First game load: Downloads GeoJSON (slow)
+- Subsequent plays: Instant from cache + silent background update
+- Always get latest data on next load (from previous background fetch)
+
+### Version Management
+
+Service worker version is controlled by `CACHE_VERSION` constant:
+
+```javascript
+// public/service-worker.js
+const CACHE_VERSION = 'v1';
+const CACHE_NAME = `geography-game-${CACHE_VERSION}`;
+const DATA_CACHE_NAME = `geography-game-data-${CACHE_VERSION}`;
+```
+
+**To force cache invalidation:**
+1. Increment `CACHE_VERSION` (e.g., `v1` → `v2`)
+2. Deploy new version
+3. Service worker auto-updates
+4. Old caches deleted on activation
+
 ## Offline Behavior
 
 ### Cached Games
