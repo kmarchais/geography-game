@@ -46,7 +46,7 @@
           :geojson-name-property="gameDefinition.config.propertyName"
           :total-rounds-override="totalRounds"
           :map-options="mapOptions"
-          :processors="gameDefinition.config.processors"
+          :processors="processorNames"
           :process-geojson-data-fn="processGeoJsonData"
           :add-manual-markers-fn="markerFunction"
           :game-id="gameDefinition.id"
@@ -61,7 +61,7 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useGameRegistry } from "../composables/useGameRegistry";
-import { applyProcessors } from "../utils/geo/processors";
+import { applyProcessors, type ProcessorName } from "../utils/geo/processors";
 import { getMarkerFunction } from "../utils/markers";
 import MapGame from "../components/MapGame.vue";
 import ErrorBoundary from "../components/ErrorBoundary.vue";
@@ -147,6 +147,19 @@ const resolvedDataUrl = computed(() => {
  */
 const totalRounds = computed(() => {
   return gameDefinition.value?.config.totalRounds || undefined;
+});
+
+/**
+ * Processor names for MapGame (filters out custom processor functions)
+ */
+const processorNames = computed(() => {
+  const processors = gameDefinition.value?.config.processors;
+  if (!processors) {
+    return undefined;
+  }
+  // Filter to only string processor names (exclude custom functions)
+  // Type assertion is safe because we're filtering to only strings
+  return processors.filter(p => typeof p === 'string') as ProcessorName[] | undefined;
 });
 
 /**
