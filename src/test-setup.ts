@@ -24,9 +24,9 @@ if (typeof window.cancelAnimationFrame === 'undefined') {
 
 // Mock document if needed
 if (typeof document === 'undefined') {
-  // @ts-ignore
+  // @ts-expect-error - Mock implementation for testing
   globalThis.document = {
-    createElement: () => ({}),
-    createElementNS: () => ({}),
+    createElement: () => ({} as any),
+    createElementNS: () => ({} as any),
   };
 }
