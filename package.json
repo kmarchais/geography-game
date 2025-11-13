@@ -6,7 +6,7 @@
   "packageManager": "bun@1.1.43",
   "scripts": {
     "dev": "vite",
-    "prebuild": "tsx scripts/add-total-rounds.ts",
+    "prebuild": "bun run scripts/add-total-rounds.ts",
     "build": "vite build",
     "preview": "vite preview",
     "build-only": "vite build",
@@ -18,7 +18,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
-    "update-total-rounds": "tsx scripts/add-total-rounds.ts",
+    "update-total-rounds": "bun run scripts/add-total-rounds.ts",
+    "validate-total-rounds": "bun run scripts/validate-total-rounds.ts",
     "start": "vite preview --host --port $PORT"
   },
   "dependencies": {
