@@ -219,9 +219,7 @@ export const useStatsStore = defineStore('stats', () => {
     const authStore = useAuthStore()
 
     if (!authStore.isLoggedIn) {
-      if (import.meta.env.DEV) {
-        console.warn('Cannot record game result: user not logged in')
-      }
+      console.warn('Cannot record game result: user not logged in')
       return
     }
 
@@ -289,9 +287,7 @@ export const useStatsStore = defineStore('stats', () => {
     const authStore = useAuthStore()
 
     if (!authStore.isLoggedIn || !authStore.userProfile) {
-      if (import.meta.env.DEV) {
-        console.warn('Cannot reset stats: user not logged in')
-      }
+      console.warn('Cannot reset stats: user not logged in')
       return
     }
 
