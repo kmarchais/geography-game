@@ -8,7 +8,7 @@ module.exports = [
   {
     name: 'app/base',
     files: ['**/*.{ts,mts,tsx,vue}'],
-    ignores: ['**/dist/**', '**/dist-ssr/**', '**/coverage/**'],
+    ignores: ['**/dist/**', '**/dist-ssr/**', '**/coverage/**', '**/.venv/**', '**/node_modules/**'],
     plugins: {
       '@typescript-eslint': typescriptPlugin,
       'vue': pluginVue,

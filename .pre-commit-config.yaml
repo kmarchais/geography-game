@@ -19,6 +19,7 @@ repos:
     -   id: eslint
         language_version: "23.8.0"
         args: [--config eslint.config.cjs]
+        exclude: ^(\.venv/|node_modules/|\.env|ruff\.toml)
         additional_dependencies:
           - eslint@9.25.0
           - eslint-plugin-vue@10.0.0

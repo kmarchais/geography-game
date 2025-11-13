@@ -22,7 +22,7 @@ const GameResultSchema = z.object({
   timeInSeconds: z.number().int().min(0).max(86400), // Max 24 hours
   timestamp: z.number().int().positive(),
   accuracy: z.number().min(0).max(100),
-  rawScorePercentage: z.number().min(0).max(100),
+  rawScorePercentage: z.number().min(0).max(100).optional(), // Optional for migration from old data
 })
 
 const GameStatsSchema = z.object({
@@ -157,13 +157,13 @@ export const useStatsStore = defineStore('stats', () => {
             // If rawScorePercentage is missing, use the score as fallback
             // This maintains existing display scores while allowing future tiebreaking
             if (result.rawScorePercentage === undefined) {
-              return { ...result, rawScorePercentage: result.score }
+              return { ...result, rawScorePercentage: result.score } as GameResult
             }
-            return result
+            return result as GameResult
           })
         }
 
-        stats.value = validated
+        stats.value = validated as UserStats
       } catch (e) {
         if (e instanceof z.ZodError) {
           console.error('Invalid stats data in localStorage, resetting:', e.issues)
@@ -317,13 +317,13 @@ export const useStatsStore = defineStore('stats', () => {
       if (validated.recentGames) {
         validated.recentGames = validated.recentGames.map(result => {
           if (result.rawScorePercentage === undefined) {
-            return { ...result, rawScorePercentage: result.score }
+            return { ...result, rawScorePercentage: result.score } as GameResult
           }
-          return result
+          return result as GameResult
         })
       }
 
-      stats.value = validated
+      stats.value = validated as UserStats
       return true
     } catch (e) {
       if (e instanceof z.ZodError) {

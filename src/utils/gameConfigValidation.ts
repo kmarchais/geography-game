@@ -18,7 +18,22 @@ export const DifficultySchema = z.number().int().min(1).max(5)
  * Game configuration schema
  */
 export const GameConfigSchema = z.object({
-  dataUrl: z.string().url(),
+  dataUrl: z.string().refine(
+    (url) => {
+      // Accept full URLs (http/https)
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        try {
+          new URL(url)
+          return true
+        } catch {
+          return false
+        }
+      }
+      // Accept absolute paths (starting with /)
+      return url.startsWith('/')
+    },
+    { message: 'dataUrl must be a valid URL or absolute path starting with /' }
+  ),
   mapCenter: z.tuple([z.number(), z.number()]),
   zoom: z.number().positive(),
   propertyName: z.string().min(1),

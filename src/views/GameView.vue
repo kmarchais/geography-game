@@ -126,9 +126,15 @@ const resolvedDataUrl = computed(() => {
     return `${import.meta.env.BASE_URL}${relativePath}`;
   }
 
-  // If it starts with '/', it's root-relative, prepend BASE_URL
+  // If it starts with '/', check if it already includes BASE_URL
   if (dataUrl.startsWith('/')) {
-    return `${import.meta.env.BASE_URL}${dataUrl.substring(1)}`;
+    const baseUrl = import.meta.env.BASE_URL;
+    // If the path already starts with BASE_URL, use as-is
+    if (dataUrl.startsWith(baseUrl)) {
+      return dataUrl;
+    }
+    // Otherwise, prepend BASE_URL
+    return `${baseUrl}${dataUrl.substring(1)}`;
   }
 
   // Otherwise, treat as relative and prepend BASE_URL

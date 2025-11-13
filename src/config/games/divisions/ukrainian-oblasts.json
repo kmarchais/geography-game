@@ -17,7 +17,7 @@
   "featured": false,
   "estimatedTime": 8,
   "config": {
-    "dataUrl": "./data/ukraine-oblasts.geojson",
+    "dataUrl": "/geography-game/data/ukraine-oblasts.geojson",
     "mapCenter": [
       49,
       31

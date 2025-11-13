@@ -31,6 +31,7 @@ import dutchProvinces from "../config/games/divisions/dutch-provinces.json";
 import ukCounties from "../config/games/divisions/uk-counties.json";
 import russianOblasts from "../config/games/divisions/russian-oblasts.json";
 import ukrainianOblasts from "../config/games/divisions/ukrainian-oblasts.json";
+import frenchDepartments from "../config/games/divisions/french-departments.json";
 
 // Cities
 import parisArrondissements from "../config/games/cities/paris-arrondissements.json";
@@ -82,6 +83,7 @@ const ALL_GAMES: GameDefinition[] = [
   ukCounties,
   russianOblasts,
   ukrainianOblasts,
+  frenchDepartments,
 
   // Cities
   parisArrondissements,

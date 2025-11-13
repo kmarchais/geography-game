@@ -15,7 +15,9 @@ describe('Belgian Provinces Game Configuration', () => {
     // Local file - read from public directory
     const fs = await import('fs')
     const path = await import('path')
-    const localPath = path.join(process.cwd(), 'public', gameConfig.config.dataUrl.substring(2))
+    // Extract filename from URL (e.g., /geography-game/data/file.json -> file.json)
+    const filename = gameConfig.config.dataUrl.split('/').pop() || ''
+    const localPath = path.join(process.cwd(), 'public', 'data', filename)
     const fileContent = fs.readFileSync(localPath, 'utf-8')
     const data: FeatureCollection<Geometry, GeoJSONProperties> = JSON.parse(fileContent)
 
