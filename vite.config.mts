@@ -74,6 +74,22 @@ export default defineConfig({
     //   brotliSize: true,
     //   template: 'treemap', // 'sunburst', 'treemap', 'network'
     // }) as any,
+
+    // TODO: Replace manual service worker with vite-plugin-pwa
+    // The current manual service worker in public/service-worker.js works but has limitations:
+    // - Cannot cache hashed asset names (Vite generates index-[hash].js)
+    // - Manual cache invalidation required
+    // - No workbox integration
+    //
+    // To migrate to vite-plugin-pwa:
+    // 1. Run: bun add -D vite-plugin-pwa
+    // 2. Import: import { VitePWA } from 'vite-plugin-pwa'
+    // 3. Add to plugins array (see git history for configuration)
+    // 4. Remove manual registration in src/main.ts
+    // 5. Use: import { registerSW } from 'virtual:pwa-register'
+    //
+    // Note: As of Dec 2024, there are known Sass compatibility issues with vite-plugin-pwa
+    // that cause build failures. Revisit when vite-plugin-pwa is updated for Vite 6+
   ],
   define: { 'process.env': {} }, // Keep this if your client-side code needs it
   resolve: {
@@ -95,10 +111,8 @@ export default defineConfig({
   },
   css: {
     preprocessorOptions: {
-      sass: {
-        api: 'modern-compiler',
-      },
       scss: {
+        api: 'legacy', // Use legacy Dart Sass API to avoid sass-embedded issues
         // additionalData: `@import "@/styles/variables.scss";`
       },
     },
