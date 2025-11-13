@@ -1,6 +1,13 @@
 /**
  * Game Data Loading Integration Tests
  * Actually fetches and validates GeoJSON data for all 27 games
+ *
+ * NOTE: These tests make real network requests and may fail in CI due to:
+ * - Rate limiting from external APIs
+ * - Network timeouts
+ * - API changes
+ *
+ * Set SKIP_INTEGRATION_TESTS=true to skip these tests in CI
  */
 
 import { describe, it, expect } from 'vitest';
@@ -121,7 +128,11 @@ async function fetchGeoJSON(url: string, timeoutMs: number = 10000): Promise<Fea
   }
 }
 
-describe('Game Data Loading Integration Tests', () => {
+// Skip integration tests in CI if SKIP_INTEGRATION_TESTS is set
+const shouldSkip = process.env.SKIP_INTEGRATION_TESTS === 'true';
+const describeOrSkip = shouldSkip ? describe.skip : describe;
+
+describeOrSkip('Game Data Loading Integration Tests', () => {
   // Increase timeout for network requests
   const TEST_TIMEOUT = 30000; // 30 seconds per test
 
