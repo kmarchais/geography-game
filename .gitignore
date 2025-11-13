@@ -32,3 +32,6 @@ __pycache__
 # Local development
 .local
 tools
+
+# Local TODO file (not committed)
+TODO.md
