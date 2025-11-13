@@ -5,6 +5,7 @@
 
 import { useGameRegistry } from "../composables/useGameRegistry";
 import type { GameDefinition } from "../types/gameRegistry";
+import { validateGameDefinitions } from "./gameConfigValidation";
 
 // Import game configurations
 // Countries
@@ -95,10 +96,33 @@ const ALL_GAMES: GameDefinition[] = [
 /**
  * Load and register all games into the registry
  * Call this once at app startup
+ *
+ * Validates all game configurations before registration
  */
 export function loadGames(): void {
   const registry = useGameRegistry();
-  registry.registerGames(ALL_GAMES);
+
+  // Validate all games before loading
+  const { valid, invalid } = validateGameDefinitions(ALL_GAMES);
+
+  // Log validation errors in development
+  if (invalid.length > 0 && import.meta.env.DEV) {
+    console.error(`[GameLoader] ${invalid.length} invalid game configuration(s):`);
+    invalid.forEach(({ index, error }) => {
+      const game = ALL_GAMES[index] as any;
+      console.error(`  - ${game?.name || `Game at index ${index}`}:`, error.errors);
+    });
+  }
+
+  // Register only valid games
+  if (valid.length > 0) {
+    registry.registerGames(valid as GameDefinition[]);
+  }
+
+  // Throw error in development if no valid games found
+  if (valid.length === 0 && import.meta.env.DEV) {
+    throw new Error('[GameLoader] No valid game configurations found!');
+  }
 }
 
 /**

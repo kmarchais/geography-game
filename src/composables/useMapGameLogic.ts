@@ -1,12 +1,47 @@
 import { ref, computed, onScopeDispose, type Ref } from "vue";
 
-// Scoring weights - higher weight for better performance
+/**
+ * Weighted Scoring System
+ *
+ * Points are awarded based on attempt number:
+ * - First try:  4 points
+ * - Second try: 2 points
+ * - Third try:  1 point
+ * - Failed:     0 points
+ * - Skipped:    0 points
+ *
+ * IMPORTANT: The score is calculated as (points_earned / max_possible_points) × 100
+ * and then FLOORED to an integer. This means:
+ *
+ * - Only a PERFECT game (all territories on first try) will achieve 100 points
+ * - Even one mistake will result in a score < 100
+ *
+ * Example with 9 territories:
+ * - All on 1st try: (9×4)/36 × 100 = 100.00 → 100 points ✓
+ * - 8 on 1st, 1 on 2nd: (34)/36 × 100 = 94.44 → 94 points
+ * - 4 on 1st, 3 on 2nd, 2 on 3rd: (22)/36 × 100 = 61.11 → 61 points
+ *
+ * The raw percentage (with full precision) is also stored separately for
+ * leaderboard tiebreaking purposes.
+ */
 export const SCORE_WEIGHTS = {
   FIRST_TRY: 4,
   SECOND_TRY: 2,
   THIRD_TRY: 1,
   FAILED: 0,
   SKIPPED: 0,
+} as const;
+
+/**
+ * Attempt status codes
+ * These are used to track how a territory was handled
+ */
+export const ATTEMPT_STATUS = {
+  FIRST_TRY: 1,
+  SECOND_TRY: 2,
+  THIRD_TRY: 3,
+  FAILED: 4,      // Failed after 3 attempts
+  SKIPPED: 5,     // Manually skipped by player
 } as const;
 
 export interface MapGameLogicOptions {
@@ -54,19 +89,19 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
     };
 
     foundEntities.value.forEach((attempts, name) => {
-      if (attempts === 1) {
+      if (attempts === ATTEMPT_STATUS.FIRST_TRY) {
         stats.foundOnAttempt1++;
         stats.territoriesAttempt1.push(name);
-      } else if (attempts === 2) {
+      } else if (attempts === ATTEMPT_STATUS.SECOND_TRY) {
         stats.foundOnAttempt2++;
         stats.territoriesAttempt2.push(name);
-      } else if (attempts === 3) {
+      } else if (attempts === ATTEMPT_STATUS.THIRD_TRY) {
         stats.foundOnAttempt3++;
         stats.territoriesAttempt3.push(name);
-      } else if (attempts === 4) {
+      } else if (attempts === ATTEMPT_STATUS.FAILED) {
         stats.failed++;
         stats.territoriesFailed.push(name);
-      } else if (attempts === 5) {
+      } else if (attempts === ATTEMPT_STATUS.SKIPPED) {
         stats.skipped++;
         stats.territoriesSkipped.push(name);
       }
@@ -98,7 +133,7 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
     const maxPoints = totalRounds.value * SCORE_WEIGHTS.FIRST_TRY;
 
     // Calculate exact percentage (keep full precision for tiebreaking)
-    if (maxPoints === 0) return 0;
+    if (maxPoints === 0) {return 0;}
     return (pointsEarned / maxPoints) * 100;
   });
 
@@ -151,7 +186,9 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
 
   const selectNewTargetEntity = () => {
     if (availableEntities.value.length === 0) {
-      console.warn("No available entities to select from.");
+      if (import.meta.env.DEV) {
+        console.warn("No available entities to select from.");
+      }
       targetEntity.value = "Error: No entities loaded";
       return;
     }
@@ -217,10 +254,10 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
 
   const handleIncorrectGuess = (): { shouldEndRound: boolean } => {
     currentAttempts.value++;
-    const isOutOfAttempts = currentAttempts.value >= 3;
+    const isOutOfAttempts = currentAttempts.value >= ATTEMPT_STATUS.THIRD_TRY;
 
     if (isOutOfAttempts) {
-      foundEntities.value.set(targetEntity.value, 4); // 4 = failed after 3 attempts
+      foundEntities.value.set(targetEntity.value, ATTEMPT_STATUS.FAILED);
       showFeedback(false);
       advanceRound();
       return { shouldEndRound: true };
@@ -232,8 +269,8 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
 
   const skipEntity = () => {
     if (gameEnded.value) {return { skippedEntity: "" };}
-    currentAttempts.value = 3;
-    foundEntities.value.set(targetEntity.value, 5); // 5 = skipped
+    currentAttempts.value = ATTEMPT_STATUS.THIRD_TRY;
+    foundEntities.value.set(targetEntity.value, ATTEMPT_STATUS.SKIPPED);
     showFeedback(
       false,
       `Skipped! The correct ${entityNameSingular} was ${targetEntity.value}`

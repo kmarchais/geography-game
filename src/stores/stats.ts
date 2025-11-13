@@ -21,7 +21,7 @@ export interface GameResult {
   timeInSeconds: number
   timestamp: number // Unix timestamp
   accuracy: number // Percentage (0-100)
-  rawScorePercentage?: number // Exact percentage for leaderboard tiebreaking (with full precision)
+  rawScorePercentage: number // Exact percentage for leaderboard tiebreaking (with full precision)
 }
 
 export interface GameStats {
@@ -66,7 +66,7 @@ export const useStatsStore = defineStore('stats', () => {
   const totalGamesPlayed = computed(() => stats.value.totalGamesPlayed)
   const totalScore = computed(() => stats.value.totalScore)
   const averageScore = computed(() => {
-    if (stats.value.totalGamesPlayed === 0) return 0
+    if (stats.value.totalGamesPlayed === 0) {return 0}
     return Math.round(stats.value.totalScore / stats.value.totalGamesPlayed)
   })
   const gamesCompleted = computed(() => stats.value.gamesCompleted.length)
@@ -107,6 +107,20 @@ export const useStatsStore = defineStore('stats', () => {
     if (storedStats) {
       try {
         const parsed = JSON.parse(storedStats) as UserStats
+
+        // MIGRATION: Add rawScorePercentage to old game results
+        // This ensures backward compatibility with data created before weighted scoring
+        if (parsed.recentGames) {
+          parsed.recentGames = parsed.recentGames.map(result => {
+            // If rawScorePercentage is missing, use the score as fallback
+            // This maintains existing display scores while allowing future tiebreaking
+            if (result.rawScorePercentage === undefined) {
+              return { ...result, rawScorePercentage: result.score }
+            }
+            return result
+          })
+        }
+
         stats.value = parsed
       } catch (e) {
         console.error('Error parsing stored user stats:', e)
@@ -157,8 +171,16 @@ export const useStatsStore = defineStore('stats', () => {
     const authStore = useAuthStore()
 
     if (!authStore.isLoggedIn) {
-      console.warn('Cannot record game result: user not logged in')
+      if (import.meta.env.DEV) {
+        console.warn('Cannot record game result: user not logged in')
+      }
       return
+    }
+
+    // MIGRATION: Ensure rawScorePercentage exists for backward compatibility
+    // This handles edge cases where old data might be passed in
+    if (result.rawScorePercentage === undefined) {
+      result.rawScorePercentage = result.score
     }
 
     // Update total stats
@@ -218,7 +240,9 @@ export const useStatsStore = defineStore('stats', () => {
     const authStore = useAuthStore()
 
     if (!authStore.isLoggedIn || !authStore.userProfile) {
-      console.warn('Cannot reset stats: user not logged in')
+      if (import.meta.env.DEV) {
+        console.warn('Cannot reset stats: user not logged in')
+      }
       return
     }
 

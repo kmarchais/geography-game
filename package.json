@@ -28,11 +28,12 @@
     "country-flag-emoji-polyfill": "^0.1.8",
     "jwt-decode": "^4.0.0",
     "leaflet": "^1.9.4",
-    "pinia": "^2.3.0",
+    "pinia": "^3.0.4",
     "roboto-fontface": "^0.10.0",
     "vue": "^3.5.13",
     "vue-leaflet": "^0.1.0",
-    "vuetify": "^3.8.2"
+    "vuetify": "^3.8.2",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.1",

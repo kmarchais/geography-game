@@ -171,20 +171,20 @@
 
   // Helper to extract entity name from feature properties
   const getEntityName = (properties: GeoJSONProperties | undefined): string | undefined => {
-    if (!properties) return undefined;
+    if (!properties) {return undefined;}
     const value = properties[props.geojsonNameProperty];
     // Convert numbers to strings (e.g., Paris arrondissements use numeric IDs)
-    if (typeof value === 'number') return String(value);
-    if (typeof value === 'string') return value;
+    if (typeof value === 'number') {return String(value);}
+    if (typeof value === 'string') {return value;}
     return undefined;
   };
 
   // Helper to extract entity code from feature properties
   const getEntityCode = (properties: GeoJSONProperties | undefined): string | undefined => {
-    if (!properties || !props.geojsonCodeProperty) return undefined;
+    if (!properties || !props.geojsonCodeProperty) {return undefined;}
     const value = properties[props.geojsonCodeProperty];
-    if (typeof value === 'number') return String(value);
-    if (typeof value === 'string') return value;
+    if (typeof value === 'number') {return String(value);}
+    if (typeof value === 'string') {return value;}
     return undefined;
   };
 
@@ -213,17 +213,17 @@
   const gameHasBeenRecorded = ref(false);
 
   const currentGameStats = computed(() => {
-    if (!props.gameId) return null;
+    if (!props.gameId) {return null;}
     return statsStore.getGameStats(props.gameId);
   });
 
   const isNewBestScore = computed(() => {
-    if (!currentGameStats.value || !gameEnded.value) return false;
+    if (!currentGameStats.value || !gameEnded.value) {return false;}
     return weightedScore.value > currentGameStats.value.bestScore;
   });
 
   const isNewBestTime = computed(() => {
-    if (!currentGameStats.value || !gameEnded.value) return false;
+    if (!currentGameStats.value || !gameEnded.value) {return false;}
     // Get time in seconds from formattedTime (MM:SS format)
     const parts = formattedTime.value.split(':').map(Number);
     const minutes = parts[0] ?? 0;
@@ -437,7 +437,9 @@
           if (props.geojsonNameProperty in feature.properties) {
               feature.properties.name = feature.properties[props.geojsonNameProperty];
           } else {
-              console.warn(`Feature missing expected name property '${props.geojsonNameProperty}':`, feature);
+              if (import.meta.env.DEV) {
+                console.warn(`Feature missing expected name property '${props.geojsonNameProperty}':`, feature);
+              }
               feature.properties.name = 'Unknown';
           }
           if (props.geojsonCodeProperty && props.geojsonCodeProperty in feature.properties) {
@@ -576,6 +578,9 @@
       const finalScore = weightedScore.value;
       const rawScore = rawScorePercentage.value;
 
+      // Calculate actual accuracy (percentage of territories found regardless of attempts)
+      const actualAccuracy = (correctAnswers / totalRoundsComputed.value) * 100;
+
       statsStore.recordGameResult({
         gameId: props.gameId,
         gameName: props.gameName,
@@ -584,7 +589,7 @@
         correctAnswers,
         timeInSeconds,
         timestamp: Date.now(),
-        accuracy: finalScore, // accuracy is now the same as score
+        accuracy: actualAccuracy, // Percentage of territories correctly identified
         rawScorePercentage: rawScore, // Store exact percentage for leaderboard tiebreaking
       });
 
