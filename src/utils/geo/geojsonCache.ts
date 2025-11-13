@@ -206,11 +206,15 @@ export async function fetchAndCacheGeoJSON<
   // Check cache first
   const cached = geojsonCache.get<G, P>(url, processors);
   if (cached) {
-    console.log(`[GeoJSON Cache] Cache hit for ${url}`);
+    if (import.meta.env.DEV) {
+      console.log(`[GeoJSON Cache] Cache hit for ${url}`);
+    }
     return cached;
   }
 
-  console.log(`[GeoJSON Cache] Cache miss for ${url}, fetching...`);
+  if (import.meta.env.DEV) {
+    console.log(`[GeoJSON Cache] Cache miss for ${url}, fetching...`);
+  }
 
   // Fetch data
   const response = await fetch(url);

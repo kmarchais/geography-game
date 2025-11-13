@@ -209,7 +209,9 @@ async function loadGame() {
     // Wait for registry to be initialized
     // This prevents race conditions when navigating directly to a game URL
     if (!registry.initialized.value) {
-      console.log('[GameView] Waiting for game registry to initialize...');
+      if (import.meta.env.DEV) {
+        console.log('[GameView] Waiting for game registry to initialize...');
+      }
       // Poll until registry is initialized (should happen quickly on app mount)
       await new Promise<void>((resolve) => {
         const checkInterval = setInterval(() => {

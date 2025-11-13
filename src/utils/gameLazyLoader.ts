@@ -32,7 +32,9 @@ async function loadCategoryGames(category: GameCategory): Promise<GameDefinition
   }
 
   const loadPromise = (async () => {
-    console.log(`[Lazy Loader] Loading ${category} games...`);
+    if (import.meta.env.DEV) {
+      console.log(`[Lazy Loader] Loading ${category} games...`);
+    }
     const startTime = performance.now();
 
     let games: GameDefinition[] = [];
@@ -52,8 +54,10 @@ async function loadCategoryGames(category: GameCategory): Promise<GameDefinition
     loadedCategories.add(category);
     loadingPromises.delete(category);
 
-    const loadTime = (performance.now() - startTime).toFixed(2);
-    console.log(`[Lazy Loader] Loaded ${games.length} ${category} games in ${loadTime}ms`);
+    if (import.meta.env.DEV) {
+      const loadTime = (performance.now() - startTime).toFixed(2);
+      console.log(`[Lazy Loader] Loaded ${games.length} ${category} games in ${loadTime}ms`);
+    }
 
     return games;
   })();

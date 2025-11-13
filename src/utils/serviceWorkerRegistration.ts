@@ -34,13 +34,17 @@ export async function register(config?: ServiceWorkerConfig): Promise<void> {
   try {
     const publicUrl = new URL(import.meta.env.BASE_URL, window.location.href);
     if (publicUrl.origin !== window.location.origin) {
-      console.log('[SW Registration] Service worker not registered (different origin)');
+      if (import.meta.env.DEV) {
+        console.log('[SW Registration] Service worker not registered (different origin)');
+      }
       return;
     }
 
     // Register service worker
     const swUrl = `${import.meta.env.BASE_URL}service-worker.js`;
-    console.log('[SW Registration] Registering service worker:', swUrl);
+    if (import.meta.env.DEV) {
+      console.log('[SW Registration] Registering service worker:', swUrl);
+    }
 
     const registration = await navigator.serviceWorker.register(swUrl);
 
@@ -54,11 +58,15 @@ export async function register(config?: ServiceWorkerConfig): Promise<void> {
         if (installingWorker.state === 'installed') {
           if (navigator.serviceWorker.controller) {
             // New service worker available
-            console.log('[SW Registration] New content available, please refresh');
+            if (import.meta.env.DEV) {
+              console.log('[SW Registration] New content available, please refresh');
+            }
             config?.onUpdate?.(registration);
           } else {
             // Content cached for offline use
-            console.log('[SW Registration] Content cached for offline use');
+            if (import.meta.env.DEV) {
+              console.log('[SW Registration] Content cached for offline use');
+            }
             config?.onSuccess?.(registration);
           }
         }
@@ -67,12 +75,16 @@ export async function register(config?: ServiceWorkerConfig): Promise<void> {
 
     // Listen for online/offline events
     window.addEventListener('online', () => {
-      console.log('[SW Registration] Back online');
+      if (import.meta.env.DEV) {
+        console.log('[SW Registration] Back online');
+      }
       config?.onOnline?.();
     });
 
     window.addEventListener('offline', () => {
-      console.log('[SW Registration] Gone offline');
+      if (import.meta.env.DEV) {
+        console.log('[SW Registration] Gone offline');
+      }
       config?.onOffline?.();
     });
 
@@ -92,7 +104,9 @@ export async function unregister(): Promise<void> {
   try {
     const registration = await navigator.serviceWorker.ready;
     await registration.unregister();
-    console.log('[SW Registration] Service worker unregistered');
+    if (import.meta.env.DEV) {
+      console.log('[SW Registration] Service worker unregistered');
+    }
   } catch (error) {
     console.error('[SW Registration] Error unregistering service worker:', error);
   }
@@ -129,7 +143,9 @@ export async function clearCaches(): Promise<void> {
   if ('caches' in window) {
     const cacheNames = await caches.keys();
     await Promise.all(cacheNames.map(name => caches.delete(name)));
-    console.log('[SW Registration] All caches cleared');
+    if (import.meta.env.DEV) {
+      console.log('[SW Registration] All caches cleared');
+    }
   }
 }
 
