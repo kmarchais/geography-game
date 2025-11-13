@@ -1,6 +1,9 @@
 /**
  * Service Worker for Geography Game
  * Provides offline caching and performance optimization
+ *
+ * TODO: Migrate to vite-plugin-pwa when Vite 6+ compatibility is resolved
+ * See vite.config.mts for migration instructions and configuration template
  */
 
 const CACHE_VERSION = 'v1';
@@ -8,11 +11,16 @@ const CACHE_NAME = `geography-game-${CACHE_VERSION}`;
 const DATA_CACHE_NAME = `geography-game-data-${CACHE_VERSION}`;
 
 // Assets to cache on install
+// TODO: These paths should be generated at build time by vite-plugin-pwa
+// because Vite generates hashed filenames (e.g., index-a1b2c3d4.js)
+// For now, we'll skip static asset caching and only cache GeoJSON data
 const STATIC_ASSETS = [
   '/geography-game/',
   '/geography-game/index.html',
-  '/geography-game/assets/index.css',
-  '/geography-game/assets/index.js',
+  // NOTE: Commented out because Vite generates hashed asset names
+  // Use vite-plugin-pwa to generate these automatically
+  // '/geography-game/assets/index.css',
+  // '/geography-game/assets/index.js',
 ];
 
 // GeoJSON data URLs to cache
