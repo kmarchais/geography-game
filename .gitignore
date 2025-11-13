@@ -17,8 +17,18 @@ pnpm-debug.log*
 # Editor directories and files
 .idea
 .vscode
+.windsurf
+.claude
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Python virtual environment
+.venv
+__pycache__
+
+# Local development
+.local
+tools
