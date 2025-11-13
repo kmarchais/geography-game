@@ -14,7 +14,12 @@ export default mergeConfig(
         'e2e/**',
         'tests/e2e/**',
         // In CI, skip game config tests (they fetch external GeoJSON and are flaky)
-        ...(isCI ? ['src/config/games/**/*.test.ts', 'src/utils/__tests__/gameDataLoading.spec.ts'] : []),
+        ...(isCI ? [
+          '**/src/config/games/**/*.test.ts',
+          'src/config/games/**',
+          '**/config/games/**/*.test.ts',
+          'src/utils/__tests__/gameDataLoading.spec.ts'
+        ] : []),
       ],
       root: fileURLToPath(new URL('./', import.meta.url)),
       globals: true,

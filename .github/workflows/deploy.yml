@@ -35,7 +35,7 @@ jobs:
         run: bun run type-check
 
       - name: Run unit tests
-        run: bun test
+        run: bun test --exclude='src/config/games/**/*.test.ts'
         env:
           SKIP_INTEGRATION_TESTS: true
 

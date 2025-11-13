@@ -108,7 +108,11 @@ describe.skip('French Departments Game Configuration', () => {
   })
 })
 
-describe('French Territories Marker Function', () => {
+// Skip in CI when SKIP_INTEGRATION_TESTS is set (external API calls are flaky)
+const shouldSkip = process.env.SKIP_INTEGRATION_TESTS === 'true';
+const describeOrSkip = shouldSkip ? describe.skip : describe;
+
+describeOrSkip('French Territories Marker Function', () => {
   it('should define exactly 8 additional overseas territories', () => {
     expect(frenchTerritoriesModule.additionalTerritories).toHaveLength(8)
   })

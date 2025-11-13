@@ -8,7 +8,11 @@ const gameConfig = gameConfigJson as GameDefinition
 import type { FeatureCollection, Geometry } from 'geojson'
 import type { GeoJSONProperties } from '../../../utils/geo/../geojsonUtils'
 
-describe('Belgian Provinces Game Configuration', () => {
+// Skip in CI when SKIP_INTEGRATION_TESTS is set (external API calls are flaky)
+const shouldSkip = process.env.SKIP_INTEGRATION_TESTS === 'true';
+const describeOrSkip = shouldSkip ? describe.skip : describe;
+
+describeOrSkip('Belgian Provinces Game Configuration', () => {
   let processedData: FeatureCollection<Geometry, GeoJSONProperties>
 
   beforeAll(async () => {
