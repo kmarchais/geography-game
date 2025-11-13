@@ -6,7 +6,7 @@ import ViteFonts from 'unplugin-fonts/vite'
 import Components from 'unplugin-vue-components/vite'
 import VueRouter from 'unplugin-vue-router/vite'
 import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
-import { visualizer } from 'rollup-plugin-visualizer'
+// import { visualizer } from 'rollup-plugin-visualizer'
 
 // Utilities
 import { fileURLToPath, URL } from 'node:url'

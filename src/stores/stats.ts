@@ -6,10 +6,49 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
+import { z } from 'zod'
 import { useAuthStore } from './auth'
 
 // LocalStorage key
 const STATS_KEY = 'app_userStats'
+
+// Zod schemas for validation
+const GameResultSchema = z.object({
+  gameId: z.string().regex(/^[a-z0-9-]+$/, 'Invalid game ID format'),
+  gameName: z.string().min(1).max(200),
+  score: z.number().int().min(0).max(100),
+  totalRounds: z.number().int().min(1).max(1000),
+  correctAnswers: z.number().int().min(0).max(1000),
+  timeInSeconds: z.number().int().min(0).max(86400), // Max 24 hours
+  timestamp: z.number().int().positive(),
+  accuracy: z.number().min(0).max(100),
+  rawScorePercentage: z.number().min(0).max(100),
+})
+
+const GameStatsSchema = z.object({
+  gameId: z.string().regex(/^[a-z0-9-]+$/),
+  gameName: z.string().min(1).max(200),
+  timesPlayed: z.number().int().nonnegative(),
+  bestScore: z.number().min(0).max(100),
+  bestTime: z.number().nonnegative(),
+  averageScore: z.number().min(0).max(100),
+  averageTime: z.number().nonnegative(),
+  totalCorrect: z.number().int().nonnegative(),
+  totalRounds: z.number().int().nonnegative(),
+  lastPlayed: z.number().int().nonnegative(),
+  highestAccuracy: z.number().min(0).max(100),
+})
+
+const UserStatsSchema = z.object({
+  totalGamesPlayed: z.number().int().nonnegative(),
+  totalScore: z.number().nonnegative(),
+  totalTimeSeconds: z.number().nonnegative(),
+  gamesCompleted: z.array(z.string().regex(/^[a-z0-9-]+$/)),
+  gameStats: z.record(z.string(), GameStatsSchema),
+  recentGames: z.array(GameResultSchema).max(20),
+  createdAt: z.number().int().positive(),
+  updatedAt: z.number().int().positive(),
+})
 
 // Interfaces
 export interface GameResult {
@@ -106,12 +145,15 @@ export const useStatsStore = defineStore('stats', () => {
 
     if (storedStats) {
       try {
-        const parsed = JSON.parse(storedStats) as UserStats
+        const parsed = JSON.parse(storedStats)
+
+        // Validate data with Zod schema
+        const validated = UserStatsSchema.parse(parsed)
 
         // MIGRATION: Add rawScorePercentage to old game results
         // This ensures backward compatibility with data created before weighted scoring
-        if (parsed.recentGames) {
-          parsed.recentGames = parsed.recentGames.map(result => {
+        if (validated.recentGames) {
+          validated.recentGames = validated.recentGames.map(result => {
             // If rawScorePercentage is missing, use the score as fallback
             // This maintains existing display scores while allowing future tiebreaking
             if (result.rawScorePercentage === undefined) {
@@ -121,9 +163,15 @@ export const useStatsStore = defineStore('stats', () => {
           })
         }
 
-        stats.value = parsed
+        stats.value = validated
       } catch (e) {
-        console.error('Error parsing stored user stats:', e)
+        if (e instanceof z.ZodError) {
+          console.error('Invalid stats data in localStorage, resetting:', e.issues)
+        } else if (e instanceof SyntaxError) {
+          console.error('Corrupted stats data in localStorage, resetting:', e.message)
+        } else {
+          console.error('Error loading stored user stats, resetting:', e)
+        }
         clearStats()
       }
     }
@@ -167,7 +215,7 @@ export const useStatsStore = defineStore('stats', () => {
   )
 
   // Actions
-  function recordGameResult(result: GameResult) {
+  function recordGameResult(inputResult: GameResult) {
     const authStore = useAuthStore()
 
     if (!authStore.isLoggedIn) {
@@ -178,9 +226,10 @@ export const useStatsStore = defineStore('stats', () => {
     }
 
     // MIGRATION: Ensure rawScorePercentage exists for backward compatibility
-    // This handles edge cases where old data might be passed in
-    if (result.rawScorePercentage === undefined) {
-      result.rawScorePercentage = result.score
+    // Create immutable copy to avoid mutating input
+    const result: GameResult = {
+      ...inputResult,
+      rawScorePercentage: inputResult.rawScorePercentage ?? inputResult.score
     }
 
     // Update total stats
@@ -259,11 +308,31 @@ export const useStatsStore = defineStore('stats', () => {
 
   function importStats(jsonData: string): boolean {
     try {
-      const imported = JSON.parse(jsonData) as UserStats
-      stats.value = imported
+      const parsed = JSON.parse(jsonData)
+
+      // Validate with Zod schema
+      const validated = UserStatsSchema.parse(parsed)
+
+      // Apply migration to ensure rawScorePercentage exists
+      if (validated.recentGames) {
+        validated.recentGames = validated.recentGames.map(result => {
+          if (result.rawScorePercentage === undefined) {
+            return { ...result, rawScorePercentage: result.score }
+          }
+          return result
+        })
+      }
+
+      stats.value = validated
       return true
     } catch (e) {
-      console.error('Error importing stats:', e)
+      if (e instanceof z.ZodError) {
+        console.error('Invalid stats data format:', e.issues)
+      } else if (e instanceof SyntaxError) {
+        console.error('Invalid JSON format:', e.message)
+      } else {
+        console.error('Error importing stats:', e)
+      }
       return false
     }
   }
