@@ -38,39 +38,52 @@ bun run update-total-rounds  # Update totalRounds in all game configs
 
 ### Core Game System
 
-The application uses a **configuration-driven architecture** for games. Each game is defined by a `GameConfig` object (see `src/types/game.d.ts`) that specifies:
+The application uses a **JSON-driven game registry architecture**. All 27 games are defined as JSON configuration files in `src/config/games/` organized by category:
+- `countries/` - World and continent-based country games (7 games)
+- `divisions/` - Administrative divisions (states, provinces, departments) (13 games)
+- `cities/` - City district games (7 games)
+
+Each game is defined by a `GameDefinition` object (see `src/types/game.d.ts`) that includes:
+- Game metadata (id, name, category, difficulty, tags)
 - GeoJSON data source URL
 - Map center, zoom, and bounds
 - Property name to extract entity names
-- Optional data processing, filtering, and name mapping functions
+- Optional GeoJSON processors (worldWrapping, filterEurope, etc.)
+- Optional marker functions for additional territories
 
-Game configurations are centralized in:
-- `src/utils/worldCountriesConfig.ts` - World map configurations
-- `src/utils/cityDistrictsConfig.ts` - City district configurations (Paris, London, Barcelona, Bordeaux)
-- `src/utils/capitalCitiesData.ts` - Capital cities data
+Games are loaded dynamically via `useGameRegistry` composable and routed through the `GameView` component at `/game/:gameId`.
 
 ### Component Architecture
 
-**Reusable Game Components:**
+**Core Game Components:**
 - `MapGame.vue` - Generic map-based geography game component that accepts a `GameConfig`
+- `GameView.vue` - Dynamic game loader that routes games by ID using the game registry
+- `GameButton.vue` - Reusable game button with difficulty indicators
+- `GameCategorySection.vue` - Category organizer with themed styling
 - `CapitalGame.vue` - Capital cities quiz game
 - `FlagGame.vue` - Country flag identification game
 
-**Game-Specific Components:**
-The app has multiple specific game components in:
-- `src/components/WorldCountries/` - World and continent-based country games
-- `src/components/AdministrativeDivisions/` - State/province/department games
-- `src/components/CityDistricts/` - City district games
-
-Each specific component typically wraps `MapGame.vue` with a specific `GameConfig`.
+**Home & Navigation:**
+- `HomeView.vue` - Dynamic home page with search and category-based game organization
+- Pulls games from the registry and displays them by category
+- Includes real-time search filtering across game names and tags
 
 ### Game Logic Composables
 
 Game logic is extracted into reusable composables:
-- `useMapGameLogic.ts` - Core map game logic (score, rounds, timer, feedback)
+- `useMapGameLogic.ts` - Core map game logic with weighted scoring system (4/2/1/0 points)
 - `useCapitalGameLogic.ts` - Capital cities game logic
 - `useFlagGameLogic.ts` - Flag game logic
-- `useAuth.ts` - Authentication state management with localStorage persistence
+- `useGameRegistry.ts` - Game registry management with filtering and search capabilities
+
+### State Management
+
+The application uses **Pinia stores** for centralized state management with localStorage persistence:
+- `useAuthStore` - Authentication state (login status, user profile, Google OAuth)
+- `useStatsStore` - User statistics tracking (game results, scores, timing, accuracy)
+  - Automatic migration for legacy data
+  - Zod schema validation for data integrity
+  - Export/import functionality for stats backup
 
 ### Routing & Authentication
 
@@ -86,7 +99,10 @@ Game logic is extracted into reusable composables:
 - Layer animations (`animateLayer`)
 - Type guards (`isFeatureCollection`)
 
-World map games use special processing (`processData` in `worldCountriesConfig.ts`) to create wrapped world copies at -360° and +360° longitude for seamless panning.
+`src/utils/geo/processors.ts` provides a registry of GeoJSON processors:
+- `worldWrapping` - Creates ±360° longitude copies for seamless panning
+- `filterEurope`, `filterAsia`, `filterAfrica`, etc. - Continent filters
+- Processors can be chained via the `processors` array in game configs
 
 ### Styling
 
@@ -116,12 +132,37 @@ The app also supports deployment to Railway via the `start` script in package.js
 
 To add a new map-based geography game:
 
-1. Create a `GameConfig` in the appropriate config file (`worldCountriesConfig.ts` or `cityDistrictsConfig.ts`)
-2. Create a component that uses `MapGame.vue` and passes the config as a prop
-3. Add route in `src/router/index.ts`
-4. Add navigation link in `HomeView.vue`
+1. **Create a JSON configuration file** in `src/config/games/[category]/your-game.json`:
+   ```json
+   {
+     "id": "your-game-id",
+     "name": "Your Game Name",
+     "category": "countries|divisions|cities",
+     "route": "/game/your-game-id",
+     "difficulty": 1-5,
+     "config": {
+       "dataUrl": "https://example.com/data.geojson",
+       "mapCenter": [lat, lng],
+       "zoom": 5,
+       "propertyName": "name",
+       "targetLabel": "Territory",
+       "totalRounds": 50,
+       "processors": ["worldWrapping"] // optional
+     }
+   }
+   ```
 
-If the game uses local GeoJSON data, place the file in `public/data/` and reference it using `${import.meta.env.BASE_URL}data/filename.geojson`.
+2. **Create a test file** `src/config/games/[category]/your-game.test.ts` to validate the config and GeoJSON data
+
+3. **Import the game** in `src/utils/gameLoader.ts`:
+   ```typescript
+   import yourGame from '@/config/games/[category]/your-game.json';
+   // Add to ALL_GAMES array
+   ```
+
+4. The game will automatically appear on the home page in its category section
+
+If using local GeoJSON data, place it in `public/data/` and reference via `${import.meta.env.BASE_URL}data/filename.geojson`.
 
 ## Technology Stack
 
@@ -130,6 +171,8 @@ If the game uses local GeoJSON data, place the file in `public/data/` and refere
 - **Mapping:** Leaflet
 - **Build Tool:** Vite
 - **Package Manager:** Bun
-- **TypeScript:** Full type safety with vue-tsc
+- **TypeScript:** Full type safety with vue-tsc and strict mode enabled
 - **Router:** Vue Router 4
-- **State:** Reactive composables (no Pinia currently used)
+- **State Management:** Pinia with localStorage persistence
+- **Testing:** Vitest (unit tests) + Playwright (E2E tests)
+- **Validation:** Zod for runtime schema validation
