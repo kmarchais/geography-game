@@ -18,7 +18,7 @@
   "featured": false,
   "estimatedTime": 10,
   "config": {
-    "dataUrl": "/geography-game/data/paris_districts.geojson",
+    "dataUrl": "/data/paris_districts.geojson",
     "mapCenter": [
       48.8566,
       2.3522

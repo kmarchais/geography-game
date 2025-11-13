@@ -16,7 +16,7 @@
   "featured": false,
   "estimatedTime": 3,
   "config": {
-    "dataUrl": "/geography-game/data/belgium.json",
+    "dataUrl": "/data/belgium.json",
     "mapCenter": [
       50.5,
       4.5
