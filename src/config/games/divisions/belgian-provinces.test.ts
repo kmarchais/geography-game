@@ -9,7 +9,7 @@ import type { FeatureCollection, Geometry } from 'geojson'
 import type { GeoJSONProperties } from '../../../utils/geo/../geojsonUtils'
 
 // Skip in CI when SKIP_INTEGRATION_TESTS is set (external API calls are flaky)
-const shouldSkip = process.env.SKIP_INTEGRATION_TESTS === 'true';
+const shouldSkip = process.env.SKIP_INTEGRATION_TESTS === 'true' || process.env.SKIP_INTEGRATION_TESTS === true;
 const describeOrSkip = shouldSkip ? describe.skip : describe;
 
 describeOrSkip('Belgian Provinces Game Configuration', () => {
