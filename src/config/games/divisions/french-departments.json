@@ -1,6 +1,6 @@
 {
   "id": "french-departments",
-  "name": "French Departments",
+  "name": "Departments",
   "category": "divisions",
   "route": "/game/french-departments",
   "icon": "mdi-map-marker-radius",
