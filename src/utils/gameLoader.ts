@@ -110,7 +110,7 @@ export function loadGames(): void {
     console.error(`[GameLoader] ${invalid.length} invalid game configuration(s):`);
     invalid.forEach(({ index, error }) => {
       const game = ALL_GAMES[index] as any;
-      console.error(`  - ${game?.name || `Game at index ${index}`}:`, error.errors);
+      console.error(`  - ${game?.name || `Game at index ${index}`}:`, error.issues);
     });
   }
 
