@@ -1,6 +1,32 @@
 import type { FeatureCollection, Geometry, GeoJsonProperties } from "geojson";
 import { createWorldWrappedCollection } from "../worldWrapping";
-import specialTerritories from "@/data/geography/special-territories.json";
+
+// Special territories data (inlined for test compatibility)
+const specialTerritories = {
+  gibraltar: {
+    type: "Feature" as const,
+    properties: {
+      name: "Gibraltar",
+      continent: "Europe",
+      name_long: "Gibraltar",
+      admin: "United Kingdom"
+    },
+    geometry: {
+      type: "Polygon" as const,
+      coordinates: [
+        [
+          [-5.3536, 36.1086],
+          [-5.3384, 36.1086],
+          [-5.3384, 36.1225],
+          [-5.3438, 36.1449],
+          [-5.3536, 36.1449],
+          [-5.3589, 36.1225],
+          [-5.3536, 36.1086]
+        ]
+      ]
+    }
+  }
+};
 
 /**
  * Processor function that transforms a GeoJSON FeatureCollection
@@ -89,7 +115,7 @@ export const PROCESSOR_REGISTRY = {
       const cyprusFeature = data.features.find(f => f.properties?.name === "Cyprus");
       const northCyprusFeature = data.features.find(f => f.properties?.name === "N. Cyprus");
 
-      let filteredFeatures = data.features.filter((feature) => {
+      const filteredFeatures = data.features.filter((feature) => {
         const continent = feature.properties?.continent;
         const name = feature.properties?.name;
 

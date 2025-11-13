@@ -1,93 +1,100 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { shallowMount, VueWrapper } from "@vue/test-utils";
 import { nextTick, ref } from "vue";
-import MapGame from "./MapGame.vue";
 
-// Mock Leaflet
-const mockMap = {
-  remove: vi.fn(),
-  hasLayer: vi.fn(() => true),
-  on: vi.fn(),
-  off: vi.fn(),
-};
-
-const mockTileLayer = {
-  addTo: vi.fn(() => mockTileLayer),
-  setUrl: vi.fn(),
-};
-
-const mockGeoJSONLayer = {
-  addTo: vi.fn(() => mockGeoJSONLayer),
-  eachLayer: vi.fn(),
-  on: vi.fn(),
-};
-
-const mockPopup = {
-  setLatLng: vi.fn(() => mockPopup),
-  setContent: vi.fn(() => mockPopup),
-  openOn: vi.fn(() => mockPopup),
-};
-
-vi.mock("leaflet", () => ({
-  default: {
-    map: vi.fn(() => mockMap),
-    tileLayer: vi.fn(() => mockTileLayer),
-    geoJSON: vi.fn(() => mockGeoJSONLayer),
-    popup: vi.fn(() => mockPopup),
-  },
-}));
-
-// Mock Vuetify theme
-vi.mock("vuetify", async () => {
-  const { ref } = await import("vue");
-  return {
-    useTheme: () => ({
-      global: ref({
-        name: ref("light"),
-      }),
-    }),
-  };
-});
-
-// Mock Pinia stats store
-vi.mock("../stores/stats", () => ({
-  useStatsStore: () => ({
-    getGameStats: vi.fn(() => null),
-    recordGameCompletion: vi.fn(),
-  }),
-}));
-
-// Mock composable - use actual refs for proper reactivity
-const mockGameLogic = {
-  score: ref(0),
-  currentRound: ref(1),
-  currentAttempts: ref(0),
-  gameEnded: ref(false),
-  targetEntity: ref("TestEntity"),
-  foundEntities: ref(new Map<string, number>()),
-  formattedTime: ref("00:00"),
-  feedback: ref(""),
-  feedbackType: ref(""),
-  startNewGame: vi.fn(),
-  skipEntity: vi.fn(() => ({ skippedEntity: "TestEntity" })),
-  handleCorrectGuess: vi.fn(),
-  handleIncorrectGuess: vi.fn(() => ({ shouldEndRound: false })),
-};
-
-vi.mock("../composables/useMapGameLogic", () => ({
-  useMapGameLogic: () => mockGameLogic,
-}));
-
-// Mock geojsonUtils
-vi.mock("../utils/geojsonUtils", () => ({
-  defaultStyle: { color: "blue", weight: 1 },
-  selectedStyle: { color: "red", weight: 2 },
-  getStyleForAttempts: vi.fn(() => ({ color: "green", weight: 1 })),
-  animateLayer: vi.fn(),
-  isFeatureCollection: vi.fn(() => true),
-}));
+// NOTE: These tests are skipped because they require extensive mocking
+// and the component is thoroughly tested via E2E tests.
+// Mocks are commented out to prevent pollution of other test suites.
 
 describe.skip("MapGame.vue", () => {
+  // Mock Leaflet (moved inside describe.skip to prevent global pollution)
+  /*
+  const mockMap = {
+    remove: vi.fn(),
+    hasLayer: vi.fn(() => true),
+    on: vi.fn(),
+    off: vi.fn(),
+  };
+
+  const mockTileLayer = {
+    addTo: vi.fn(() => mockTileLayer),
+    setUrl: vi.fn(),
+  };
+
+  const mockGeoJSONLayer = {
+    addTo: vi.fn(() => mockGeoJSONLayer),
+    eachLayer: vi.fn(),
+    on: vi.fn(),
+  };
+
+  const mockPopup = {
+    setLatLng: vi.fn(() => mockPopup),
+    setContent: vi.fn(() => mockPopup),
+    openOn: vi.fn(() => mockPopup),
+  };
+
+  vi.mock("leaflet", () => ({
+    default: {
+      map: vi.fn(() => mockMap),
+      tileLayer: vi.fn(() => mockTileLayer),
+      geoJSON: vi.fn(() => mockGeoJSONLayer),
+      popup: vi.fn(() => mockPopup),
+    },
+  }));
+
+  // Mock Vuetify theme
+  vi.mock("vuetify", async () => {
+    const { ref } = await import("vue");
+    return {
+      useTheme: () => ({
+        global: ref({
+          name: ref("light"),
+        }),
+      }),
+    };
+  });
+
+  // Mock Pinia stats store
+  vi.mock("../stores/stats", () => ({
+    useStatsStore: () => ({
+      getGameStats: vi.fn(() => null),
+      recordGameCompletion: vi.fn(),
+    }),
+  }));
+
+  // Mock composable - use actual refs for proper reactivity
+  const mockGameLogic = {
+    score: ref(0),
+    currentRound: ref(1),
+    currentAttempts: ref(0),
+    gameEnded: ref(false),
+    targetEntity: ref("TestEntity"),
+    foundEntities: ref(new Map<string, number>()),
+    formattedTime: ref("00:00"),
+    feedback: ref(""),
+    feedbackType: ref(""),
+    startNewGame: vi.fn(),
+    skipEntity: vi.fn(() => ({ skippedEntity: "TestEntity" })),
+    handleCorrectGuess: vi.fn(),
+    handleIncorrectGuess: vi.fn(() => ({ shouldEndRound: false })),
+  };
+
+  vi.mock("../composables/useMapGameLogic", () => ({
+    useMapGameLogic: () => mockGameLogic,
+  }));
+
+  // Mock geojsonUtils
+  vi.mock("../utils/geojsonUtils", () => ({
+    defaultStyle: { color: "blue", weight: 1 },
+    selectedStyle: { color: "red", weight: 2 },
+    getStyleForAttempts: vi.fn(() => ({ color: "green", weight: 1 })),
+    animateLayer: vi.fn(),
+    isFeatureCollection: vi.fn(() => true),
+  }));
+  */
+
+  // Import after mocks would be set up
+  // import MapGame from "./MapGame.vue";
   let wrapper: VueWrapper;
 
   const mockGeoJSONData = {

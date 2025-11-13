@@ -10,6 +10,11 @@ export default mergeConfig(
       exclude: [...configDefaults.exclude, 'e2e/**', 'tests/e2e/**'],
       root: fileURLToPath(new URL('./', import.meta.url)),
       globals: true,
+      setupFiles: ['./src/test-setup.ts'],
+      // Define BASE_URL for tests to resolve relative GeoJSON paths
+      env: {
+        VITE_BASE_URL: '/geography-game/',
+      },
       coverage: {
         provider: 'v8',
         reporter: ['text', 'json', 'html'],

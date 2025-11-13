@@ -1,13 +1,21 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { effectScope } from "vue";
 import { useFlagGameLogic, type Country } from "./useFlagGameLogic";
 
 describe("useFlagGameLogic", () => {
+  let scope: ReturnType<typeof effectScope> | null = null;
+
   beforeEach(() => {
-    // Fake timers disabled due to vitest 4.x API issues
-    // vi.useFakeTimers();
+    // Create a new effect scope for each test
+    scope = effectScope();
   });
 
   afterEach(() => {
+    // Clean up the scope after each test
+    if (scope) {
+      scope.stop();
+      scope = null;
+    }
     vi.restoreAllMocks();
   });
 
@@ -21,7 +29,8 @@ describe("useFlagGameLogic", () => {
 
   const createGameLogic = (countryCount = 10) => {
     const countries = createTestCountries(countryCount);
-    return useFlagGameLogic(countries);
+    // Run composable inside effect scope
+    return scope!.run(() => useFlagGameLogic(countries))!;
   };
 
   describe("initialization", () => {

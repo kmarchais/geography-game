@@ -1,14 +1,21 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { ref } from "vue";
+import { ref, effectScope } from "vue";
 import { useMapGameLogic, type MapGameLogicOptions } from "./useMapGameLogic";
 
 describe("useMapGameLogic", () => {
+  let scope: ReturnType<typeof effectScope> | null = null;
+
   beforeEach(() => {
-    // Fake timers disabled due to vitest 4.x API issues
-    // vi.useFakeTimers();
+    // Create a new effect scope for each test
+    scope = effectScope();
   });
 
   afterEach(() => {
+    // Clean up the scope after each test
+    if (scope) {
+      scope.stop();
+      scope = null;
+    }
     vi.restoreAllMocks();
   });
 
@@ -20,7 +27,8 @@ describe("useMapGameLogic", () => {
       availableEntities: ref(entities),
       totalRounds: ref(rounds),
     };
-    return useMapGameLogic(options);
+    // Run composable inside effect scope
+    return scope!.run(() => useMapGameLogic(options))!;
   };
 
   describe("initialization", () => {

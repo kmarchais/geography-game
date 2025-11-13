@@ -1,7 +1,13 @@
 <template>
-  <v-card variant="outlined" class="mb-4">
+  <v-card
+    variant="outlined"
+    class="mb-4"
+  >
     <v-card-title :class="['text-h6 py-3 px-4', categoryConfig.bgClass]">
-      <v-icon start :color="categoryConfig.iconColor">
+      <v-icon
+        start
+        :color="categoryConfig.iconColor"
+      >
         {{ categoryConfig.icon }}
       </v-icon>
       {{ categoryConfig.title }}

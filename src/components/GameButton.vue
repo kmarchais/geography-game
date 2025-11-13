@@ -1,6 +1,9 @@
 <template>
-  <v-tooltip location="top" :text="game.name">
-    <template v-slot:activator="{ props: tooltipProps }">
+  <v-tooltip
+    location="top"
+    :text="game.name"
+  >
+    <template #activator="{ props: tooltipProps }">
       <v-btn
         v-bind="tooltipProps"
         block
@@ -11,8 +14,15 @@
       >
         <div class="d-flex align-center w-100">
           <!-- For divisions and cities, prioritize emoji (flag) over icon -->
-          <span v-if="showEmoji" class="me-2 game-emoji flex-shrink-0">{{ displayEmoji }}</span>
-          <v-icon v-else-if="game.icon" start class="flex-shrink-0">
+          <span
+            v-if="showEmoji"
+            class="me-2 game-emoji flex-shrink-0"
+          >{{ displayEmoji }}</span>
+          <v-icon
+            v-else-if="game.icon"
+            start
+            class="flex-shrink-0"
+          >
             {{ game.icon }}
           </v-icon>
 
@@ -47,12 +57,12 @@ const router = useRouter();
  * Get country flag emoji for cities based on city name
  */
 const cityCountryFlag = computed(() => {
-  if (props.game.category !== 'cities') return null;
+  if (props.game.category !== 'cities') {return null;}
 
   const name = props.game.name;
-  if (name.includes('Paris') || name.includes('Bordeaux')) return '🇫🇷';
-  if (name.includes('London')) return '🇬🇧';
-  if (name.includes('Barcelona')) return '🇪🇸';
+  if (name.includes('Paris') || name.includes('Bordeaux')) {return '🇫🇷';}
+  if (name.includes('London')) {return '🇬🇧';}
+  if (name.includes('Barcelona')) {return '🇪🇸';}
 
   return null;
 });
@@ -154,9 +164,10 @@ const getDifficultyColor = (difficulty: number): string => {
 .game-emoji {
   font-size: 1.2em;
   vertical-align: middle;
+
   /* Use Twemoji font for proper flag emoji rendering */
-  font-family: "Twemoji Country Flags", "Apple Color Emoji", "Segoe UI Emoji",
-    "Segoe UI Symbol", "Noto Color Emoji", "EmojiOne Color", "Android Emoji", sans-serif;
+  font-family: Twemoji Country Flags, Apple Color emoji, Segoe UI emoji,
+    Segoe UI Symbol, Noto Color emoji, EmojiOne Color, Android emoji, sans-serif;
 }
 
 .game-button {

@@ -123,8 +123,13 @@ describe('Game Data Loading Integration Tests', () => {
 
   describe('All games can load GeoJSON data', () => {
     ALL_GAMES.forEach(({ name, config }) => {
+      // Skip games with local file paths - these can't be fetched in test environment
+      // Only external URLs (https://) can be tested
+      const isLocalFile = config.config.dataUrl.startsWith('./') || config.config.dataUrl.startsWith('/');
+
       // Skip London Boroughs due to CORS issues with external API
-      const testFn = name === 'London Boroughs' ? it.skip : it;
+      // Skip all games with local files (Belgian Provinces, Ukrainian Oblasts, Paris districts, etc.)
+      const testFn = (name === 'London Boroughs' || isLocalFile) ? it.skip : it;
 
       testFn(`${name} - can fetch and parse GeoJSON data`, async () => {
         const resolvedUrl = resolveDataUrl(config.config.dataUrl);

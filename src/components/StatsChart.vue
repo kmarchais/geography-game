@@ -180,7 +180,7 @@ const segments = computed(() => {
 
 // Get the currently hovered segment safely
 const currentSegment = computed(() => {
-  if (hoveredSegment.value === null) return null;
+  if (hoveredSegment.value === null) {return null;}
   return segments.value[hoveredSegment.value];
 });
 </script>
@@ -198,7 +198,7 @@ const currentSegment = computed(() => {
 }
 
 .pie-chart {
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  filter: drop-shadow(0 2px 4px rgb(0 0 0 / 10%));
 }
 
 .pie-segment {
@@ -221,7 +221,7 @@ const currentSegment = computed(() => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: rgba(0, 0, 0, 0.9);
+  background: rgb(0 0 0 / 90%);
   color: white;
   padding: 12px 16px;
   border-radius: 8px;
@@ -230,7 +230,7 @@ const currentSegment = computed(() => {
   max-height: 300px;
   pointer-events: none;
   z-index: 10;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 30%);
 }
 
 .tooltip-header {
@@ -241,11 +241,11 @@ const currentSegment = computed(() => {
   font-size: 1rem;
   margin-bottom: 8px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid rgb(255 255 255 / 20%);
 }
 
 .tooltip-count {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgb(255 255 255 / 20%);
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 0.9rem;
@@ -255,7 +255,7 @@ const currentSegment = computed(() => {
   max-height: 220px;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  scrollbar-color: rgb(255 255 255 / 30%) transparent;
 }
 
 .tooltip-territories::-webkit-scrollbar {
@@ -267,12 +267,12 @@ const currentSegment = computed(() => {
 }
 
 .tooltip-territories::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgb(255 255 255 / 30%);
   border-radius: 3px;
 }
 
 .tooltip-territories::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgb(255 255 255 / 50%);
 }
 
 .territory-item {
@@ -306,11 +306,11 @@ const currentSegment = computed(() => {
 }
 
 .legend-item:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgb(0 0 0 / 5%);
 }
 
 [data-theme="dark"] .legend-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgb(255 255 255 / 5%);
 }
 
 .legend-color {

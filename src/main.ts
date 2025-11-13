@@ -27,15 +27,23 @@ app.mount('#app')
 // Register service worker
 registerServiceWorker({
   onSuccess: () => {
-    console.log('[App] Service worker registered successfully');
+    if (import.meta.env.DEV) {
+      console.log('[App] Service worker registered successfully');
+    }
   },
   onUpdate: () => {
-    console.log('[App] New version available! Please refresh to update.');
+    if (import.meta.env.DEV) {
+      console.log('[App] New version available! Please refresh to update.');
+    }
   },
   onOffline: () => {
-    console.log('[App] App is offline');
+    if (import.meta.env.DEV) {
+      console.log('[App] App is offline');
+    }
   },
   onOnline: () => {
-    console.log('[App] App is back online');
+    if (import.meta.env.DEV) {
+      console.log('[App] App is back online');
+    }
   },
 });

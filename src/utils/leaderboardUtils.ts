@@ -15,17 +15,14 @@ import type { GameResult } from '../stores/stats';
  * @returns negative if a ranks higher, positive if b ranks higher, 0 if equal
  */
 export function compareGameResults(a: GameResult, b: GameResult): number {
-  // Primary: Higher score wins
+  // Primary: Higher score wins (floored display score)
   if (a.score !== b.score) {
     return b.score - a.score;
   }
 
-  // First tiebreaker: Higher raw percentage wins
-  const aRaw = a.rawScorePercentage ?? a.score;
-  const bRaw = b.rawScorePercentage ?? b.score;
-
-  if (aRaw !== bRaw) {
-    return bRaw - aRaw;
+  // First tiebreaker: Higher raw percentage wins (full precision)
+  if (a.rawScorePercentage !== b.rawScorePercentage) {
+    return b.rawScorePercentage - a.rawScorePercentage;
   }
 
   // Second tiebreaker: Lower time wins (faster)

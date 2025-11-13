@@ -34,7 +34,7 @@ async function analyzeGame(configPath: string): Promise<{
   console.log(`Analyzing ${config.name}...`)
 
   // Resolve data URL (handle local files)
-  let dataUrl = config.config.dataUrl
+  const dataUrl = config.config.dataUrl
   if (dataUrl.startsWith('./')) {
     // Local file - read from public directory
     const localPath = path.join(process.cwd(), 'public', dataUrl.substring(2))

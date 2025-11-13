@@ -186,11 +186,32 @@ async function loadGame() {
       throw new Error("No game ID provided");
     }
 
+    // Wait for registry to be initialized
+    // This prevents race conditions when navigating directly to a game URL
+    if (!registry.initialized.value) {
+      console.log('[GameView] Waiting for game registry to initialize...');
+      // Poll until registry is initialized (should happen quickly on app mount)
+      await new Promise<void>((resolve) => {
+        const checkInterval = setInterval(() => {
+          if (registry.initialized.value) {
+            clearInterval(checkInterval);
+            resolve();
+          }
+        }, 50); // Check every 50ms
+
+        // Timeout after 5 seconds to prevent infinite waiting
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          resolve();
+        }, 5000);
+      });
+    }
+
     // Get game from registry
     const game = registry.getGameById(gameId);
 
     if (!game) {
-      throw new Error(`Game not found: ${gameId}`);
+      throw new Error(`Game not found: ${gameId}. Please check the URL or return to the home page.`);
     }
 
     gameDefinition.value = game;
@@ -232,6 +253,7 @@ watch(
 <style scoped>
 .game-view {
   width: 100%;
+
   /* Fill viewport minus header (64px) */
   height: calc(100vh - 64px);
   position: relative;
@@ -251,7 +273,7 @@ watch(
 .loading-spinner {
   width: 50px;
   height: 50px;
-  border: 4px solid rgba(0, 0, 0, 0.1);
+  border: 4px solid rgb(0 0 0 / 10%);
   border-left-color: #4a90e2;
   border-radius: 50%;
   animation: spin 1s linear infinite;
