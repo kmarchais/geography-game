@@ -60,7 +60,7 @@ function extractManualOverride(testFilePath: string): number | null {
 function countMarkerFunctionTerritories(markerFunctionName: string): number | null {
   try {
     const markerFilePath = path.join(markersDir, `${markerFunctionName}.ts`);
-    if (!fs.existsSync(markerFilePath)) return null;
+    if (!fs.existsSync(markerFilePath)) {return null;}
 
     const content = fs.readFileSync(markerFilePath, 'utf-8');
     const arrayMatch = content.match(/export\s+const\s+additionalTerritories[^=]*=\s*\[([\s\S]*?)\]/);
