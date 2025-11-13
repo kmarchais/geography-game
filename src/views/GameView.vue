@@ -46,6 +46,7 @@
           :geojson-name-property="gameDefinition.config.propertyName"
           :total-rounds-override="totalRounds"
           :map-options="mapOptions"
+          :processors="gameDefinition.config.processors"
           :process-geojson-data-fn="processGeoJsonData"
           :add-manual-markers-fn="markerFunction"
           :game-id="gameDefinition.id"
