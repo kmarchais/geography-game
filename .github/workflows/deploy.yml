@@ -37,7 +37,7 @@ jobs:
       - name: Run unit tests
         env:
           SKIP_INTEGRATION_TESTS: 'true'
-        run: bun test
+        run: bun run test
 
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium

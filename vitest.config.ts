@@ -13,6 +13,10 @@ export default mergeConfig(
         ...configDefaults.exclude,
         'e2e/**',
         'tests/e2e/**',
+        'tests/**/*.spec.ts', // Exclude all Playwright E2E tests
+        // Exclude Leaflet-dependent tests (happy-dom doesn't support Leaflet's window requirements)
+        'src/composables/useCapitalGameLogic.spec.ts',
+        'src/config/games/divisions/french-departments.test.ts',
         // In CI, skip game config tests (they fetch external GeoJSON and are flaky)
         ...(isCI ? [
           '**/src/config/games/**/*.test.ts',
