@@ -109,8 +109,8 @@ case 'countries':
 ### 4. Test It
 
 ```bash
-bun test my-game  # Run your test
-bun dev          # Start server and play your game at /game/my-game
+bun run test my-game  # Run your test
+bun dev               # Start server and play your game at /game/my-game
 ```
 
 Done! Your game is playable at `http://localhost:3000/game/my-game`
@@ -119,9 +119,16 @@ Done! Your game is playable at `http://localhost:3000/game/my-game`
 
 ### Run Tests
 
+**Important:** Always use `bun run test`, not `bun test`
+
+- ✅ `bun run test` - Uses Vitest (correct)
+- ❌ `bun test` - Uses Bun's native test runner (incompatible with this project)
+
 ```bash
-bun test              # Unit tests
-bun test:e2e          # E2E tests (requires Playwright)
+bun run test          # Unit tests with Vitest
+bun run test:ui       # Interactive UI for tests
+bun run test:coverage # With coverage report
+bun run test:e2e      # E2E tests (requires Playwright)
 bun run type-check    # TypeScript check
 ```
 
@@ -193,7 +200,7 @@ Games are lazy-loaded by category to reduce initial bundle size:
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feat/my-feature`)
 3. Make your changes
-4. Run tests (`bun test`)
+4. Run tests (`bun run test`)
 5. Create a Pull Request
 
 For larger changes, open an issue first to discuss.

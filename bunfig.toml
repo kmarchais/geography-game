@@ -1,0 +1,15 @@
+# Bun Configuration
+# https://bun.sh/docs/runtime/bunfig
+
+# ⚠️ IMPORTANT: This project uses Vitest, not Bun's native test runner
+#
+# ✅ Use: bun run test    (runs Vitest - correct)
+# ❌ Don't use: bun test  (runs Bun's test runner - incompatible)
+#
+# Unfortunately, Bun's test runner cannot be fully disabled.
+# The test configuration below is for Bun's native runner (if accidentally used),
+# but all project tests are designed for Vitest.
+
+[test]
+# Coverage configuration (not used, but here for reference)
+# coverage = false
