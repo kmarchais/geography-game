@@ -19,6 +19,7 @@ repos:
     -   id: eslint
         language_version: "23.8.0"
         args: [--config eslint.config.cjs]
+        exclude: ^(\.venv/|node_modules/|\.env|ruff\.toml)
         additional_dependencies:
           - eslint@9.25.0
           - eslint-plugin-vue@10.0.0
@@ -32,9 +33,9 @@ repos:
     hooks:
       - id: stylelint
         files: \.(scss|vue)$
-        args: [--fix, --config=.stylelintrc.json]
+        args: [--fix, --config=.stylelintrc.json, --allow-empty-input]
         additional_dependencies:
-          - stylelint@16.18.0
+          - stylelint@16.25.0
           - stylelint-config-standard-scss@14.0.0
           - stylelint-config-recommended-vue@1.6.0
           - postcss@8.5.3

@@ -1,0 +1,39 @@
+{
+  "id": "belgian-provinces",
+  "name": "Belgian Provinces",
+  "category": "divisions",
+  "route": "/game/belgian-provinces",
+  "icon": "mdi-map-marker-radius",
+  "emoji": "🇧🇪",
+  "color": "blue-grey-darken-6",
+  "description": "Identify all provinces of Belgium",
+  "tags": [
+    "belgium",
+    "provinces",
+    "europe"
+  ],
+  "difficulty": 1,
+  "featured": false,
+  "estimatedTime": 3,
+  "config": {
+    "dataUrl": "/data/belgium.json",
+    "mapCenter": [
+      50.5,
+      4.5
+    ],
+    "zoom": 8,
+    "maxBounds": [
+      [
+        49.5,
+        2.5
+      ],
+      [
+        51.5,
+        6.5
+      ]
+    ],
+    "propertyName": "name",
+    "targetLabel": "Province",
+    "totalRounds": 11
+  }
+}

@@ -1,7 +1,7 @@
 <template>
   <v-container class="fill-height d-flex align-center justify-center">
     <!-- Use a div to allow content to potentially exceed viewport height -->
-    <div style="width: 100%; max-width: 700px">
+    <div style="width: 100%; max-width: 1200px">
       <v-card
         class="pa-6"
         elevation="3"
@@ -14,454 +14,39 @@
           Select a category to explore different geography challenges
         </v-card-text>
 
+        <!-- Search Bar -->
+        <v-text-field
+          v-model="searchQuery"
+          prepend-inner-icon="mdi-magnify"
+          label="Search games..."
+          variant="outlined"
+          density="comfortable"
+          clearable
+          hide-details
+          class="mb-4"
+        />
+
         <v-divider class="mb-6" />
 
-        <!-- Countries Card -->
-        <v-card
-          class="mb-6"
-          variant="outlined"
-        >
-          <v-card-title class="text-h6 bg-blue-lighten-5 py-3 px-4">
-            <v-icon
-              start
-              color="blue-darken-2"
-              class="me-2"
-            >
-              mdi-earth
-            </v-icon>
-            Countries of the World
-          </v-card-title>
-          <v-card-text class="pt-4">
-            <v-row dense>
-              <v-col
-                cols="12"
-                md="4"
-                sm="6"
-              >
-                <v-btn
-                  block
-                  color="blue-darken-1"
-                  @click="navigateTo('/world-countries')"
-                >
-                  <v-icon start>
-                    mdi-earth
-                  </v-icon>
-                  World
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="6"
-              >
-                <v-btn
-                  block
-                  color="green-darken-2"
-                  @click="navigateTo('/african-countries')"
-                >
-                  <span class="me-1 continent-emoji">🌍</span>
-                  Africa
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="6"
-              >
-                <v-btn
-                  block
-                  color="red-darken-2"
-                  @click="navigateTo('/asian-countries')"
-                >
-                  <span class="me-1 continent-emoji">🌏</span>
-                  Asia
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="6"
-              >
-                <v-btn
-                  block
-                  color="blue-grey darken-1"
-                  @click="navigateTo('/european-countries')"
-                >
-                  <span class="me-1 continent-emoji">🌍</span>
-                  Europe
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="6"
-              >
-                <v-btn
-                  block
-                  color="orange darken-2"
-                  @click="navigateTo('/north-american-countries')"
-                >
-                  <span class="me-1 continent-emoji">🌎</span>
-                  N. America
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="6"
-              >
-                <v-btn
-                  block
-                  color="pink darken-2"
-                  @click="navigateTo('/south-american-countries')"
-                >
-                  <span class="me-1 continent-emoji">🌎</span>
-                  S. America
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="6"
-              >
-                <v-btn
-                  block
-                  color="purple darken-2"
-                  @click="navigateTo('/oceanian-countries')"
-                >
-                  <span class="me-1 continent-emoji">🌏</span>
-                  Oceania
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
+        <!-- Dynamic Game Categories from Registry -->
+        <template v-if="filteredGames.length > 0">
+          <GameCategorySection
+            v-for="category in categoriesWithGames"
+            :key="category"
+            :category="category"
+            :games="getGamesByCategory(category)"
+          />
+        </template>
 
-        <!-- Administrative Divisions Card -->
-        <v-card
+        <!-- No Results Message -->
+        <v-alert
+          v-else-if="searchQuery"
+          type="info"
+          variant="tonal"
           class="mb-6"
-          variant="outlined"
         >
-          <v-card-title class="text-h6 bg-green-lighten-5 py-3 px-4">
-            <v-icon
-              start
-              color="green-darken-2"
-              class="me-2"
-            >
-              mdi-map-marker
-            </v-icon>
-            Administrative Divisions
-          </v-card-title>
-          <v-card-text class="pt-4">
-            <v-row dense>
-              <v-col
-                cols="12"
-                md="4"
-                sm="12"
-              >
-                <v-btn
-                  block
-                  color="blue-grey"
-                  @click="navigateTo('/us-states')"
-                >
-                  <span class="flag-emoji me-1">🇺🇸</span>
-                  <span>US States</span>
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="12"
-              >
-                <v-btn
-                  block
-                  color="blue-grey"
-                  @click="navigateTo('/french-departments')"
-                >
-                  <span class="flag-emoji me-1">🇫🇷</span>
-                  <span>French Depts.</span>
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="12"
-              >
-                <v-btn
-                  block
-                  color="blue-grey"
-                  @click="navigateTo('/spanish-communities')"
-                >
-                  <span class="flag-emoji me-1">🇪🇸</span>
-                  <span>Spanish Comm.</span>
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="12"
-              >
-                <v-btn
-                  block
-                  color="blue-grey darken-1"
-                  @click="navigateTo('/german-states')"
-                >
-                  <span class="flag-emoji me-1">🇩🇪</span>
-                  <span>German States</span>
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="12"
-              >
-                <v-btn
-                  block
-                  color="blue-grey darken-2"
-                  @click="navigateTo('/canadian-provinces')"
-                >
-                  <span class="flag-emoji me-1">🇨🇦</span>
-                  <span>Canadian Prov.</span>
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="12"
-              >
-                <v-btn
-                  block
-                  color="blue-grey darken-3"
-                  @click="navigateTo('/australian-states')"
-                >
-                  <span class="flag-emoji me-1">🇦🇺</span>
-                  <span>Australian St.</span>
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="12"
-              >
-                <v-btn
-                  block
-                  color="blue-grey"
-                  @click="navigateTo('/brazilian-states')"
-                >
-                  <span class="flag-emoji me-1">🇧🇷</span>
-                  <span>Brazilian States</span>
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="12"
-              >
-                <v-btn
-                  block
-                  color="blue-grey darken-1"
-                  @click="navigateTo('/italian-regions')"
-                >
-                  <span class="flag-emoji me-1">🇮🇹</span>
-                  <span>Italian Regions</span>
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="12"
-              >
-                <v-btn
-                  block
-                  color="blue-grey darken-2"
-                  @click="navigateTo('/uk-counties')"
-                >
-                  <span class="flag-emoji me-1">🇬🇧</span>
-                  <span>UK Counties</span>
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="12"
-              >
-                <v-btn
-                  block
-                  color="blue-grey darken-3"
-                  @click="navigateTo('/russian-oblasts')"
-                >
-                  <span class="flag-emoji me-1">🇷🇺</span>
-                  <span>Russian Oblasts</span>
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="12"
-              >
-                <v-btn
-                  block
-                  color="blue-grey darken-4"
-                  @click="navigateTo('/ukrainian-oblasts')"
-                >
-                  <span class="flag-emoji me-1">🇺🇦</span>
-                  <span>Ukrainian Oblasts</span>
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="12"
-              >
-                <v-btn
-                  block
-                  color="blue-grey darken-5"
-                  @click="navigateTo('/chinese-provinces')"
-                >
-                  <span class="flag-emoji me-1">🇨🇳</span>
-                  <span>Chinese Provinces</span>
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="12"
-              >
-                <v-btn
-                  block
-                  color="blue-grey darken-6"
-                  @click="navigateTo('/belgian-provinces')"
-                >
-                  <span class="flag-emoji me-1">🇧🇪</span>
-                  <span>Belgian Provinces</span>
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="12"
-              >
-                <v-btn
-                  block
-                  color="blue-grey darken-7"
-                  @click="navigateTo('/dutch-provinces')"
-                >
-                  <span class="flag-emoji me-1">🇳🇱</span>
-                  <span>Dutch Provinces</span>
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-
-        <!-- City Districts Card -->
-        <v-card
-          class="mb-6"
-          variant="outlined"
-        >
-          <v-card-title class="text-h6 bg-teal-lighten-5 py-3 px-4">
-            <v-icon
-              start
-              color="teal-darken-2"
-              class="me-2"
-            >
-              mdi-city-variant
-            </v-icon>
-            City Districts
-          </v-card-title>
-          <v-card-text class="pt-4">
-            <v-row dense>
-              <v-col
-                cols="12"
-                md="2"
-                sm="6"
-              >
-                <v-btn
-                  block
-                  color="teal darken-1"
-                  class="mb-2"
-                  size="small"
-                  @click="navigateTo('/paris-arrondissements')"
-                >
-                  <span class="me-1">🗼</span>
-                  Paris (20 arrondissements)
-                </v-btn>
-                <v-btn
-                  block
-                  color="teal darken-2"
-                  class="mb-2"
-                  size="small"
-                  @click="navigateTo('/paris-quartiers')"
-                >
-                  <span class="me-1">🏘️</span>
-                  Paris (80 quartiers administratifs)
-                </v-btn>
-                <v-btn
-                  block
-                  color="teal darken-3"
-                  size="small"
-                  @click="navigateTo('/paris-districts')"
-                >
-                  <span class="me-1">🌟</span>
-                  Paris (44 quartiers d'usage)
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="3"
-                sm="6"
-              >
-                <v-btn
-                  block
-                  color="teal darken-2"
-                  @click="navigateTo('/london-boroughs')"
-                >
-                  <span class="flag-emoji me-1">🇬🇧</span>
-                  London
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="3"
-                sm="6"
-              >
-                <v-btn
-                  block
-                  color="teal darken-3"
-                  class="mb-2"
-                  size="small"
-                  @click="navigateTo('/barcelona-districts')"
-                >
-                  <span class="me-1">🏛️</span>
-                  Barcelona (10)
-                </v-btn>
-                <v-btn
-                  block
-                  color="teal darken-4"
-                  size="small"
-                  @click="navigateTo('/barcelona-barrios')"
-                >
-                  <span class="me-1">🏘️</span>
-                  Barcelona (73)
-                </v-btn>
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="6"
-              >
-                <v-btn
-                  block
-                  color="teal darken-5"
-                  @click="navigateTo('/bordeaux-quartiers')"
-                >
-                  <span class="me-1">🍷</span>
-                  Bordeaux
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
+          No games found matching "{{ searchQuery }}"
+        </v-alert>
 
         <!-- Flag and Capitals Cards -->
         <v-row
@@ -625,18 +210,45 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from "vue-router";
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { polyfillCountryFlagEmojis } from "country-flag-emoji-polyfill";
-
-import { useAuth } from "@/composables/useAuth"; // Adjust path if needed
+import { useGameRegistry } from '@/composables/useGameRegistry';
+import GameCategorySection from '@/components/GameCategorySection.vue';
+import type { GameDefinition, GameCategory } from '@/types/gameRegistry';
 
 polyfillCountryFlagEmojis();
 
 const router = useRouter();
-const { isLoggedIn } = useAuth(); // Get login status
+const registry = useGameRegistry();
+const searchQuery = ref('');
 
-const navigateTo = (path: string) => {
-  router.push(path);
+// Navigation helper
+const navigateTo = (route: string) => {
+  router.push(route);
+};
+
+// Get all games from registry
+const allGames = computed(() => Array.from(registry.games.value.values()));
+
+// Filter games based on search query
+const filteredGames = computed(() => {
+  if (!searchQuery.value) {
+    return allGames.value;
+  }
+  return registry.searchGames(searchQuery.value);
+});
+
+// Get unique categories that have games, in preferred order
+const categoriesWithGames = computed(() => {
+  const preferredOrder = ['countries', 'divisions', 'cities', 'capitals', 'flags'] as const;
+  const categories = new Set(filteredGames.value.map(game => game.category));
+  return preferredOrder.filter((cat): cat is GameCategory => categories.has(cat));
+});
+
+// Get games for a specific category
+const getGamesByCategory = (category: string): GameDefinition[] => {
+  return filteredGames.value.filter(game => game.category === category);
 };
 </script>
 
@@ -647,11 +259,12 @@ const navigateTo = (path: string) => {
   vertical-align: middle;
 }
 
-/* Ensure container allows scrolling if content overflows */
+/* Home page should scroll naturally */
 .v-container.fill-height {
-  align-items: flex-start; /* Align items to top */
-  overflow-y: auto; /* Allow vertical scroll */
-  padding-top: 40px; /* Add some padding at the top */
-  padding-bottom: 40px; /* Add some padding at the bottom */
+  align-items: flex-start;
+  min-height: 100%;
+  height: auto;
+  padding-top: 40px;
+  padding-bottom: 40px;
 }
 </style>

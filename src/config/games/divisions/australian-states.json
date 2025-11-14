@@ -1,0 +1,43 @@
+{
+  "id": "australian-states",
+  "name": "Australian States & Territories",
+  "category": "divisions",
+  "route": "/game/australian-states",
+  "icon": "mdi-map-marker-radius",
+  "emoji": "🇦🇺",
+  "color": "blue-grey-darken-3",
+  "description": "Identify all states and territories of Australia",
+  "tags": [
+    "australia",
+    "states",
+    "territories",
+    "oceania"
+  ],
+  "difficulty": 1,
+  "featured": false,
+  "estimatedTime": 3,
+  "config": {
+    "dataUrl": "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_1_states_provinces_shp.geojson",
+    "mapCenter": [
+      -25,
+      134
+    ],
+    "zoom": 4,
+    "maxBounds": [
+      [
+        -45,
+        110
+      ],
+      [
+        -10,
+        155
+      ]
+    ],
+    "propertyName": "name",
+    "targetLabel": "State/Territory",
+    "processors": [
+      "filterAustralia"
+    ],
+    "totalRounds": 9
+  }
+}

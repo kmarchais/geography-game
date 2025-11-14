@@ -142,7 +142,6 @@
       if (!BASE_API_URL) {
          console.warn("VITE_BACKEND_API_URL is not set. Using fallback /api/users.");
       }
-      console.log(`Fetching users from: ${USERS_ENDPOINT_URL}`);
 
       try {
         const response = await fetch(USERS_ENDPOINT_URL, {
@@ -159,7 +158,7 @@
           try {
             const errorData = await response.json();
             errorMsg += ` - ${errorData.message || 'No specific error message from backend.'}`;
-          } catch (e) {
+          } catch (_e) {
             // Ignore if response body is not JSON
           }
           throw new Error(errorMsg);
@@ -175,8 +174,6 @@
             last_login: row[5],
             is_admin: row[6]
         }));
-        console.log('User object structure:', users.value[0]); // Log the first user object
-        console.log(`Successfully fetched ${users.value.length} users.`);
 
       } catch (err: any) {
         console.error('Error fetching users:', err);
@@ -188,21 +185,21 @@
 
     // Helper function to format date/time strings (basic example)
     const formatDateTime = (dateString: string | null | undefined): string => {
-      if (!dateString) return 'N/A';
+      if (!dateString) {return 'N/A';}
       try {
         const date = new Date(dateString);
         return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-      } catch (e) {
+      } catch (_e) {
         return 'Invalid Date';
       }
     };
     // Helper function to format date strings (basic example)
     const formatDate = (dateString: string | null | undefined): string => {
-      if (!dateString) return 'N/A';
+      if (!dateString) {return 'N/A';}
       try {
         const date = new Date(dateString);
         return date.toLocaleDateString();
-      } catch (e) {
+      } catch (_e) {
         return 'Invalid Date';
       }
     };

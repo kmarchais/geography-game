@@ -5,6 +5,7 @@ node_modules
 # local env files
 .env.local
 .env.*.local
+.env.development
 
 .env
 
@@ -17,8 +18,21 @@ pnpm-debug.log*
 # Editor directories and files
 .idea
 .vscode
+.windsurf
+.claude
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Python virtual environment
+.venv
+__pycache__
+
+# Local development
+.local
+tools
+
+# Local TODO file (not committed)
+TODO.md

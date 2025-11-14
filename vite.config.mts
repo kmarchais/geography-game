@@ -6,6 +6,7 @@ import ViteFonts from 'unplugin-fonts/vite'
 import Components from 'unplugin-vue-components/vite'
 import VueRouter from 'unplugin-vue-router/vite'
 import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
+// import { visualizer } from 'rollup-plugin-visualizer'
 
 // Utilities
 import { fileURLToPath, URL } from 'node:url'
@@ -65,6 +66,30 @@ export default defineConfig({
         ],
       },
     }),
+    // Bundle analyzer - TEMPORARILY DISABLED (causing CI hangs)
+    // visualizer({
+    //   filename: 'dist/stats.html',
+    //   open: false,
+    //   gzipSize: true,
+    //   brotliSize: true,
+    //   template: 'treemap', // 'sunburst', 'treemap', 'network'
+    // }) as any,
+
+    // TODO: Replace manual service worker with vite-plugin-pwa
+    // The current manual service worker in public/service-worker.js works but has limitations:
+    // - Cannot cache hashed asset names (Vite generates index-[hash].js)
+    // - Manual cache invalidation required
+    // - No workbox integration
+    //
+    // To migrate to vite-plugin-pwa:
+    // 1. Run: bun add -D vite-plugin-pwa
+    // 2. Import: import { VitePWA } from 'vite-plugin-pwa'
+    // 3. Add to plugins array (see git history for configuration)
+    // 4. Remove manual registration in src/main.ts
+    // 5. Use: import { registerSW } from 'virtual:pwa-register'
+    //
+    // Note: As of Dec 2024, there are known Sass compatibility issues with vite-plugin-pwa
+    // that cause build failures. Revisit when vite-plugin-pwa is updated for Vite 6+
   ],
   define: { 'process.env': {} }, // Keep this if your client-side code needs it
   resolve: {
@@ -86,12 +111,42 @@ export default defineConfig({
   },
   css: {
     preprocessorOptions: {
-      sass: {
-        api: 'modern-compiler',
-      },
       scss: {
+        api: 'legacy', // Use legacy Dart Sass API to avoid sass-embedded issues
         // additionalData: `@import "@/styles/variables.scss";`
       },
     },
+  },
+  build: {
+    // Target modern browsers for smaller bundles
+    target: 'es2020',
+
+    // Source maps for production debugging (optional)
+    sourcemap: false,
+
+    // Chunk size warning limit
+    chunkSizeWarningLimit: 600,
+
+    // Simplified rollup options for CI compatibility
+    // Manual chunking disabled to avoid CI hanging issues
+    // rollupOptions: {
+    //   output: {
+    //     manualChunks: {
+    //       'vue-core': ['vue', 'vue-router', 'pinia'],
+    //       'vuetify': ['vuetify', 'vuetify/components', 'vuetify/directives'],
+    //       'leaflet': ['leaflet'],
+    //     },
+    //     chunkFileNames: (chunkInfo) => {
+    //       if (chunkInfo.name.includes('config/games/')) {
+    //         const gameName = chunkInfo.name.split('/').pop()?.replace('.json', '') || 'game';
+    //         return `assets/${gameName}-[hash].js`;
+    //       }
+    //       return 'assets/[name]-[hash].js';
+    //     },
+    //   },
+    // },
+
+    // Minification - using esbuild for faster builds
+    minify: 'esbuild',
   },
 })

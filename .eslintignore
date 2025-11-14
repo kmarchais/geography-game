@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+
+# Coverage
+coverage/
+
+# Python virtual environment
+.venv/
+__pycache__/
+
+# Editor directories
+.idea/
+.vscode/
+.windsurf/
+.claude/
+
+# Local development
+.local/
+tools/
+
+# Test output
+playwright-report/
+test-results/

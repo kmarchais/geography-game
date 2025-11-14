@@ -26,10 +26,35 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
+
+      - name: Validate game data integrity
+        run: bun run validate-total-rounds
 
       - name: Type check
         run: bun run type-check
+
+      - name: Run unit tests
+        env:
+          SKIP_INTEGRATION_TESTS: 'true'
+        run: bun run test
+
+      # E2E tests temporarily disabled in CI - dev server hangs waiting for http://localhost:3000
+      # TODO: Re-enable E2E tests with proper CI configuration (build first, then test static files)
+      # - name: Install Playwright browsers
+      #   run: bunx playwright install --with-deps chromium
+
+      # - name: Run E2E tests
+      #   run: bun run test:e2e
+      #   timeout-minutes: 15
+
+      # - name: Upload Playwright report
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: playwright-report
+      #     path: playwright-report/
+      #     retention-days: 30
 
       - name: Build for PR
         if: github.event_name == 'pull_request'

@@ -1,5 +1,5 @@
 import type { GameConfig } from "../types/game.d";
-import type { FeatureCollection, Feature, Geometry, GeoJsonObject, GeoJsonProperties } from "geojson";
+import type { Feature, GeoJsonProperties } from "geojson";
 
 export const parisArondissementsConfig: GameConfig = {
   name: "Paris Arrondissements",
@@ -13,15 +13,15 @@ export const parisArondissementsConfig: GameConfig = {
   propertyName: "c_ar",
   targetLabel: "Arrondissement",
   nameMapping: (properties: GeoJsonProperties) => {
-    if (!properties) return "Unknown";
+    if (!properties) {return "Unknown";}
 
     const arName = properties.l_aroff as string;
     const arNum = properties.c_ar as string | number;
 
-    if (!arName || !arNum) return "Unknown";
+    if (!arName || !arNum) {return "Unknown";}
 
     const num = typeof arNum === 'string' ? parseInt(arNum) : arNum;
-    if (isNaN(num)) return arName;
+    if (isNaN(num)) {return arName;}
 
     return `${arName} (${num})`;
   },
@@ -39,16 +39,16 @@ export const parisQuartiersConfig: GameConfig = {
   propertyName: "l_qu",
   targetLabel: "Quartier",
   nameMapping: (properties: GeoJsonProperties) => {
-    if (!properties) return "Unknown";
+    if (!properties) {return "Unknown";}
 
     const quartierName = properties.l_qu as string;
     const arrondissement = properties.c_ar as string | number;
 
-    if (!quartierName) return "Unknown";
-    if (!arrondissement) return quartierName;
+    if (!quartierName) {return "Unknown";}
+    if (!arrondissement) {return quartierName;}
 
     const arNum = typeof arrondissement === 'string' ? parseInt(arrondissement) : arrondissement;
-    if (isNaN(arNum)) return quartierName;
+    if (isNaN(arNum)) {return quartierName;}
 
     const suffix = arNum === 1 ? "st" : arNum === 2 ? "nd" : arNum === 3 ? "rd" : "th";
     return `${quartierName} (${arNum}${suffix})`;
@@ -80,9 +80,9 @@ export const londonBoroughsConfig: GameConfig = {
   propertyName: "name",
   targetLabel: "Borough",
   nameMapping: (properties: GeoJsonProperties) => {
-    if (!properties) return "Unknown";
+    if (!properties) {return "Unknown";}
     const name = properties.name as string;
-    if (!name) return "Unknown";
+    if (!name) {return "Unknown";}
 
     // Remove "London Borough of" prefix if present
     if (name.startsWith("London Borough of ")) {
@@ -90,8 +90,8 @@ export const londonBoroughsConfig: GameConfig = {
     }
 
     // Handle special cases
-    if (name === "City of London") return "City of London";
-    if (name === "City of Westminster") return "Westminster";
+    if (name === "City of London") {return "City of London";}
+    if (name === "City of Westminster") {return "Westminster";}
 
     return name;
   },
@@ -122,13 +122,13 @@ export const barcelonaBarriosConfig: GameConfig = {
   propertyName: "NOM",
   targetLabel: "Barrio",
   nameMapping: (properties: GeoJsonProperties) => {
-    if (!properties) return "Unknown";
+    if (!properties) {return "Unknown";}
 
     const barrioName = properties.NOM as string;
     const districtCode = properties.DISTRICTE as string;
 
-    if (!barrioName) return "Unknown";
-    if (!districtCode) return barrioName;
+    if (!barrioName) {return "Unknown";}
+    if (!districtCode) {return barrioName;}
 
     // Map district codes to district names
     const districtNames: Record<string, string> = {
@@ -161,12 +161,12 @@ export const bordeauxQuartiersConfig: GameConfig = {
   propertyName: "nom",
   targetLabel: "Quartier",
   nameMapping: (properties: GeoJsonProperties) => {
-    if (!properties) return "Unknown";
+    if (!properties) {return "Unknown";}
 
     const quartierName = properties.nom as string;
     const inseeCode = properties.insee as string;
 
-    if (!quartierName) return "Unknown";
+    if (!quartierName) {return "Unknown";}
 
     // Map INSEE codes to city names
     const inseeToCity: Record<string, string> = {

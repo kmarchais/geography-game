@@ -90,7 +90,7 @@
   // Helper function to normalize longitude values
   const normalizeLongitude = (lng: number): number => {
     let normalized = ((lng + 180) % 360) - 180;
-    if (normalized < -180) normalized += 360;
+    if (normalized < -180) {normalized += 360;}
     return normalized;
   };
 
@@ -224,7 +224,7 @@
 
   // Simplified onMapClick function
   const onMapClick = (e: L.LeafletMouseEvent) => {
-    if (gameEnded.value || feedback.value || !targetCapital.value) return;
+    if (gameEnded.value || feedback.value || !targetCapital.value) {return;}
 
     // Clear previous markers
     if (markersLayer.value) {
@@ -280,7 +280,7 @@
       );
 
       // Calculate distance using original coordinates for accuracy
-      const distance = calculateHaversineDistance(
+      const _distance = calculateHaversineDistance(
         clickLat, clickLng, targetLat, targetLng
       );
 

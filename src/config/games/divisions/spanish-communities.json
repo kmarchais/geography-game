@@ -1,0 +1,39 @@
+{
+  "id": "spanish-communities",
+  "name": "Spanish Autonomous Communities",
+  "category": "divisions",
+  "route": "/game/spanish-communities",
+  "icon": "mdi-map-marker-radius",
+  "emoji": "🇪🇸",
+  "color": "blue-grey",
+  "description": "Identify all autonomous communities of Spain",
+  "tags": [
+    "spain",
+    "communities",
+    "europe"
+  ],
+  "difficulty": 2,
+  "featured": false,
+  "estimatedTime": 5,
+  "config": {
+    "dataUrl": "https://cdn.jsdelivr.net/gh/codeforamerica/click_that_hood@master/public/data/spain-communities.geojson",
+    "mapCenter": [
+      40,
+      -4
+    ],
+    "zoom": 6,
+    "maxBounds": [
+      [
+        35,
+        -10
+      ],
+      [
+        45,
+        5
+      ]
+    ],
+    "propertyName": "name",
+    "targetLabel": "Community",
+    "totalRounds": 19
+  }
+}

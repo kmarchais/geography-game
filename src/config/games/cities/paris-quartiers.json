@@ -1,0 +1,41 @@
+{
+  "id": "paris-quartiers",
+  "name": "Paris Quartiers Administratifs",
+  "category": "cities",
+  "route": "/game/paris-quartiers",
+  "icon": "mdi-city",
+  "emoji": "🗼",
+  "color": "teal-darken-2",
+  "description": "Identify all 80 administrative quarters (quartiers administratifs) of Paris",
+  "tags": [
+    "paris",
+    "france",
+    "quartiers",
+    "city",
+    "europe"
+  ],
+  "difficulty": 3,
+  "featured": false,
+  "estimatedTime": 15,
+  "config": {
+    "dataUrl": "https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/quartier_paris/exports/geojson",
+    "mapCenter": [
+      48.8566,
+      2.3522
+    ],
+    "zoom": 12,
+    "maxBounds": [
+      [
+        48.8155,
+        2.2241
+      ],
+      [
+        48.9021,
+        2.4699
+      ]
+    ],
+    "propertyName": "l_qu",
+    "targetLabel": "Quartier",
+    "totalRounds": 80
+  }
+}

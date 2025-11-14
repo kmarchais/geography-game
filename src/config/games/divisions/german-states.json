@@ -1,0 +1,39 @@
+{
+  "id": "german-states",
+  "name": "German States",
+  "category": "divisions",
+  "route": "/game/german-states",
+  "icon": "mdi-map-marker-radius",
+  "emoji": "🇩🇪",
+  "color": "blue-grey-darken-1",
+  "description": "Identify all federal states (Länder) of Germany",
+  "tags": [
+    "germany",
+    "states",
+    "europe"
+  ],
+  "difficulty": 2,
+  "featured": false,
+  "estimatedTime": 4,
+  "config": {
+    "dataUrl": "https://cdn.jsdelivr.net/gh/codeforamerica/click_that_hood@master/public/data/germany.geojson",
+    "mapCenter": [
+      51,
+      10.5
+    ],
+    "zoom": 6,
+    "maxBounds": [
+      [
+        47,
+        5
+      ],
+      [
+        55,
+        16
+      ]
+    ],
+    "propertyName": "name",
+    "targetLabel": "State",
+    "totalRounds": 16
+  }
+}

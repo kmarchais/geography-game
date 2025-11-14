@@ -1,5 +1,5 @@
 // composables/useFlagGameLogic.ts
-import { ref, computed, watch } from "vue";
+import { ref } from "vue";
 
 export interface Country {
   name: string;
@@ -34,8 +34,14 @@ export function useFlagGameLogic(countriesRef: Country[]) {
       idx = Math.floor(Math.random() * countriesRef.length);
     } while (usedIndices.value.includes(idx) && usedIndices.value.length < countriesRef.length);
 
+    const country = countriesRef[idx];
+    if (!country) {
+      console.error("Failed to select a country");
+      return;
+    }
+
     usedIndices.value.push(idx);
-    currentCountry.value = countriesRef[idx];
+    currentCountry.value = country;
     feedback.value = "";
     feedbackType.value = "";
   }
@@ -55,7 +61,7 @@ export function useFlagGameLogic(countriesRef: Country[]) {
   }
 
   function guessCountry(guess: string) {
-    if (!currentCountry.value) return;
+    if (!currentCountry.value) {return;}
 
     if (guess.trim().toLowerCase() === currentCountry.value.name.toLowerCase()) {
       score.value++;

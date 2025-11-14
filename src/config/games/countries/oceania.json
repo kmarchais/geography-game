@@ -1,0 +1,35 @@
+{
+  "id": "oceania-countries",
+  "name": "Oceanian Countries",
+  "category": "countries",
+  "route": "/game/oceania-countries",
+  "icon": "mdi-earth",
+  "emoji": "🌏",
+  "color": "purple-darken-2",
+  "description": "Identify all countries in Oceania, including Australia and Pacific island nations",
+  "tags": [
+    "oceania",
+    "countries",
+    "geography",
+    "continent",
+    "pacific"
+  ],
+  "difficulty": 2,
+  "featured": true,
+  "estimatedTime": 7,
+  "config": {
+    "dataUrl": "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson",
+    "mapCenter": [
+      -15,
+      160
+    ],
+    "zoom": 3,
+    "propertyName": "name",
+    "targetLabel": "Country",
+    "processors": [
+      "filterOceania",
+      "worldWrapping"
+    ],
+    "totalRounds": 24
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "id": "paris-arrondissements",
+  "name": "Paris Arrondissements",
+  "category": "cities",
+  "route": "/game/paris-arrondissements",
+  "icon": "mdi-eiffel-tower",
+  "emoji": "🗼",
+  "color": "purple-darken-1",
+  "description": "Identify all 20 arrondissements of Paris",
+  "tags": [
+    "paris",
+    "france",
+    "europe",
+    "easy"
+  ],
+  "difficulty": 1,
+  "featured": true,
+  "estimatedTime": 5,
+  "config": {
+    "dataUrl": "https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/arrondissements/exports/geojson",
+    "mapCenter": [
+      48.8566,
+      2.3522
+    ],
+    "zoom": 11,
+    "maxBounds": [
+      [
+        48.8155,
+        2.2241
+      ],
+      [
+        48.9021,
+        2.4699
+      ]
+    ],
+    "propertyName": "c_ar",
+    "targetLabel": "Arrondissement",
+    "totalRounds": 20
+  }
+}

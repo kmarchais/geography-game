@@ -15,8 +15,35 @@ import { createApp } from 'vue';
 import 'vuetify/styles'
 import '@mdi/font/css/materialdesignicons.css' // if you're using Material Design Icons
 
+// Import service worker registration
+import { register as registerServiceWorker } from './utils/serviceWorkerRegistration';
+
 const app = createApp(App)
 
 registerPlugins(app)
 
 app.mount('#app')
+
+// Register service worker
+registerServiceWorker({
+  onSuccess: () => {
+    if (import.meta.env.DEV) {
+      console.log('[App] Service worker registered successfully');
+    }
+  },
+  onUpdate: () => {
+    if (import.meta.env.DEV) {
+      console.log('[App] New version available! Please refresh to update.');
+    }
+  },
+  onOffline: () => {
+    if (import.meta.env.DEV) {
+      console.log('[App] App is offline');
+    }
+  },
+  onOnline: () => {
+    if (import.meta.env.DEV) {
+      console.log('[App] App is back online');
+    }
+  },
+});

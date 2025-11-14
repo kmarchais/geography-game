@@ -1,0 +1,40 @@
+{
+  "id": "ukrainian-oblasts",
+  "name": "Ukrainian Oblasts",
+  "category": "divisions",
+  "route": "/game/ukrainian-oblasts",
+  "icon": "mdi-map-marker-radius",
+  "emoji": "🇺🇦",
+  "color": "blue-grey-darken-4",
+  "description": "Identify all oblasts (provinces) of Ukraine",
+  "tags": [
+    "ukraine",
+    "oblasts",
+    "provinces",
+    "europe"
+  ],
+  "difficulty": 3,
+  "featured": false,
+  "estimatedTime": 8,
+  "config": {
+    "dataUrl": "/data/ukraine-oblasts.geojson",
+    "mapCenter": [
+      49,
+      31
+    ],
+    "zoom": 6,
+    "maxBounds": [
+      [
+        44,
+        22
+      ],
+      [
+        53,
+        40
+      ]
+    ],
+    "propertyName": "name:en",
+    "targetLabel": "Oblast",
+    "totalRounds": 25
+  }
+}

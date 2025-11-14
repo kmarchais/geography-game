@@ -345,7 +345,7 @@
     try {
       const res = await fetch("https://restcountries.com/v3.1/all");
 
-      if (!res.ok) throw new Error("Network error");
+      if (!res.ok) {throw new Error("Network error");}
 
       const data = await res.json();
 
@@ -399,7 +399,7 @@
     const hardThreshold = 200_000;
 
     filteredCountries.value = countries.value.filter((country) => {
-      if (!country.population) return false;
+      if (!country.population) {return false;}
       if (level === 'easy') {
         return country.population >= easyThreshold;
       } else if (level === 'medium') {
@@ -413,7 +413,6 @@
     });
 
     if (filteredCountries.value.length < totalRounds.value * 2) {
-      console.log("Not enough countries for selected difficulty, using all countries");
       filteredCountries.value = countries.value;
     }
   }
@@ -423,7 +422,7 @@
   }
 
   function formatPopulation(population?: number): string {
-    if (!population) return "Unknown";
+    if (!population) {return "Unknown";}
 
     if (population >= 1_000_000) {
       return `${(population / 1_000_000).toFixed(2)} million`;
@@ -470,7 +469,12 @@
     }
 
     const randomIndex = Math.floor(Math.random() * filteredCountries.value.length);
-    currentCountry.value = filteredCountries.value[randomIndex];
+    const country = filteredCountries.value[randomIndex];
+    if (!country) {
+      console.error("Failed to select a country");
+      return;
+    }
+    currentCountry.value = country;
 
     filteredCountries.value = filteredCountries.value.filter((_, i) => i !== randomIndex);
 
@@ -484,7 +488,7 @@
   }
 
   function onGuess() {
-    if (!guess.value.trim() || !currentCountry.value || showAnswer.value) return;
+    if (!guess.value.trim() || !currentCountry.value || showAnswer.value) {return;}
 
     const userGuess = guess.value.trim().toLowerCase();
     const correctAnswer = currentCountry.value.name.toLowerCase();
@@ -542,7 +546,7 @@
     const normalizedGuess = userGuess.toLowerCase().trim();
     const normalizedAnswer = correctAnswer.toLowerCase().trim();
 
-    if (normalizedGuess === normalizedAnswer) return true;
+    if (normalizedGuess === normalizedAnswer) {return true;}
 
     if (currentCountry.value?.alternativeNames) {
       for (const altName of currentCountry.value.alternativeNames) {
@@ -555,7 +559,7 @@
     const cleanGuess = normalizedGuess.replace(/^the\s+/i, '');
     const cleanAnswer = normalizedAnswer.replace(/^the\s+/i, '');
 
-    if (cleanGuess === cleanAnswer) return true;
+    if (cleanGuess === cleanAnswer) {return true;}
 
     if (currentCountry.value?.alternativeNames) {
       for (const altName of currentCountry.value.alternativeNames) {
@@ -584,28 +588,44 @@
   }
 
   function calculateSimilarity(a: string, b: string): number {
-    if (a.length === 0 || b.length === 0) return 0;
+    if (a.length === 0 || b.length === 0) {return 0;}
 
     const matrix = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(0));
 
-    for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
-    for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+    for (let i = 0; i <= a.length; i++) {
+      const row = matrix[i];
+      if (row) {row[0] = i;}
+    }
+    for (let j = 0; j <= b.length; j++) {
+      const row = matrix[0];
+      if (row) {row[j] = j;}
+    }
 
     for (let i = 1; i <= a.length; i++) {
       for (let j = 1; j <= b.length; j++) {
         const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j - 1] + cost
+        const currentRow = matrix[i];
+        const prevRow = matrix[i - 1];
+        if (!currentRow || !prevRow) {continue;}
+
+        const val1 = prevRow[j];
+        const val2 = currentRow[j - 1];
+        const val3 = prevRow[j - 1];
+        if (val1 === undefined || val2 === undefined || val3 === undefined) {continue;}
+
+        currentRow[j] = Math.min(
+          val1 + 1,
+          val2 + 1,
+          val3 + cost
         );
       }
     }
 
-    const distance = matrix[a.length][b.length];
+    const lastRow = matrix[a.length];
+    const distance = lastRow?.[b.length] ?? 0;
     const maxLength = Math.max(a.length, b.length);
 
-    return 1 - distance / maxLength;
+    return maxLength === 0 ? 1 : 1 - distance / maxLength;
   }
 
   function handleCorrectAnswer() {
@@ -647,7 +667,7 @@
     }, 2000);
   }
 
-  function handleIncorrectAnswer(userGuess: string) {
+  function handleIncorrectAnswer(_userGuess: string) {
     feedback.value = "Incorrect!";
     feedbackType.value = "incorrect";
 
@@ -660,14 +680,15 @@
   }
 
   function showHint() {
-    if (hintsUsed.value >= maxHints.value || !currentCountry.value) return;
+    if (hintsUsed.value >= maxHints.value || !currentCountry.value) {return;}
 
     hintsUsed.value++;
     hintVisible.value = true;
 
     const country = currentCountry.value;
+    const firstLetter = country.name[0] ?? '';
     const hints = [
-      `The country name starts with "${country.name[0]}"`,
+      `The country name starts with "${firstLetter}"`,
       `The country name has ${country.name.length} letters`,
       country.capital ? `The capital is ${country.capital}` : `This country is in ${country.continent || 'Unknown continent'}`,
       `The first three letters are "${country.name.substring(0, 3)}"`,
@@ -681,7 +702,9 @@
       randomHint = hints[Math.floor(Math.random() * hints.length)];
     } while (randomHint === currentHint.value && hints.length > 1);
 
-    currentHint.value = randomHint;
+    if (randomHint) {
+      currentHint.value = randomHint;
+    }
   }
 
   function startTimer() {
@@ -730,7 +753,7 @@
   }
 
   function handleImageError(event: Event) {
-    if (!currentCountry.value) return;
+    if (!currentCountry.value) {return;}
 
     const img = event.target as HTMLImageElement;
     const code = currentCountry.value.code.toLowerCase();

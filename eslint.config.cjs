@@ -8,12 +8,13 @@ module.exports = [
   {
     name: 'app/base',
     files: ['**/*.{ts,mts,tsx,vue}'],
-    ignores: ['**/dist/**', '**/dist-ssr/**', '**/coverage/**'],
+    ignores: ['**/dist/**', '**/dist-ssr/**', '**/coverage/**', '**/.venv/**', '**/node_modules/**'],
     plugins: {
       '@typescript-eslint': typescriptPlugin,
       'vue': pluginVue,
     },
     rules: {
+      // TypeScript rules
       '@typescript-eslint/no-unused-expressions': [
         'error',
         {
@@ -21,7 +22,34 @@ module.exports = [
           allowTernary: true,
         },
       ],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+
+      // General JavaScript/TypeScript rules
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'prefer-const': 'error',
+      'no-var': 'error',
+      'eqeqeq': ['error', 'always', { null: 'ignore' }],
+      'curly': ['error', 'all'],
+      'no-debugger': 'error',
+
+      // Vue rules
       'vue/multi-word-component-names': 'off',
+      'vue/component-name-in-template-casing': ['error', 'PascalCase'],
+      'vue/require-default-prop': 'off',
+      'vue/require-explicit-emits': 'error',
+      'vue/no-unused-components': 'warn',
+      'vue/no-unused-vars': 'error',
+      'vue/prefer-import-from-vue': 'error',
     }
   },
   ...pluginVue.configs['flat/recommended'],

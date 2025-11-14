@@ -1,0 +1,41 @@
+{
+  "id": "bordeaux-quartiers",
+  "name": "Bordeaux Area Quartiers",
+  "category": "cities",
+  "route": "/game/bordeaux-quartiers",
+  "icon": "mdi-city",
+  "emoji": "🍷",
+  "color": "teal-darken-5",
+  "description": "Identify quartiers of Bordeaux metropolitan area (8 cities)",
+  "tags": [
+    "bordeaux",
+    "france",
+    "quartiers",
+    "city",
+    "europe"
+  ],
+  "difficulty": 3,
+  "featured": false,
+  "estimatedTime": 12,
+  "config": {
+    "dataUrl": "https://opendata.bordeaux-metropole.fr/api/explore/v2.1/catalog/datasets/se_quart_s/exports/geojson",
+    "mapCenter": [
+      44.85,
+      -0.59
+    ],
+    "zoom": 9,
+    "maxBounds": [
+      [
+        44.72,
+        -0.75
+      ],
+      [
+        44.98,
+        -0.4
+      ]
+    ],
+    "propertyName": "nom",
+    "targetLabel": "Quartier",
+    "totalRounds": 75
+  }
+}

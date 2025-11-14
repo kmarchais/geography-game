@@ -23,7 +23,7 @@ export function useCapitalGameLogic(options: CapitalGameLogicOptions) {
   const usedCapitals = ref<Capital[]>([]);
   const currentGuess = ref<L.LatLng | null>(null);
   const currentDistance = ref<number | null>(null);
-  const maxDistance = 10000; // Maximum distance in km for scoring (no points beyond this)
+  const _maxDistance = 10000; // Maximum distance in km for scoring (no points beyond this)
 
   const timer = ref(0);
   const timerInterval = ref<number | null>(null);
@@ -92,13 +92,16 @@ export function useCapitalGameLogic(options: CapitalGameLogicOptions) {
 
     let capitalsToChooseFrom = remainingCapitals;
     if (remainingCapitals.length === 0) {
-      console.log("All capitals used, starting over selection.");
       usedCapitals.value = [];
       capitalsToChooseFrom = availableCapitals.value;
     }
 
     const randomIndex = Math.floor(Math.random() * capitalsToChooseFrom.length);
     const newTarget = capitalsToChooseFrom[randomIndex];
+    if (!newTarget) {
+      console.error("Failed to select a target capital");
+      return;
+    }
     usedCapitals.value.push(newTarget);
     targetCapital.value = newTarget;
     currentGuess.value = null;
@@ -147,7 +150,7 @@ export function useCapitalGameLogic(options: CapitalGameLogicOptions) {
   };
 
   const handleGuess = (guessLocation: L.LatLng) => {
-    if (gameEnded.value || !targetCapital.value) return;
+    if (gameEnded.value || !targetCapital.value) {return;}
 
     currentGuess.value = guessLocation;
 
@@ -187,7 +190,7 @@ export function useCapitalGameLogic(options: CapitalGameLogicOptions) {
   };
 
   const skipCapital = () => {
-    if (gameEnded.value || !targetCapital.value) return;
+    if (gameEnded.value || !targetCapital.value) {return;}
 
     showFeedback("incorrect", `Skipped! ${targetCapital.value.name} is the capital of ${targetCapital.value.country}`);
     setTimeout(advanceRound, 2000);

@@ -36,9 +36,37 @@
       <template v-else>
         <div class="game-end">
           <div class="final-score">
-            Final Score: {{ score }}/{{ totalRoundsComputed }}
+            Final Score: {{ weightedScore }} points
             <div class="final-time">
               Time: {{ formattedTime }}
+            </div>
+
+            <!-- Performance breakdown with chart -->
+            <StatsChart
+              :stats="gameStats"
+              :total-rounds="totalRoundsComputed"
+              :size="220"
+            />
+
+            <div
+              v-if="currentGameStats"
+              class="stats-summary"
+            >
+              <div
+                v-if="isNewBestScore"
+                class="new-record"
+              >
+                🏆 New Best Score!
+              </div>
+              <div
+                v-if="isNewBestTime"
+                class="new-record"
+              >
+                ⚡ New Best Time!
+              </div>
+              <div class="previous-best">
+                Previous Best: {{ currentGameStats.bestScore }} points
+              </div>
             </div>
           </div>
           <button
@@ -76,9 +104,12 @@
     watch,
     type Ref,
     shallowRef,
+    computed,
   } from "vue";
   import { useTheme } from "vuetify";
   import { useMapGameLogic } from "../composables/useMapGameLogic";
+  import { useStatsStore } from "../stores/stats";
+  import { useAuthStore } from "../stores/auth";
   import {
     animateLayer,
     defaultStyle,
@@ -88,6 +119,9 @@
     type GeoJSONFeature,
     type GeoJSONProperties,
   } from "../utils/geojsonUtils";
+  import { fetchAndCacheGeoJSON } from "../utils/geo/geojsonCache";
+  import type { ProcessorName } from "../utils/geo/processors";
+  import StatsChart from "./StatsChart.vue";
 
 
   interface MapOptions extends L.MapOptions {
@@ -113,8 +147,11 @@
     geojsonCodeProperty?: string;
     totalRoundsOverride?: number;
     processGeojsonDataFn?: ProcessGeoJsonFunc;
+    processors?: ProcessorName[];
     addManualMarkersFn?: AddManualMarkersFunc;
     mapOptions: MapOptions;
+    gameId?: string;
+    gameName?: string;
   }>();
 
   const mapElement = ref<HTMLElement | null>(null);
@@ -131,6 +168,26 @@
     availableEntities: availableEntities,
     totalRounds: totalRoundsComputed,
   });
+
+  // Helper to extract entity name from feature properties
+  const getEntityName = (properties: GeoJSONProperties | undefined): string | undefined => {
+    if (!properties) {return undefined;}
+    const value = properties[props.geojsonNameProperty];
+    // Convert numbers to strings (e.g., Paris arrondissements use numeric IDs)
+    if (typeof value === 'number') {return String(value);}
+    if (typeof value === 'string') {return value;}
+    return undefined;
+  };
+
+  // Helper to extract entity code from feature properties
+  const getEntityCode = (properties: GeoJSONProperties | undefined): string | undefined => {
+    if (!properties || !props.geojsonCodeProperty) {return undefined;}
+    const value = properties[props.geojsonCodeProperty];
+    if (typeof value === 'number') {return String(value);}
+    if (typeof value === 'string') {return value;}
+    return undefined;
+  };
+
   const {
     score,
     currentRound,
@@ -141,11 +198,39 @@
     formattedTime,
     feedback,
     feedbackType,
+    gameStats,
+    weightedScore,
+    rawScorePercentage,
     startNewGame,
     skipEntity,
     handleCorrectGuess,
     handleIncorrectGuess,
   } = gameLogic;
+
+  // Stats tracking
+  const statsStore = useStatsStore();
+  const authStore = useAuthStore();
+  const gameHasBeenRecorded = ref(false);
+
+  const currentGameStats = computed(() => {
+    if (!props.gameId) {return null;}
+    return statsStore.getGameStats(props.gameId);
+  });
+
+  const isNewBestScore = computed(() => {
+    if (!currentGameStats.value || !gameEnded.value) {return false;}
+    return weightedScore.value > currentGameStats.value.bestScore;
+  });
+
+  const isNewBestTime = computed(() => {
+    if (!currentGameStats.value || !gameEnded.value) {return false;}
+    // Get time in seconds from formattedTime (MM:SS format)
+    const parts = formattedTime.value.split(':').map(Number);
+    const minutes = parts[0] ?? 0;
+    const seconds = parts[1] ?? 0;
+    const timeInSeconds = minutes * 60 + seconds;
+    return timeInSeconds < currentGameStats.value.bestTime;
+  });
 
 
   const setLayerStyle = (layer: L.Layer, style: L.PathOptions) => {
@@ -155,7 +240,7 @@
   };
 
   const updateAllLayerStyles = () => {
-    if (!geojsonLayer.value) return;
+    if (!geojsonLayer.value) {return;}
 
     geojsonLayer.value.eachLayer((layer) => {
       if ('feature' in layer && layer.feature) {
@@ -180,7 +265,7 @@
 
 
   const onEntityClick = (e: L.LeafletMouseEvent) => {
-    if (gameEnded.value || feedback.value) return;
+    if (gameEnded.value || feedback.value) {return;}
 
     const layer = e.target as L.GeoJSON;
     const feature = layer.feature as GeoJSONFeature | undefined;
@@ -189,8 +274,8 @@
         console.warn("Clicked layer is missing feature properties:", layer);
         return;
     }
-    const clickedEntityName = feature.properties.name;
-    const clickedEntityCode = feature.properties.code;
+    const clickedEntityName = getEntityName(feature.properties);
+    const clickedEntityCode = getEntityCode(feature.properties);
 
     if (!clickedEntityName || clickedEntityName === 'Unknown') {
       console.warn("Clicked feature has invalid name property:", feature);
@@ -243,7 +328,7 @@
   };
 
   const onManualMarkerClick = (name: string, latlng: L.LatLng) => {
-    if (gameEnded.value || feedback.value) return;
+    if (gameEnded.value || feedback.value) {return;}
 
     // Show popup regardless of found status
     if (leafletMap.value) {
@@ -286,12 +371,13 @@
   };
 
   const handleNewGame = () => {
+    gameHasBeenRecorded.value = false;
     startNewGame();
     updateAllLayerStyles();
   };
 
   const highlightTargetEntity = (entityNameToHighlight: string) => {
-    if (!geojsonLayer.value || !entityNameToHighlight) return;
+    if (!geojsonLayer.value || !entityNameToHighlight) {return;}
     let layerFound = false;
     geojsonLayer.value.eachLayer((layer) => {
       if ('feature' in layer && layer.feature) {
@@ -333,17 +419,27 @@
     document.documentElement.setAttribute("data-theme", currentTheme);
 
     try {
-      const response = await fetch(props.geojsonUrl);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
+      // Use cached fetch if processors are provided, otherwise use direct fetch
+      let data: FeatureCollection;
+      if (props.processors && props.processors.length > 0) {
+        // Use cache with processors
+        data = await fetchAndCacheGeoJSON(props.geojsonUrl, props.processors);
+      } else {
+        // Fallback to direct fetch for backward compatibility
+        const response = await fetch(props.geojsonUrl);
+        if (!response.ok) {throw new Error(`HTTP error! status: ${response.status}`);}
+        data = await response.json();
+      }
 
       if (isFeatureCollection(data)) {
         data.features.forEach((feature: Feature) => {
-          if (!feature.properties) feature.properties = {};
+          if (!feature.properties) {feature.properties = {};}
           if (props.geojsonNameProperty in feature.properties) {
               feature.properties.name = feature.properties[props.geojsonNameProperty];
           } else {
-              console.warn(`Feature missing expected name property '${props.geojsonNameProperty}':`, feature);
+              if (import.meta.env.DEV) {
+                console.warn(`Feature missing expected name property '${props.geojsonNameProperty}':`, feature);
+              }
               feature.properties.name = 'Unknown';
           }
           if (props.geojsonCodeProperty && props.geojsonCodeProperty in feature.properties) {
@@ -351,11 +447,22 @@
           }
         });
 
-        const processedData = props.processGeojsonDataFn ? props.processGeojsonDataFn(data) : data;
+        // Apply additional processing function if provided (for backward compatibility)
+        // Note: If processors prop is used, processing is already done by the cache
+        const processedData = (props.processGeojsonDataFn && !props.processors)
+          ? props.processGeojsonDataFn(data)
+          : data;
 
         if (isFeatureCollection(processedData)) {
+          // Extract entity names, filtering out world-wrapped copies to avoid duplicates
+          // World wrapping creates 3 copies: original, isEastCopy, isWestCopy
           availableEntities.value = processedData.features
-            .map((feature) => feature.properties?.name)
+            .filter((feature) => {
+              // Only include original features (not wrapped copies)
+              const props = feature.properties as any;
+              return !props?.isEastCopy && !props?.isWestCopy;
+            })
+            .map((feature) => getEntityName(feature.properties))
             .filter((name): name is string => typeof name === "string" && name.trim() !== "" && name !== 'Unknown');
 
           if (availableEntities.value.length === 0) {
@@ -370,13 +477,14 @@
             style: defaultStyle,
             onEachFeature: (feature, layer) => {
               const feat = feature as GeoJSONFeature | undefined;
-              if (feat?.properties?.name && feat.properties.name !== 'Unknown') {
+              const entityName = getEntityName(feat?.properties);
+              if (entityName && entityName !== 'Unknown') {
                   layer.on({
                     click: onEntityClick,
                     mouseover: (e) => {
                       const geoLayer = e.target as L.GeoJSON;
                       const feat = geoLayer.feature as GeoJSONFeature | undefined;
-                      const entityName = feat?.properties.name;
+                      const entityName = getEntityName(feat?.properties);
                       if (entityName && !foundEntities.value.has(entityName)) {
                         setLayerStyle(layer, { ...defaultStyle, fillOpacity: 0.7 });
                       }
@@ -384,7 +492,7 @@
                     mouseout: (e) => {
                       const geoLayer = e.target as L.GeoJSON;
                       const feat = geoLayer.feature as GeoJSONFeature | undefined;
-                      const entityName = feat?.properties.name;
+                      const entityName = getEntityName(feat?.properties);
                       if (entityName && !foundEntities.value.has(entityName)) {
                         if (leafletMap.value?.hasLayer(layer)) {
                             setLayerStyle(layer, defaultStyle);
@@ -396,7 +504,8 @@
             },
             filter: (feature) => {
                 const feat = feature as GeoJSONFeature | undefined;
-                return feat?.properties?.name !== 'Unknown';
+                const entityName = getEntityName(feat?.properties);
+                return entityName !== 'Unknown';
             }
           }).addTo(map);
 
@@ -447,6 +556,46 @@
   watch(foundEntities, () => {
       updateAllLayerStyles();
   }, { deep: true });
+
+  // Watch for game end to record stats
+  watch(gameEnded, (ended) => {
+    if (ended && !gameHasBeenRecorded.value && authStore.isLoggedIn && props.gameId && props.gameName) {
+      // Parse time from formattedTime (MM:SS format)
+      const parts = formattedTime.value.split(':').map(Number);
+      const minutes = parts[0] ?? 0;
+      const seconds = parts[1] ?? 0;
+      const timeInSeconds = minutes * 60 + seconds;
+
+      // Count correct answers (entries with attempts 1, 2, or 3)
+      let correctAnswers = 0;
+      foundEntities.value.forEach((attempts) => {
+        if (attempts >= 1 && attempts <= 3) {
+          correctAnswers++;
+        }
+      });
+
+      // Use weighted score (out of 100 points)
+      const finalScore = weightedScore.value;
+      const rawScore = rawScorePercentage.value;
+
+      // Calculate actual accuracy (percentage of territories found regardless of attempts)
+      const actualAccuracy = (correctAnswers / totalRoundsComputed.value) * 100;
+
+      statsStore.recordGameResult({
+        gameId: props.gameId,
+        gameName: props.gameName,
+        score: finalScore,
+        totalRounds: totalRoundsComputed.value,
+        correctAnswers,
+        timeInSeconds,
+        timestamp: Date.now(),
+        accuracy: actualAccuracy, // Percentage of territories correctly identified
+        rawScorePercentage: rawScore, // Store exact percentage for leaderboard tiebreaking
+      });
+
+      gameHasBeenRecorded.value = true;
+    }
+  });
 </script>
 
 <style>
@@ -492,7 +641,7 @@
   .map-container {
     position: relative;
     width: 100%;
-    height: 100vh;
+    height: 100%;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -603,6 +752,38 @@
     font-size: clamp(.9rem, 3vw, 1.1rem);
     margin-top: 5px;
     color: var(--text-color);
+  }
+
+  .stats-summary {
+    margin-top: 10px;
+    font-size: clamp(.8rem, 2.5vw, .95rem);
+    color: var(--text-color);
+  }
+
+  .new-record {
+    font-weight: 700;
+    font-size: clamp(.9rem, 3vw, 1.05rem);
+    margin: 5px 0;
+    animation: celebrate .5s ease-in-out;
+  }
+
+  .previous-best {
+    margin-top: 5px;
+    opacity: .8;
+  }
+
+  @keyframes celebrate {
+    0% {
+      transform: scale(1);
+    }
+
+    50% {
+      transform: scale(1.1);
+    }
+
+    100% {
+      transform: scale(1);
+    }
   }
 
   .leaflet-container {

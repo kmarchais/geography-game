@@ -1,0 +1,41 @@
+{
+  "id": "barcelona-districts",
+  "name": "Barcelona Districts",
+  "category": "cities",
+  "route": "/game/barcelona-districts",
+  "icon": "mdi-city",
+  "emoji": "🏛️",
+  "color": "teal-darken-3",
+  "description": "Identify all 10 districts (districtes) of Barcelona",
+  "tags": [
+    "barcelona",
+    "spain",
+    "districts",
+    "city",
+    "europe"
+  ],
+  "difficulty": 1,
+  "featured": false,
+  "estimatedTime": 3,
+  "config": {
+    "dataUrl": "https://cdn.jsdelivr.net/gh/martgnz/bcn-geodata@master/districtes/districtes.geojson",
+    "mapCenter": [
+      41.3851,
+      2.1734
+    ],
+    "zoom": 11,
+    "maxBounds": [
+      [
+        41.32,
+        2.0534
+      ],
+      [
+        41.4695,
+        2.228
+      ]
+    ],
+    "propertyName": "NOM",
+    "targetLabel": "District",
+    "totalRounds": 10
+  }
+}

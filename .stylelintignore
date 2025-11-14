@@ -1,0 +1,13 @@
+# Node modules
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+
+# Coverage
+coverage/
+
+# Temporarily ignore files with pre-existing stylelint preset issues
+# TODO: Fix once stylelint presets are updated
+src/views/GameView.vue

@@ -1,5 +1,49 @@
 import { ref, computed, onScopeDispose, type Ref } from "vue";
 
+/**
+ * Weighted Scoring System
+ *
+ * Points are awarded based on attempt number:
+ * - First try:  4 points
+ * - Second try: 2 points
+ * - Third try:  1 point
+ * - Failed:     0 points
+ * - Skipped:    0 points
+ *
+ * IMPORTANT: The score is calculated as (points_earned / max_possible_points) × 100
+ * and then FLOORED to an integer. This means:
+ *
+ * - Only a PERFECT game (all territories on first try) will achieve 100 points
+ * - Even one mistake will result in a score < 100
+ *
+ * Example with 9 territories:
+ * - All on 1st try: (9×4)/36 × 100 = 100.00 → 100 points ✓
+ * - 8 on 1st, 1 on 2nd: (34)/36 × 100 = 94.44 → 94 points
+ * - 4 on 1st, 3 on 2nd, 2 on 3rd: (22)/36 × 100 = 61.11 → 61 points
+ *
+ * The raw percentage (with full precision) is also stored separately for
+ * leaderboard tiebreaking purposes.
+ */
+export const SCORE_WEIGHTS = {
+  FIRST_TRY: 4,
+  SECOND_TRY: 2,
+  THIRD_TRY: 1,
+  FAILED: 0,
+  SKIPPED: 0,
+} as const;
+
+/**
+ * Attempt status codes
+ * These are used to track how a territory was handled
+ */
+export const ATTEMPT_STATUS = {
+  FIRST_TRY: 1,
+  SECOND_TRY: 2,
+  THIRD_TRY: 3,
+  FAILED: 4,      // Failed after 3 attempts
+  SKIPPED: 5,     // Manually skipped by player
+} as const;
+
 export interface MapGameLogicOptions {
   entityNameSingular: string;
   entityNamePlural: string;
@@ -29,12 +73,80 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
       .padStart(2, "0")}`;
   });
 
+  // Game completion statistics with territory names
+  const gameStats = computed(() => {
+    const stats = {
+      foundOnAttempt1: 0,
+      foundOnAttempt2: 0,
+      foundOnAttempt3: 0,
+      failed: 0,
+      skipped: 0,
+      territoriesAttempt1: [] as string[],
+      territoriesAttempt2: [] as string[],
+      territoriesAttempt3: [] as string[],
+      territoriesFailed: [] as string[],
+      territoriesSkipped: [] as string[],
+    };
+
+    foundEntities.value.forEach((attempts, name) => {
+      if (attempts === ATTEMPT_STATUS.FIRST_TRY) {
+        stats.foundOnAttempt1++;
+        stats.territoriesAttempt1.push(name);
+      } else if (attempts === ATTEMPT_STATUS.SECOND_TRY) {
+        stats.foundOnAttempt2++;
+        stats.territoriesAttempt2.push(name);
+      } else if (attempts === ATTEMPT_STATUS.THIRD_TRY) {
+        stats.foundOnAttempt3++;
+        stats.territoriesAttempt3.push(name);
+      } else if (attempts === ATTEMPT_STATUS.FAILED) {
+        stats.failed++;
+        stats.territoriesFailed.push(name);
+      } else if (attempts === ATTEMPT_STATUS.SKIPPED) {
+        stats.skipped++;
+        stats.territoriesSkipped.push(name);
+      }
+    });
+
+    // Sort territory lists alphabetically
+    stats.territoriesAttempt1.sort();
+    stats.territoriesAttempt2.sort();
+    stats.territoriesAttempt3.sort();
+    stats.territoriesFailed.sort();
+    stats.territoriesSkipped.sort();
+
+    return stats;
+  });
+
+  // Raw score percentage (with full precision for tiebreaking)
+  const rawScorePercentage = computed(() => {
+    const stats = gameStats.value;
+
+    // Calculate points earned
+    const pointsEarned =
+      (stats.foundOnAttempt1 * SCORE_WEIGHTS.FIRST_TRY) +
+      (stats.foundOnAttempt2 * SCORE_WEIGHTS.SECOND_TRY) +
+      (stats.foundOnAttempt3 * SCORE_WEIGHTS.THIRD_TRY) +
+      (stats.failed * SCORE_WEIGHTS.FAILED) +
+      (stats.skipped * SCORE_WEIGHTS.SKIPPED);
+
+    // Maximum possible points (all territories on first try)
+    const maxPoints = totalRounds.value * SCORE_WEIGHTS.FIRST_TRY;
+
+    // Calculate exact percentage (keep full precision for tiebreaking)
+    if (maxPoints === 0) {return 0;}
+    return (pointsEarned / maxPoints) * 100;
+  });
+
+  // Weighted score (0-100 points, floored for display)
+  const weightedScore = computed(() => {
+    return Math.floor(rawScorePercentage.value);
+  });
+
   const feedback = ref("");
   const feedbackType = ref("");
 
   const stopTimer = () => {
     if (timerInterval.value !== null) {
-      console.log("Clearing timer interval from composable scope dispose.");
       clearInterval(timerInterval.value);
       timerInterval.value = null;
     }
@@ -43,9 +155,9 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
   const startTimer = () => {
     stopTimer();
     timer.value = 0;
-    timerInterval.value = window.setInterval(() => {
+    timerInterval.value = setInterval(() => {
       timer.value++;
-    }, 1000);
+    }, 1000) as unknown as number;
   };
 
   const showFeedback = (isCorrect: boolean, customMsg?: string) => {
@@ -74,7 +186,9 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
 
   const selectNewTargetEntity = () => {
     if (availableEntities.value.length === 0) {
-      console.warn("No available entities to select from.");
+      if (import.meta.env.DEV) {
+        console.warn("No available entities to select from.");
+      }
       targetEntity.value = "Error: No entities loaded";
       return;
     }
@@ -85,13 +199,16 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
 
     let entitiesToChooseFrom = remainingEntities;
     if (remainingEntities.length === 0) {
-      console.log("All entities used, starting over selection.");
       usedEntities.value = [];
       entitiesToChooseFrom = availableEntities.value;
     }
 
     const randomIndex = Math.floor(Math.random() * entitiesToChooseFrom.length);
     const newTarget = entitiesToChooseFrom[randomIndex];
+    if (!newTarget) {
+      console.error("Failed to select a target entity");
+      return;
+    }
     usedEntities.value.push(newTarget);
     targetEntity.value = newTarget;
     currentAttempts.value = 0;
@@ -137,10 +254,10 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
 
   const handleIncorrectGuess = (): { shouldEndRound: boolean } => {
     currentAttempts.value++;
-    const isOutOfAttempts = currentAttempts.value >= 3;
+    const isOutOfAttempts = currentAttempts.value >= ATTEMPT_STATUS.THIRD_TRY;
 
     if (isOutOfAttempts) {
-      foundEntities.value.set(targetEntity.value, 4);
+      foundEntities.value.set(targetEntity.value, ATTEMPT_STATUS.FAILED);
       showFeedback(false);
       advanceRound();
       return { shouldEndRound: true };
@@ -151,9 +268,9 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
   };
 
   const skipEntity = () => {
-    if (gameEnded.value) return { skippedEntity: "" };
-    currentAttempts.value = 3;
-    foundEntities.value.set(targetEntity.value, 4);
+    if (gameEnded.value) {return { skippedEntity: "" };}
+    currentAttempts.value = ATTEMPT_STATUS.THIRD_TRY;
+    foundEntities.value.set(targetEntity.value, ATTEMPT_STATUS.SKIPPED);
     showFeedback(
       false,
       `Skipped! The correct ${entityNameSingular} was ${targetEntity.value}`
@@ -181,6 +298,9 @@ export function useMapGameLogic(options: MapGameLogicOptions) {
 
     // Computed Refs
     formattedTime,
+    gameStats,
+    weightedScore,
+    rawScorePercentage,
 
     // Methods
     startNewGame,

@@ -1,11 +1,12 @@
 import L from "leaflet";
 import type { GeoJsonObject, Feature, GeoJsonProperties } from "geojson";
+import type { ProcessorName, GeoJSONProcessor } from "../utils/geo/processors";
 
 export interface GameConfig {
   /**
    * Name of the game (e.g., "US States")
    */
-  name: string;
+  name?: string;
 
   /**
    * URL to fetch the GeoJSON data
@@ -44,8 +45,20 @@ export interface GameConfig {
 
   /**
    * Maximum number of rounds (defaults to all available entities)
+   * @deprecated Use totalRounds instead
    */
   maxRounds?: number;
+
+  /**
+   * Total number of rounds for the game (defaults to all available entities)
+   */
+  totalRounds?: number;
+
+  /**
+   * Optional processors to apply to GeoJSON data
+   * Can be processor names from registry or custom processor functions
+   */
+  processors?: (ProcessorName | GeoJSONProcessor)[];
 
   /**
    * Optional fallback list of entity names if filtering returns no results
@@ -71,4 +84,11 @@ export interface GameConfig {
    * Optional function called after map and layers are initialized
    */
   postInitialization?: (map: L.Map, layer: L.GeoJSON) => void;
+
+  /**
+   * Name of marker function to use for manual marker placement
+   * References function registered in src/utils/markers/index.ts
+   * @example "frenchTerritories"
+   */
+  markerFunction?: string;
 }

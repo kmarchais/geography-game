@@ -86,7 +86,8 @@ export function getStyleForAttempts(attempts: number | undefined) {
       return correctStyle2;
     case 3:
       return correctStyle3;
-    case 4:
+    case 4: // Failed after 3 attempts
+    case 5: // Skipped
       return failedStyle;
     default:
       return defaultStyle;
@@ -98,7 +99,7 @@ export function getStyleForAttempts(attempts: number | undefined) {
  */
 export function computeScaleFactor(bbox: SVGRect): number {
   const minDim = Math.min(bbox.width, bbox.height);
-  if (minDim === 0) return 1.2;
+  if (minDim === 0) {return 1.2;}
   if (minDim < 50) {
     return Math.min(50 / minDim, 10);
   } else if (minDim < 150) {
