@@ -6,7 +6,7 @@
   "icon": "mdi-castle",
   "emoji": "🏰",
   "color": "indigo-darken-1",
-  "description": "Identify all 32 boroughs of Greater London",
+  "description": "Identify London's 32 boroughs and the City of London",
   "tags": [
     "london",
     "uk",
@@ -17,7 +17,7 @@
   "featured": true,
   "estimatedTime": 6,
   "config": {
-    "dataUrl": "https://gis2.london.gov.uk/server/rest/services/apps/webmap_context_layer/MapServer/3/query?outFields=*&where=1%3D1&f=geojson",
+    "dataUrl": "/data/london-boroughs.geojson",
     "mapCenter": [
       51.5074,
       -0.1278

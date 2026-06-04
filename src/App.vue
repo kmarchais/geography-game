@@ -47,7 +47,7 @@ function warmFeaturedGamesCache(): void {
 
   // Fetch featured game data in background (fire and forget)
   featuredGames.forEach((game) => {
-    const dataUrl = game.config.dataUrl;
+    const dataUrl = resolveDataUrl(game.config.dataUrl);
     const processors = (game.config.processors || []) as ProcessorName[];
 
     // Silently fetch and cache - don't block or show errors
@@ -55,6 +55,27 @@ function warmFeaturedGamesCache(): void {
       // Silent fail - cache warming is optional optimization
     });
   });
+}
+
+function resolveDataUrl(dataUrl: string): string {
+  if (dataUrl.startsWith('http://') || dataUrl.startsWith('https://')) {
+    return dataUrl;
+  }
+
+  const baseUrl = import.meta.env.BASE_URL;
+
+  if (dataUrl.startsWith('./')) {
+    return `${baseUrl}${dataUrl.substring(2)}`;
+  }
+
+  if (dataUrl.startsWith('/')) {
+    if (dataUrl.startsWith(baseUrl)) {
+      return dataUrl;
+    }
+    return `${baseUrl}${dataUrl.substring(1)}`;
+  }
+
+  return `${baseUrl}${dataUrl}`;
 }
 </script>
 
