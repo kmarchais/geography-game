@@ -70,7 +70,7 @@ export const parisDistrictsConfig: GameConfig = {
 
 export const londonBoroughsConfig: GameConfig = {
   name: "London Boroughs",
-  dataUrl: "https://gis2.london.gov.uk/server/rest/services/apps/webmap_context_layer/MapServer/3/query?outFields=*&where=1%3D1&f=geojson",
+  dataUrl: `${import.meta.env.BASE_URL}data/london-boroughs.geojson`,
   mapCenter: [51.5074, -0.1278], // London center
   zoom: 10,
   maxBounds: [
