@@ -73,7 +73,6 @@ test('guest results offer Google sign-in and retry saving the completed score wi
   test.setTimeout(90000)
   await googleAccount(page)
   let attempts = 0
-  let run: { id: string; claimToken: string }
   // Keep the real API for all 195 answers; only Google and the claim response are mocked.
   await page.route('**/atlas-api/runs/*/claim', route => {
     expect(route.request().url()).toContain(`/runs/${run.id}/claim`)
@@ -85,7 +84,7 @@ test('guest results offer Google sign-in and retry saving the completed score wi
   await page.getByLabel('Name', { exact: true }).fill('Guest results')
   const started = page.waitForResponse(response => response.url().endsWith('/atlas-api/runs') && response.request().method() === 'POST')
   await page.getByRole('button', { name: 'Play', exact: true }).click()
-  run = await (await started).json()
+  const run: { id: string; claimToken: string } = await (await started).json()
   for (let i = 0; i < 195; i++) {await page.getByRole('button', { name: 'Skip' }).click()}
   await expect(page.getByRole('heading', { name: 'Your score' })).toBeVisible()
   await expect(page.getByText('Saving score…')).toBeHidden({ timeout: 20000 })
