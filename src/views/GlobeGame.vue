@@ -64,19 +64,24 @@
           >
             <span>or play as a guest</span>
           </div>
-          <form @submit.prevent="start">
-            <label
-              class="name-label"
-              for="player-name"
-            >Name</label>
-            <input
-              id="player-name"
-              v-model="playerName"
-              maxlength="24"
-              required
-              autocomplete="nickname"
-              placeholder="Your name"
-            >
+          <form
+            :class="{ 'account-play': account }"
+            @submit.prevent="start"
+          >
+            <template v-if="!account">
+              <label
+                class="name-label"
+                for="player-name"
+              >Name</label>
+              <input
+                id="player-name"
+                v-model="playerName"
+                maxlength="24"
+                required
+                autocomplete="nickname"
+                placeholder="Your name"
+              >
+            </template>
             <button
               class="primary-button"
               :disabled="!canPlay || starting || authBusy"
@@ -400,7 +405,7 @@ const locallySaved = ref(false), uploadUnconfirmed = ref(false)
 const authBusy = ref(false)
 const best = computed(() => account.value ? accountBest.value : localBest.value)
 function connected(user: AtlasUser) {
-  if (!playerName.value.trim()) {playerName.value = user.name}
+  playerName.value = user.name
   if (session.value?.phase === 'complete' && !saving.value && !claimMessage.value) {claimScore()}
 }
 const pendingClaim = ref<{ id: string; claimToken: string }>()

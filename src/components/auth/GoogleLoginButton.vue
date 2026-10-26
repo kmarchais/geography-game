@@ -3,8 +3,16 @@
     <div
       v-if="account"
       class="account-row"
+      role="status"
     >
-      <span>Connected as {{ account.name }}</span>
+      <span
+        class="account-avatar"
+        aria-hidden="true"
+      >{{ account.name.slice(0, 1).toUpperCase() }}</span>
+      <div class="account-identity">
+        <strong>Connected as {{ account.name }} <span aria-hidden="true">✓</span></strong>
+        <span>Your scores follow you across devices.</span>
+      </div>
       <button
         class="quiet-button"
         :disabled="disabled || busy"
@@ -56,6 +64,13 @@
       </button>
     </template>
     <p
+      v-if="notice"
+      class="account-notice small"
+      role="status"
+    >
+      {{ notice }}
+    </p>
+    <p
       v-if="error"
       class="account-error small"
       role="status"
@@ -72,6 +87,7 @@ import { rankingRequest } from '@/globe/ranking'
 const props = defineProps<{ disabled?: boolean }>()
 const emit = defineEmits<{ busy: [value: boolean]; connected: [user: AtlasUser] }>()
 const buttonHost = ref<HTMLDivElement>(), buttonReady = ref(false), busy = ref(false), error = ref('')
+const notice = ref('')
 let alive = true, refresh: ReturnType<typeof setTimeout> | undefined
 let preparing = false
 let resize: ResizeObserver | undefined
@@ -87,13 +103,16 @@ function renderButton() {
 function setBusy(value: boolean) {busy.value = value; emit('busy', value)}
 async function finish(credential?: string) {
   if (!alive || props.disabled || !credential) {return}
-  setBusy(true); error.value = ''
+  setBusy(true); error.value = ''; notice.value = ''
+  let accepted = false
   try {
     await rankingRequest('/auth/google', { credential })
+    accepted = true
     if (nativeAccount) {await nativeGoogle.persistCookies()}
     await refreshAccount()
+    if (!account.value) {throw new Error('Session not retained')}
     if (alive && account.value) {emit('connected', account.value)}
-  } catch {if (alive) {await prepare(); error.value = 'Google connection failed. Please try again.'}}
+  } catch {if (alive) {await prepare(); if (!account.value) {error.value = accepted ? 'Google connection could not be confirmed. You are not connected. Please try again.' : 'Google connection failed. Please try again.'}}}
   finally {if (alive) {setBusy(false)}}
 }
 async function prepare() {
@@ -103,7 +122,7 @@ async function prepare() {
   try {
     await refreshAccount()
     if (!alive) {return}
-    if (account.value) {emit('connected', account.value); return}
+    if (account.value) {error.value = ''; notice.value = ''; emit('connected', account.value); return}
     if (!googleClientId.value) {throw new Error('Google is unavailable')}
     if (nativeAccount) {return}
     await loadGoogle()
@@ -126,17 +145,22 @@ async function prepare() {
 }
 async function connectNative() {
   if (props.disabled || busy.value) {return}
-  setBusy(true); error.value = ''
+  setBusy(true); error.value = ''; notice.value = ''
   try {
     const { nonce } = await rankingRequest<{ nonce: string }>('/auth/challenge')
     const result = await nativeGoogle.signIn({ clientId: googleClientId.value, nonce })
     setBusy(false)
     await finish(result.credential)
-  } catch (e) {if (alive && (e as { code?: string }).code !== 'CANCELLED') {error.value = 'Google connection failed. Please try again.'}}
+  } catch (e) {
+    if (alive) {
+      if ((e as { code?: string }).code === 'CANCELLED') {notice.value = 'Google sign-in was not completed. You are not connected.'}
+      else {error.value = 'Google connection failed. Please try again.'}
+    }
+  }
   finally {if (alive) {setBusy(false)}}
 }
 async function disconnect() {
-  setBusy(true)
+  setBusy(true); error.value = ''; notice.value = ''
   try {
     await rankingRequest('/auth/logout', {})
     if (nativeAccount) {await nativeGoogle.signOut()}

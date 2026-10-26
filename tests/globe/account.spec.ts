@@ -1,14 +1,14 @@
 import { test, expect } from '@playwright/test'
 
-async function googleAccount(page: import('@playwright/test').Page, reject = false) {
+async function googleAccount(page: import('@playwright/test').Page, reject = false, retainSession = true) {
   let connected = false
   await page.route('https://accounts.google.com/gsi/client', route => route.fulfill({ contentType: 'application/javascript', body: `window.google={accounts:{id:{initialize(config){window.atlasGoogleConfig=config},renderButton(host,options){window.atlasGoogleButtonOptions=options;const b=document.createElement('button');b.textContent='Sign in with Google';b.style.width=options.width+'px';b.style.height='40px';b.onclick=()=>window.atlasGoogleConfig.callback({credential:'signed-test-credential'});host.append(b)},disableAutoSelect(){}}}}` }))
   await page.route('**/atlas-api/auth/session', route => route.fulfill({ json: { user: connected ? { id: '11111111-1111-4111-8111-111111111111', name: 'Alex' } : null, best: connected ? { id: 'best', name: 'Alex', correct: 100, total: 195, timeMs: 5000 } : null, googleClientId: 'test.apps.googleusercontent.com' } }))
   await page.route('**/atlas-api/auth/challenge', route => route.fulfill({ json: { nonce: 'a'.repeat(43) } }))
   await page.route('**/atlas-api/auth/google', route => {
     expect(route.request().postDataJSON()).toEqual({ credential: 'signed-test-credential' })
-    connected = !reject
-    return route.fulfill({ status: reject ? 401 : 200, json: { user: connected ? { id: '11111111-1111-4111-8111-111111111111', name: 'Alex' } : null } })
+    connected = !reject && retainSession
+    return route.fulfill({ status: reject ? 401 : 200, json: { user: !reject ? { id: '11111111-1111-4111-8111-111111111111', name: 'Alex' } : null } })
   })
   await page.route('**/atlas-api/auth/logout', route => {connected = false; return route.fulfill({ json: { user: null } })})
 }
@@ -34,7 +34,15 @@ test('Google connection restores account best and sign-out returns to guest play
   await page.goto('./')
   await page.getByRole('button', { name: 'Sign in with Google', exact: true }).click()
   await expect(page.getByText('Connected as Alex')).toBeVisible()
-  await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Alex')
+  await expect(page.getByRole('button', { name: 'Sign in with Google', exact: true })).toBeHidden()
+  await expect(page.getByLabel('Name', { exact: true })).toBeHidden()
+  await expect(page.getByText('or play as a guest', { exact: true })).toBeHidden()
+  await expect(page.getByText('Your scores follow you across devices.')).toBeVisible()
+  const card = (await page.locator('.account-row').boundingBox())!
+  const play = (await page.locator('form .primary-button').boundingBox())!
+  expect(play.y - card.y - card.height).toBeGreaterThanOrEqual(16)
+  expect(play.width).toBeCloseTo(card.width, 0)
+  await page.screenshot({ path: test.info().outputPath('atlas-connected-account.png'), fullPage: true })
   await expect(page.locator('.personal-best')).toContainText('51.3%')
   expect(await page.evaluate(() => Object.keys(localStorage).some(k => /session|credential|token/i.test(k)))).toBe(false)
   await page.reload()
@@ -42,9 +50,31 @@ test('Google connection restores account best and sign-out returns to guest play
   await page.getByRole('button', { name: 'Sign out', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Sign in with Google', exact: true })).toBeVisible()
   await expect(page.getByText('Connected as Alex')).not.toBeVisible()
+  await expect(page.getByLabel('Name', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Play', exact: true }).click()
   await expect(page.getByTestId('progress')).toHaveText('1 / 195')
   await expect(page.locator('.account-panel')).toHaveCount(0)
+})
+
+test('Google login without a retained session explicitly stays disconnected', async ({ page }) => {
+  await googleAccount(page, false, false)
+  await page.goto('./')
+  await page.getByRole('button', { name: 'Sign in with Google', exact: true }).click()
+  await expect(page.getByText('Google connection could not be confirmed. You are not connected. Please try again.')).toBeVisible()
+  await expect(page.locator('.account-row')).toBeHidden()
+  await expect(page.getByLabel('Name', { exact: true })).toBeVisible()
+})
+
+test('connected play uses the account name instead of a previously saved guest name', async ({ page }) => {
+  await googleAccount(page)
+  await page.addInitScript(() => localStorage.setItem('atlas-name', 'Previous guest'))
+  await page.goto('./')
+  await page.getByRole('button', { name: 'Sign in with Google', exact: true }).click()
+  await expect(page.getByText('Connected as Alex')).toBeVisible()
+  const started = page.waitForRequest(request => request.url().endsWith('/atlas-api/runs') && request.method() === 'POST')
+  await page.getByRole('button', { name: 'Play', exact: true }).click()
+  expect((await started).postDataJSON().name).toBe('Alex')
+  await expect(page.getByTestId('progress')).toHaveText('1 / 195')
 })
 
 test('unavailable Google script leaves one entry button without an empty row', async ({ page }) => {

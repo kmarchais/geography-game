@@ -1,6 +1,10 @@
 # Atlas
 
-Find all 195 countries on a 3D Earth. One guess per country. Correct answers, wrong answers, and skips advance immediately. The clock runs continuously. Shared rankings sort by percentage correct, then by the time of the last correct answer.
+<img src="public/atlas.svg" width="96" height="96" alt="Atlas globe and location pin">
+
+[Play Atlas](https://kmarchais.github.io/geography-game/) in your browser, or install the Android app. Both use the same interface and shared ranking.
+
+Find all 195 countries on a 3D Earth. You have one guess per country, and every answer advances immediately. Skip islands you cannot find. The clock runs continuously; rankings sort by percentage correct, then by the time of the last correct answer.
 
 The [exact quiz list](docs/country-list.md) is the 193 UN member states plus Palestine and the Holy See, represented geographically by Vatican City. This is a membership-based selection, not a claim about universal diplomatic recognition.
 
@@ -51,7 +55,13 @@ Web and Android use the same Atlas screen. Other modes and settings are hidden; 
 
 Set `GOOGLE_CLIENT_ID` on the ranking service to your Google OAuth web client ID. Register each website origin in that client's authorized JavaScript origins. For Android, register an Android OAuth client in the same Google project using the package ID and the installed app's signing-certificate SHA-1. The native account chooser uses the web client ID supplied by the server. No Google client secret is needed.
 
-Google sign-in is optional. The server verifies the ID token and a browser-bound, expiring nonce before issuing an opaque session cookie. Session cookies are Secure and HttpOnly. The SQLite database stores account identifiers, display names, hashed session tokens, and scores; it does not store Google passwords, ID tokens, or email addresses. A connected player's best score is shared across web and Android. Existing guest scores stay under their guest identity; sign-in does not claim arbitrary old guest runs.
+Google sign-in is optional. A confirmed session replaces the Google button with a connected-account card and removes the guest name field. The account name is used for new runs. An interrupted or unconfirmed connection keeps the guest interface and displays its status; choosing a Google account alone does not prove that Atlas is connected.
+
+The server verifies the ID token and a browser-bound, expiring nonce before issuing an opaque session cookie. Session cookies are Secure and HttpOnly. The SQLite database stores account identifiers, display names, hashed session tokens, and scores; it does not store Google passwords, ID tokens, or email addresses. A connected player's best score is shared across web and Android.
+
+After completing an online guest run, you can sign in from the results screen to attach that run to your account. A private claim token proves ownership; failed transfers can be retried without replaying. Older guest runs and offline scores are not automatically imported. See [Google setup and validation](docs/google-sign-in.md).
+
+If Android returns to Atlas after account selection without completing sign-in, check the Android OAuth client's package and signing fingerprint in the same Google project as the web client. Google documents that a cancellation exception can also indicate an authorization or configuration problem. Atlas reports that the connection did not complete instead of showing a connected account. See [Credential Manager troubleshooting](https://developer.android.com/identity/sign-in/credential-manager-troubleshooting-guide).
 
 For a same-origin host, proxy the API under the website origin. For GitHub Pages, use the separately hosted API and explicitly allow the website origin. `ATLAS_ALLOWED_ORIGINS` controls credentialed CORS. `ATLAS_CROSS_SITE_ORIGINS` explicitly selects origins needing SameSite=None cookies, defaulting to Capacitor's `https://localhost`. Add a custom native origin to both settings if you change Capacitor's hostname. The Android WebView accepts these cookies; other browsers can impose additional third-party-cookie restrictions. Sign out revokes the current session.
 
@@ -73,6 +83,17 @@ On Windows use `gradlew.bat`. Install `android/app/build/outputs/apk/debug/app-d
 
 `.mcp.json` provides pinned Playwright MCP desktop and phone profiles, plus Mobile MCP for physical devices. Install Android platform-tools and pair the phone through Wireless debugging. Check `adb devices` before testing. Keep device addresses and pairing credentials outside version control. Stay awake keeps a charging phone available; it does not schedule tests or bypass the lock screen.
 
+## Update the icon
+
+Edit `public/atlas.svg`, then run:
+
+```sh
+bunx playwright install chromium
+bun run icons
+```
+
+The script generates PWA icons, the favicon, the Apple touch icon, Android launcher images, and legacy splash images from the same vector. Android 13 and newer also use a separate monochrome vector for themed launcher icons. Keep the globe and pin inside the adaptive icon's safe area. Rebuild and reinstall the APK to update its launcher icon.
+
 ## Code ownership
 
 - `src/globe/game.ts`: rules, score ordering, and local best validation.
@@ -83,3 +104,5 @@ On Windows use `gradlew.bat`. Install `android/app/build/outputs/apk/debug/app-d
 - `tests/globe` and `tests/server`: browser and HTTP integration tests.
 
 Read [asset provenance](docs/assets.md), [the original architecture review](docs/project-review.md), and [Atlas validation](docs/atlas-validation.md). The append-only [decision trail](docs/decisions.tsv) records the redesign. Do not regenerate geography during a normal build.
+
+Repository instructions for coding agents are in [AGENTS.md](AGENTS.md).

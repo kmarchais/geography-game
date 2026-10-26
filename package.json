@@ -83,6 +83,7 @@
     "test:ranking": "node --test tests/server/*.test.mjs",
     "ranking": "node server/ranking.mjs",
     "data:globe": "node scripts/prepare-globe-data.mjs",
+    "icons": "node scripts/generate-icons.mjs",
     "lint:check": "eslint --config eslint.config.cjs .",
     "build:android": "node scripts/build-android.mjs",
     "android:open": "cap open android"
