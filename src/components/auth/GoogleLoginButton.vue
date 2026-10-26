@@ -5,13 +5,23 @@
       class="account-row"
       role="status"
     >
-      <span
+      <button
         class="account-avatar"
-        aria-hidden="true"
-      >{{ account.name.slice(0, 1).toUpperCase() }}</span>
+        aria-label="Change profile picture"
+        :disabled="disabled || busy"
+        @click="profile?.open()"
+      >
+        <ProfileAvatar :user="account" />
+      </button>
       <div class="account-identity">
         <strong>Connected as {{ account.name }} <span aria-hidden="true">✓</span></strong>
-        <span>Your scores follow you across devices.</span>
+        <button
+          class="profile-edit"
+          :disabled="disabled || busy"
+          @click="profile?.open()"
+        >
+          Edit profile
+        </button>
       </div>
       <button
         class="quiet-button"
@@ -63,6 +73,11 @@
         {{ busy ? 'Connecting…' : 'Sign in with Google' }}
       </button>
     </template>
+    <ProfileDialog
+      v-if="account"
+      ref="profile"
+      @updated="emit('connected', $event)"
+    />
     <p
       v-if="notice"
       class="account-notice small"
@@ -84,10 +99,13 @@ import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { account, googleClientId, refreshAccount, type AtlasUser } from '@/globe/auth'
 import { loadGoogle, nativeAccount, nativeGoogle } from '@/globe/google'
 import { rankingRequest } from '@/globe/ranking'
+import ProfileAvatar from './ProfileAvatar.vue'
+import ProfileDialog from './ProfileDialog.vue'
 const props = defineProps<{ disabled?: boolean }>()
 const emit = defineEmits<{ busy: [value: boolean]; connected: [user: AtlasUser] }>()
 const buttonHost = ref<HTMLDivElement>(), buttonReady = ref(false), busy = ref(false), error = ref('')
 const notice = ref('')
+const profile = ref<InstanceType<typeof ProfileDialog>>()
 let alive = true, refresh: ReturnType<typeof setTimeout> | undefined
 let preparing = false
 let resize: ResizeObserver | undefined

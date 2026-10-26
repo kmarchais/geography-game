@@ -55,9 +55,9 @@ Web and Android use the same Atlas screen. Other modes and settings are hidden; 
 
 Set `GOOGLE_CLIENT_ID` on the ranking service to your Google OAuth web client ID. Register each website origin in that client's authorized JavaScript origins. For Android, register an Android OAuth client in the same Google project using the package ID and the installed app's signing-certificate SHA-1. The native account chooser uses the web client ID supplied by the server. No Google client secret is needed.
 
-Google sign-in is optional. A confirmed session replaces the Google button with a connected-account card and removes the guest name field. The account name is used for new runs. An interrupted or unconfirmed connection keeps the guest interface and displays its status; choosing a Google account alone does not prove that Atlas is connected.
+Google sign-in is optional. A confirmed session replaces the Google button with a connected-account card and removes the guest name field. **Edit profile** lets you choose a username, your Google photo, a preset avatar, or an uploaded photo. Your username is independent of your Google name and updates the names shown for your account's scores. An interrupted or unconfirmed connection keeps the guest interface and displays its status; choosing a Google account alone does not prove that Atlas is connected.
 
-The server verifies the ID token and a browser-bound, expiring nonce before issuing an opaque session cookie. Session cookies are Secure and HttpOnly. The SQLite database stores account identifiers, display names, hashed session tokens, and scores; it does not store Google passwords, ID tokens, or email addresses. A connected player's best score is shared across web and Android.
+The server verifies the ID token and a browser-bound, expiring nonce before issuing an opaque session cookie. Session cookies are Secure and HttpOnly. The SQLite database stores account identifiers, chosen usernames, profile pictures or avatars, hashed session tokens, and scores; it does not store Google passwords, ID tokens, or email addresses. Google photos use the URL from the verified token. Uploads become cropped 256-pixel JPEG thumbnails; the original photo and its metadata are not uploaded. A connected player's profile and best score are shared across web and Android.
 
 After completing an online guest run, you can sign in from the results screen to attach that run to your account. A private claim token proves ownership; failed transfers can be retried without replaying. Older guest runs and offline scores are not automatically imported. See [Google setup and validation](docs/google-sign-in.md).
 
@@ -78,6 +78,8 @@ cd android
 ```
 
 On Windows use `gradlew.bat`. Install `android/app/build/outputs/apk/debug/app-debug.apk` with `adb install -r` or Mobile MCP. The display name is Atlas; the package ID remains `com.kmarchais.orbit` to preserve updates and data. Core assets are bundled for offline play. Rankings and detailed imagery need connectivity. Store releases still need release signing and an Android App Bundle.
+
+Manual runs of `Build and Deploy` also compile Android and retain the APK, source commit, and input manifest as the `atlas-android-debug` artifact. Hosted runners use their own temporary debug signing key. Re-sign that APK locally with the existing development key before updating an installed development app; keep signing keys off the runner. This artifact is not a Play Store release.
 
 ## Test through MCP
 

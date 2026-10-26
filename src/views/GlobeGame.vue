@@ -406,6 +406,7 @@ const authBusy = ref(false)
 const best = computed(() => account.value ? accountBest.value : localBest.value)
 function connected(user: AtlasUser) {
   playerName.value = user.name
+  refreshRanking()
   if (session.value?.phase === 'complete' && !saving.value && !claimMessage.value) {claimScore()}
 }
 const pendingClaim = ref<{ id: string; claimToken: string }>()

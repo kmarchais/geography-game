@@ -7,6 +7,7 @@
 - The current challenge includes all 193 UN members plus Palestine and the Holy See, represented by Vatican City. Keep the explanation behind the country-count tooltip and the exact list in Help.
 - One guess per country. Correct answers, wrong answers, and skips advance immediately. Rank completed runs by correct answers, then by the elapsed time of the last correct answer.
 - Google sign-in is optional before play and after a guest run. A confirmed account replaces the sign-in button and guest form. Never infer connection from choosing a Google account or receiving a token alone.
+- Let players choose a username and avatar independently of their Google identity. Preserve those choices across Google logins. Only use the verified Google photo URL or validated, bounded image uploads; never accept arbitrary avatar URLs or SVG uploads.
 - Do not use Claude.
 
 ## Ownership

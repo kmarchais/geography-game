@@ -54,7 +54,7 @@ export function createRankingServer({ databasePath = '.local/atlas.sqlite', coun
       let body = ''
       for await (const chunk of req) {
         body += chunk
-        if (Buffer.byteLength(body) > (path === '/auth/google' ? 12288 : 4096)) {reply(res, 413, { error: 'Request too large.' }); return}
+        if (Buffer.byteLength(body) > (path === '/auth/profile' ? 131072 : path === '/auth/google' ? 12288 : 4096)) {reply(res, 413, { error: 'Request too large.' }); return}
       }
       let data
       try {data = JSON.parse(body)} catch {reply(res, 400, { error: 'Invalid JSON.' }); return}
@@ -64,6 +64,16 @@ export function createRankingServer({ databasePath = '.local/atlas.sqlite', coun
         reply(res, account ? 200 : 401, account ? { user: account } : { error: 'Google sign-in could not be verified. Try again.' }); return
       }
       if (path === '/auth/logout') {accounts.logout(req, res); reply(res, 200, { user: null }); return}
+      if (path === '/auth/profile') {
+        let profile
+        db.exec('BEGIN')
+        try {
+          profile = accounts.updateProfile(req, data)
+          if (profile.user) {db.prepare('UPDATE runs SET name=? WHERE player=?').run(profile.user.name, `google:${profile.user.id}`)}
+          db.exec('COMMIT')
+        } catch (error) {db.exec('ROLLBACK'); throw error}
+        reply(res, profile.status, profile.user ? { user: profile.user } : { error: profile.error }); return
+      }
       if (path === '/runs') {
         const name = typeof data.name === 'string' ? data.name.normalize('NFKC').trim() : ''
         if (!isGuestId(data.playerId) || !/^[\p{L}\p{N} ._'’-]{1,24}$/u.test(name) || Object.keys(data).some(k => !['name', 'playerId'].includes(k))) {reply(res, 400, { error: 'Use a name of 1–24 letters or numbers.' }); return}
@@ -73,7 +83,7 @@ export function createRankingServer({ databasePath = '.local/atlas.sqlite', coun
         for (let i = deck.length - 1; i > 0; i--) {const j = randomInt(i + 1); [deck[i], deck[j]] = [deck[j], deck[i]]}
         const id = randomUUID(), started = now()
         const account = accounts.user(req)
-        db.prepare('INSERT INTO runs(id,player,name,started,state) VALUES(?,?,?,?,?)').run(id, account ? `google:${account.id}` : data.playerId, name, started, JSON.stringify({ version: 2, deck, answers: [] }))
+        db.prepare('INSERT INTO runs(id,player,name,started,state) VALUES(?,?,?,?,?)').run(id, account ? `google:${account.id}` : data.playerId, account?.name ?? name, started, JSON.stringify({ version: 2, deck, answers: [] }))
         const claimToken = account ? undefined : randomUUID()
         if (claimToken) {db.prepare('UPDATE runs SET claim_token_hash=? WHERE id=?').run(createHash('sha256').update(claimToken).digest('hex'), id)}
         reply(res, 201, { id, deck, claimToken }); return
@@ -86,7 +96,7 @@ export function createRankingServer({ databasePath = '.local/atlas.sqlite', coun
         if (!isGuestId(data.claimToken) || !run || run.claim_token_hash !== createHash('sha256').update(data.claimToken).digest('hex') || Object.keys(data).some(key => key !== 'claimToken')) {reply(res, 403, { error: 'This score cannot be claimed.' }); return}
         const owner = `google:${account.id}`
         if (!run.complete || (run.player.startsWith('google:') && run.player !== owner)) {reply(res, 409, { error: 'This score cannot be claimed.' }); return}
-        db.prepare('UPDATE runs SET player=? WHERE id=?').run(owner, run.id)
+        db.prepare('UPDATE runs SET player=?,name=? WHERE id=?').run(owner, account.name, run.id)
         reply(res, 200, { saved: true }); return
       }
       const match = path.match(/^\/runs\/([0-9a-f-]{36})\/answers$/i)

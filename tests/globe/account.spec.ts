@@ -1,16 +1,24 @@
 import { test, expect } from '@playwright/test'
+import { readFileSync } from 'node:fs'
 
 async function googleAccount(page: import('@playwright/test').Page, reject = false, retainSession = true) {
   let connected = false
+  let user = { id: '11111111-1111-4111-8111-111111111111', name: 'Alex', picture: 'https://lh3.googleusercontent.com/atlas-test', avatar: 'google' }
+  await page.route(user.picture, route => route.fulfill({ contentType: 'image/png', body: readFileSync('public/atlas-192.png') }))
   await page.route('https://accounts.google.com/gsi/client', route => route.fulfill({ contentType: 'application/javascript', body: `window.google={accounts:{id:{initialize(config){window.atlasGoogleConfig=config},renderButton(host,options){window.atlasGoogleButtonOptions=options;const b=document.createElement('button');b.textContent='Sign in with Google';b.style.width=options.width+'px';b.style.height='40px';b.onclick=()=>window.atlasGoogleConfig.callback({credential:'signed-test-credential'});host.append(b)},disableAutoSelect(){}}}}` }))
-  await page.route('**/atlas-api/auth/session', route => route.fulfill({ json: { user: connected ? { id: '11111111-1111-4111-8111-111111111111', name: 'Alex' } : null, best: connected ? { id: 'best', name: 'Alex', correct: 100, total: 195, timeMs: 5000 } : null, googleClientId: 'test.apps.googleusercontent.com' } }))
+  await page.route('**/atlas-api/auth/session', route => route.fulfill({ json: { user: connected ? user : null, best: connected ? { id: 'best', name: user.name, correct: 100, total: 195, timeMs: 5000 } : null, googleClientId: 'test.apps.googleusercontent.com' } }))
   await page.route('**/atlas-api/auth/challenge', route => route.fulfill({ json: { nonce: 'a'.repeat(43) } }))
   await page.route('**/atlas-api/auth/google', route => {
     expect(route.request().postDataJSON()).toEqual({ credential: 'signed-test-credential' })
     connected = !reject && retainSession
-    return route.fulfill({ status: reject ? 401 : 200, json: { user: !reject ? { id: '11111111-1111-4111-8111-111111111111', name: 'Alex' } : null } })
+    return route.fulfill({ status: reject ? 401 : 200, json: { user: !reject ? user : null } })
   })
   await page.route('**/atlas-api/auth/logout', route => {connected = false; return route.fulfill({ json: { user: null } })})
+  await page.route('**/atlas-api/auth/profile', route => {
+    const data = route.request().postDataJSON()
+    user = { ...user, name: data.name, avatar: data.avatar }
+    return route.fulfill({ json: { user } })
+  })
 }
 
 test('Google entry is aligned above guest play and adapts to the available width', async ({ page }) => {
@@ -37,7 +45,7 @@ test('Google connection restores account best and sign-out returns to guest play
   await expect(page.getByRole('button', { name: 'Sign in with Google', exact: true })).toBeHidden()
   await expect(page.getByLabel('Name', { exact: true })).toBeHidden()
   await expect(page.getByText('or play as a guest', { exact: true })).toBeHidden()
-  await expect(page.getByText('Your scores follow you across devices.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Edit profile', exact: true })).toBeVisible()
   const card = (await page.locator('.account-row').boundingBox())!
   const play = (await page.locator('form .primary-button').boundingBox())!
   expect(play.y - card.y - card.height).toBeGreaterThanOrEqual(16)
@@ -75,6 +83,59 @@ test('connected play uses the account name instead of a previously saved guest n
   await page.getByRole('button', { name: 'Play', exact: true }).click()
   expect((await started).postDataJSON().name).toBe('Alex')
   await expect(page.getByTestId('progress')).toHaveText('1 / 195')
+})
+
+test('profile username, preset and uploaded photo persist, while cancelling discards a draft', async ({ page }) => {
+  await googleAccount(page); await page.goto('./')
+  await page.getByRole('button', { name: 'Sign in with Google', exact: true }).click()
+  await expect(page.locator('.account-avatar img')).toHaveAttribute('src', 'https://lh3.googleusercontent.com/atlas-test')
+  await page.getByRole('button', { name: 'Edit profile', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Your profile' })
+  await expect(dialog.getByRole('button', { name: 'Google photo', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await dialog.getByRole('button', { name: 'Compass avatar' }).click()
+  await dialog.getByRole('button', { name: 'Close profile' }).click()
+  await expect(page.locator('.account-avatar img')).toHaveAttribute('src', 'https://lh3.googleusercontent.com/atlas-test')
+  await page.getByRole('button', { name: 'Edit profile', exact: true }).click()
+  await dialog.getByLabel('Username', { exact: true }).fill('Cartographer')
+  await dialog.getByRole('button', { name: 'Compass avatar' }).click()
+  await dialog.getByRole('button', { name: 'Save profile', exact: true }).click()
+  await expect(page.getByText('Connected as Cartographer')).toBeVisible()
+  await expect(page.locator('.account-avatar')).toContainText('🧭')
+  await page.reload()
+  await expect(page.getByText('Connected as Cartographer')).toBeVisible()
+  await expect(page.locator('.account-avatar')).toContainText('🧭')
+  await page.getByRole('button', { name: 'Edit profile', exact: true }).click()
+  const png = await page.evaluate(() => {
+    const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 8
+    const context = canvas.getContext('2d')!; context.fillStyle = '#99edc5'; context.fillRect(0, 0, 16, 8)
+    return canvas.toDataURL('image/png').split(',')[1]!
+  })
+  await dialog.locator('input[type=file]').setInputFiles({ name: 'avatar.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') })
+  await expect(dialog.locator('.profile-preview img')).toHaveAttribute('src', /^data:image\/jpeg;base64,/)
+  await expect.poll(() => dialog.locator('.profile-preview img').evaluate(image => (image as HTMLImageElement).naturalWidth)).toBe(256)
+  const saved = page.waitForRequest(request => request.url().endsWith('/auth/profile') && request.method() === 'POST')
+  await dialog.getByRole('button', { name: 'Save profile', exact: true }).click()
+  const body = (await saved).postDataJSON()
+  expect(body.name).toBe('Cartographer'); expect(body.avatar.length).toBeLessThan(88000)
+  await expect(page.locator('.account-avatar img')).toHaveAttribute('src', body.avatar)
+  await page.reload()
+  await expect(page.locator('.account-avatar img')).toHaveAttribute('src', body.avatar)
+})
+
+test('profile save failure keeps the draft available for retry', async ({ page }) => {
+  await googleAccount(page); await page.goto('./')
+  await page.getByRole('button', { name: 'Sign in with Google', exact: true }).click()
+  await page.getByRole('button', { name: 'Edit profile', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Your profile' })
+  await dialog.getByLabel('Username', { exact: true }).fill('Navigator')
+  const fail = (route: import('@playwright/test').Route) => route.fulfill({ status: 503, json: { error: 'Unavailable' } })
+  await page.route('**/atlas-api/auth/profile', fail)
+  await dialog.getByRole('button', { name: 'Save profile', exact: true }).click()
+  await expect(dialog.getByText('Could not save your profile. Try again.')).toBeVisible()
+  await expect(dialog.getByLabel('Username', { exact: true })).toHaveValue('Navigator')
+  await page.unroute('**/atlas-api/auth/profile', fail)
+  await dialog.getByRole('button', { name: 'Save profile', exact: true }).click()
+  await expect(page.getByText('Connected as Navigator')).toBeVisible()
 })
 
 test('unavailable Google script leaves one entry button without an empty row', async ({ page }) => {

@@ -5,6 +5,7 @@ import { once } from 'node:events'
 import { OAuth2Client } from 'google-auth-library'
 import { googleVerifier } from '../../server/auth.mjs'
 import { createRankingServer } from '../../server/ranking.mjs'
+import { readFileSync } from 'node:fs'
 
 const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
 const client = new OAuth2Client()
@@ -24,7 +25,7 @@ async function setup(t) {
   const url = `http://127.0.0.1:${server.address().port}`
   const request = (path, body, cookie, origin = 'http://client.test') => fetch(url + path, { method: body === undefined ? 'GET' : 'POST', headers: { Origin: origin, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(cookie ? { Cookie: cookie } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) })
   const challenge = async (origin) => {const response = await request('/auth/challenge', undefined, undefined, origin); return { nonce: (await response.json()).nonce, cookie: response.headers.get('set-cookie').split(';')[0] }}
-  const login = async (sub = 'google-one') => {const pending = await challenge(); const response = await request('/auth/google', { credential: credential(pending.nonce, { sub }) }, pending.cookie); assert.equal(response.status, 200); return { cookie: response.headers.get('set-cookie').split(';')[0], user: (await response.json()).user }}
+  const login = async (sub = 'google-one', extra = {}) => {const pending = await challenge(); const response = await request('/auth/google', { credential: credential(pending.nonce, { sub, ...extra }) }, pending.cookie); assert.equal(response.status, 200); return { cookie: response.headers.get('set-cookie').split(';')[0], user: (await response.json()).user }}
   return { request, challenge, login, clock }
 }
 
@@ -45,7 +46,7 @@ test('binds login to an expiring browser challenge and rejects nonce substitutio
   const response = await request('/auth/google', { credential: credential(pending.nonce) }, pending.cookie)
   assert.equal(response.status, 200)
   assert.match(response.headers.get('set-cookie'), /HttpOnly; Secure; SameSite=Lax/)
-  const json = await response.json(); assert.deepEqual(Object.keys(json.user).sort(), ['id', 'name'])
+  const json = await response.json(); assert.deepEqual(Object.keys(json.user).sort(), ['avatar', 'id', 'name', 'picture'])
   assert.equal((await request('/auth/google', { credential: credential(pending.nonce) }, pending.cookie)).status, 401)
   const expired = await challenge(); clock.time += 300001
   assert.equal((await request('/auth/google', { credential: credential(expired.nonce) }, expired.cookie)).status, 401)
@@ -117,7 +118,7 @@ test('claims a completed guest run with its private token, preserves its score a
   assert.equal((await request(path, { claimToken: run.claimToken }, first.cookie)).status, 200)
   // A committed claim whose response was lost must be safe to retry.
   assert.equal((await request(path, { claimToken: run.claimToken }, second.cookie)).status, 200)
-  assert.deepEqual(await (await request('/leaderboard')).json(), before)
+  assert.deepEqual(await (await request('/leaderboard')).json(), before.map(score => ({ ...score, name: first.user.name })))
   const session = await (await request('/auth/session', undefined, second.cookie)).json()
   assert.equal(session.best.id, run.id)
   assert.equal(session.best.correct, 1)
@@ -126,4 +127,55 @@ test('claims a completed guest run with its private token, preserves its score a
   assert.equal((await (await request('/auth/session', undefined, other.cookie)).json()).best, null)
   const signedInRun = await (await request('/runs', { playerId: randomUUID(), name: 'Account run' }, first.cookie)).json()
   assert.equal(signedInRun.claimToken, undefined)
+})
+
+test('Google photo, chosen username and avatar persist across devices and Google logins', async t => {
+  const { request, login, clock } = await setup(t)
+  const photo = 'https://lh3.googleusercontent.com/atlas-avatar'
+  const first = await login('google-one', { picture: photo }), second = await login('google-one', { picture: photo }), other = await login('google-two')
+  assert.equal(first.user.picture, photo); assert.equal(first.user.avatar, 'google')
+  assert.equal((await request('/auth/profile', { name: 'Navigator', avatar: 'preset:compass' })).status, 401)
+  const run = await (await request('/runs', { playerId: randomUUID(), name: 'Client spoof' }, first.cookie)).json()
+  for (let index = 0; index < 3; index++) {
+    clock.time += 1000
+    await request(`/runs/${run.id}/answers`, { index, guess: run.deck[index], elapsedMs: (index + 1) * 1000 }, first.cookie)
+  }
+  const saved = await request('/auth/profile', { name: '  Navigator  ', avatar: 'preset:compass' }, first.cookie)
+  assert.equal(saved.status, 200)
+  const session = await (await request('/auth/session', undefined, second.cookie)).json()
+  assert.equal(session.user.name, 'Navigator'); assert.equal(session.user.avatar, 'preset:compass')
+  assert.equal(session.best.name, 'Navigator'); assert.equal(session.best.correct, 3)
+  assert.equal((await (await request('/leaderboard')).json())[0].name, 'Navigator')
+  const returned = await login('google-one', { given_name: 'Different Google name', picture: photo })
+  assert.equal(returned.user.name, 'Navigator'); assert.equal(returned.user.avatar, 'preset:compass')
+  assert.equal((await (await request('/auth/session', undefined, other.cookie)).json()).user.name, 'Player')
+  const jpeg = readFileSync(new URL('./fixtures/avatar.jpg', import.meta.url))
+  const padding = Buffer.alloc(6004); padding[0] = 0xff; padding[1] = 0xef; padding.writeUInt16BE(6002, 2)
+  const custom = `data:image/jpeg;base64,${Buffer.concat([jpeg.subarray(0, 2), padding, jpeg.subarray(2)]).toString('base64')}`
+  assert.ok(custom.length > 4096)
+  assert.equal((await request('/auth/profile', { name: 'Navigator', avatar: custom }, first.cookie)).status, 200)
+  assert.equal((await (await request('/auth/session', undefined, second.cookie)).json()).user.avatar, custom)
+  assert.equal((await request('/auth/profile', { name: 'Navigator', avatar: 'google' }, first.cookie)).status, 200)
+  assert.equal((await (await request('/auth/session', undefined, second.cookie)).json()).user.picture, photo)
+})
+
+test('profile validation rejects impersonation, unsafe images, oversized photos and unknown presets', async t => {
+  const { request, login } = await setup(t)
+  const player = await login('google-one', { picture: 'https://attacker.example/avatar.svg' })
+  assert.equal(player.user.picture, null)
+  const jpeg = readFileSync(new URL('./fixtures/avatar.jpg', import.meta.url))
+  const oversized = Buffer.from(jpeg), frame = oversized.indexOf(Buffer.from([0xff, 0xc0]))
+  assert.ok(frame > 0); oversized.writeUInt16BE(4096, frame + 7)
+  for (const invalid of [
+    { name: '', avatar: 'google' }, { name: '<script>', avatar: 'google' },
+    { name: 'A'.repeat(25), avatar: 'google' }, { name: 'Player', avatar: 'preset:unknown' },
+    { name: 'Player', avatar: 'https://attacker.example/photo.jpg' },
+    { name: 'Player', avatar: `data:image/svg+xml;base64,${Buffer.from('<svg/>').toString('base64')}` },
+    { name: 'Player', avatar: 'data:image/jpeg;base64,AAAA' },
+    { name: 'Player', avatar: `data:image/jpeg;base64,${oversized.toString('base64')}` },
+    { name: 'Player', avatar: 'google', id: randomUUID() },
+  ]) {assert.equal((await request('/auth/profile', invalid, player.cookie)).status, 400)}
+  assert.equal((await request('/auth/profile', { name: 'Player', avatar: 'A'.repeat(132000) }, player.cookie)).status, 413)
+  const unchanged = await (await request('/auth/session', undefined, player.cookie)).json()
+  assert.equal(unchanged.user.name, 'Player'); assert.equal(unchanged.user.avatar, 'google')
 })

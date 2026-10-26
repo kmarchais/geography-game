@@ -54,10 +54,12 @@ body { margin: 0; background: #090f13; }
 .guest-divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 11px; margin: 20px 0; }
 .guest-divider::before, .guest-divider::after { content: ''; height: 1px; flex: 1; background: var(--line); }
 .account-row { display: flex; align-items: center; gap: 12px; padding: 16px; background: #10251f; border: 1px solid #285744; border-radius: 12px; font-size: 12px; }
-.account-avatar { display: grid; place-items: center; flex: 0 0 38px; height: 38px; border-radius: 50%; background: var(--mint); color: #092219; font-size: 18px; font-weight: 700; }
+.account-avatar { display: grid; place-items: center; flex: 0 0 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: transparent; }
+.profile-avatar { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; overflow: hidden; color: var(--mint); font-size: 26px; font-weight: 700; }
+.profile-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .account-identity { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 5px; }
 .account-identity strong { color: var(--mint); overflow-wrap: anywhere; }
-.account-identity > span { color: var(--muted); font-size: 11px; }
+.profile-edit { align-self: flex-start; min-height: 32px; padding: 0; border: 0; background: transparent; color: #b2cac3; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
 .account-row .quiet-button { flex-shrink: 0; }
 .account-notice { color: #c0cece; margin: 10px 0 0; padding: 10px 12px; background: #142128; border: 1px solid #30444d; border-radius: 8px; }
 .google-connect { display: flex; width: 100%; max-width: 400px; margin: 0 auto; align-items: center; justify-content: center; gap: 12px; min-height: 44px; padding: 10px 16px; border: 1px solid #8e918f; border-radius: 24px; background: #131314; color: #e3e3e3; }
@@ -101,6 +103,23 @@ body { margin: 0; background: #090f13; }
 .orbit-dialog { border: 1px solid #36505c; border-radius: 14px; background: #101b22; color: #e4ece9; max-width: 440px; width: calc(100% - 40px); max-height: 85svh; padding: 32px; font-family: 'DM Sans', sans-serif; }
 .orbit-dialog::backdrop { background: #03090dcc; backdrop-filter: blur(5px); }
 .orbit-dialog p { line-height: 1.7; }
+.profile-dialog { max-width: 420px; padding: 24px; }
+.profile-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.profile-heading h2 { margin: 0; font-size: 24px; }
+.profile-preview { width: 88px; height: 88px; margin: 0 auto 22px; font-size: 46px; }
+.profile-dialog label, .profile-dialog legend { font-size: 13px; color: #d3e2de; }
+.profile-dialog input:not([type="file"]) { margin-top: 8px; margin-bottom: 0; }
+.profile-dialog fieldset { border: 0; padding: 0; margin: 22px 0; min-width: 0; }
+.profile-dialog legend { margin-bottom: 12px; }
+.google-photo-option { margin-bottom: 12px; }
+.google-photo-option img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+.google-photo-option[aria-pressed="true"] { border-color: var(--mint); }
+.avatar-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.avatar-option { min-width: 44px; height: 60px; border: 2px solid transparent; border-radius: 10px; font-size: 30px; }
+.avatar-option[aria-pressed="true"] { border-color: var(--mint); box-shadow: 0 0 0 1px var(--mint); }
+.photo-upload { display: flex; align-items: center; justify-content: center; min-height: 44px; margin-top: 12px; border: 1px dashed #6e9188; border-radius: 9px; cursor: pointer; }
+.photo-upload:has(+ input:focus-visible) { outline: 2px solid var(--mint); outline-offset: 3px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .dialog-close { position: absolute; right: 6px; top: 4px; width: 44px; height: 44px; background: none; color: #c0d0d3; border: 0; font-size: 25px !important; }
 .dialog-actions { display: flex; gap: 12px; margin-top: 24px; }
 @media (min-width: 1800px) { .orbit-workspace { grid-template-columns: 360px minmax(0, 1fr); } }
