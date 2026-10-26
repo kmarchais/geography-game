@@ -18,11 +18,35 @@
         </button>
         <button
           class="icon-button"
-          aria-label="How to play"
-          @click="help?.showModal()"
+          aria-label="Menu"
+          popovertarget="atlas-menu"
+          @click="positionMenu"
         >
-          ?
+          ⋯
         </button>
+        <div
+          id="atlas-menu"
+          ref="menu"
+          popover
+          class="atlas-menu"
+          role="menu"
+          aria-label="Atlas menu"
+          @keydown="menuKey"
+        >
+          <button
+            role="menuitem"
+            autofocus
+            @click="menu?.hidePopover(); help?.showModal()"
+          >
+            How to play
+          </button>
+          <button
+            role="menuitem"
+            @click="menu?.hidePopover(); bugReport?.open()"
+          >
+            Report a bug
+          </button>
+        </div>
       </div>
     </header>
     <main class="orbit-workspace">
@@ -311,6 +335,10 @@
         </p>
       </section>
     </main>
+    <BugReportDialog
+      ref="bugReport"
+      :country="playing ? target?.id : undefined"
+    />
     <dialog
       ref="help"
       aria-label="How to play Atlas"
@@ -383,6 +411,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import EarthGlobe from '@/components/EarthGlobe.vue'
 import GoogleLoginButton from '@/components/auth/GoogleLoginButton.vue'
+import BugReportDialog from '@/components/BugReportDialog.vue'
 import { account, accountBest, refreshAccount, type AtlasUser } from '@/globe/auth'
 import { fetchCountries, type Country } from '@/globe/geography'
 import { answerCountry, compareScores, correctCount, createSession, formatTime, isGuestId, percentage, readPersonalScores, type Answer, type RankedScore, type Session } from '@/globe/game'
@@ -392,6 +421,20 @@ const base = import.meta.env.BASE_URL
 const countries = shallowRef<Country[]>([]), session = shallowRef<Session>()
 const globe = ref<InstanceType<typeof EarthGlobe>>(), help = ref<HTMLDialogElement>(), restart = ref<HTMLDialogElement>()
 const countryCount = ref<HTMLElement>()
+const menu = ref<HTMLElement>(), bugReport = ref<InstanceType<typeof BugReportDialog>>()
+function positionMenu(event: MouseEvent) {
+  const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  menu.value!.style.top = `${Math.max(16, Math.min(bounds.bottom + 8, innerHeight - 140))}px`
+  menu.value!.style.right = `${Math.max(16, innerWidth - bounds.right)}px`
+}
+function menuKey(event: KeyboardEvent) {
+  if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {return}
+  event.preventDefault()
+  const buttons = [...menu.value!.querySelectorAll<HTMLButtonElement>('button')]
+  const index = buttons.indexOf(document.activeElement as HTMLButtonElement)
+  const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length
+  buttons[next]?.focus()
+}
 const countryCountExplanation = '193 UN members + 2 observer states.'
 function positionCountryCount(event: MouseEvent) {
   const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect()

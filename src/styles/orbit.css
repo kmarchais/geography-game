@@ -103,6 +103,14 @@ body { margin: 0; background: #090f13; }
 .orbit-dialog { border: 1px solid #36505c; border-radius: 14px; background: #101b22; color: #e4ece9; max-width: 440px; width: calc(100% - 40px); max-height: 85svh; padding: 32px; font-family: 'DM Sans', sans-serif; }
 .orbit-dialog::backdrop { background: #03090dcc; backdrop-filter: blur(5px); }
 .orbit-dialog p { line-height: 1.7; }
+.atlas-menu { position: fixed; inset: auto; margin: 0; min-width: 200px; padding: 6px; border: 1px solid #36505c; border-radius: 12px; background: #101b22; box-shadow: 0 12px 36px #0006; }
+.atlas-menu button { display: block; width: 100%; min-height: 44px; padding: 10px 14px; border: 0; border-radius: 7px; background: transparent; text-align: left; color: #e4ece9; }
+.atlas-menu button:hover, .atlas-menu button:focus-visible { background: #223c3a; }
+.bug-dialog label { display: block; margin: 16px 0 8px; font-size: 13px; }
+.bug-dialog input { margin: 0; }
+.bug-dialog textarea { width: 100%; padding: 12px; border: 1px solid #3b525e; border-radius: 8px; background: #0d171d; color: #e4ece9; font: inherit; resize: vertical; min-height: 120px; }
+.bug-dialog .primary-button, .bug-dialog .secondary-button { margin-top: 18px; }
+.report-context { margin: 18px 0; }
 .profile-dialog { max-width: 420px; padding: 24px; }
 .profile-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .profile-heading h2 { margin: 0; font-size: 24px; }

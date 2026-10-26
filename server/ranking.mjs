@@ -6,10 +6,11 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { isGuestId } from '../src/globe/game.ts'
 import { createAccounts } from './auth.mjs'
+import { createBugReports } from './reports.mjs'
 
 const snapshot = JSON.parse(readFileSync(new URL('../public/data/globe/countries.json', import.meta.url)))
 
-export function createRankingServer({ databasePath = '.local/atlas.sqlite', countries = snapshot, now = Date.now, origins = [], googleClientId = '', verifyGoogle, crossSiteOrigins = ['https://localhost'] } = {}) {
+export function createRankingServer({ databasePath = '.local/atlas.sqlite', countries = snapshot, now = Date.now, origins = [], googleClientId = '', verifyGoogle, reportPublisher, crossSiteOrigins = ['https://localhost'] } = {}) {
   if (databasePath !== ':memory:') mkdirSync(dirname(resolve(databasePath)), { recursive: true })
   const db = new DatabaseSync(databasePath)
   db.exec(`PRAGMA journal_mode=WAL;
@@ -22,6 +23,7 @@ export function createRankingServer({ databasePath = '.local/atlas.sqlite', coun
   }
   const quiz = countries.filter(c => c.playable).map(c => c.id)
   const accounts = createAccounts(db, { clientId: googleClientId, verify: verifyGoogle, now, crossSiteOrigins })
+  const reports = createBugReports(db, { now, publish: reportPublisher })
   const ids = new Set(countries.map(c => c.id))
   const leaderboard = () => db.prepare(`SELECT id, name, correct, ? AS total, time_ms AS timeMs FROM
     (SELECT *, ROW_NUMBER() OVER (PARTITION BY player ORDER BY correct DESC, time_ms, id) AS place FROM runs WHERE complete=1 AND json_extract(state,'$.version')=2)
@@ -39,6 +41,8 @@ export function createRankingServer({ databasePath = '.local/atlas.sqlite', coun
       }
       const path = new URL(req.url, 'http://localhost').pathname.replace(/^\/atlas-api(?=\/|$)/, '')
       if (req.method === 'GET' && path === '/health') {reply(res, 200, { ok: true }); return}
+      const reportMatch = path.match(/^\/reports\/([0-9a-f-]{36})$/i)
+      if (req.method === 'GET' && reportMatch) {const report = reports.status(reportMatch[1]); reply(res, report ? 200 : 404, report || { error: 'Report not found.' }); return}
       if (req.method === 'GET' && path === '/leaderboard') {reply(res, 200, leaderboard()); return}
       if (req.method === 'GET' && path === '/auth/session') {
         const user = accounts.user(req)
@@ -54,11 +58,12 @@ export function createRankingServer({ databasePath = '.local/atlas.sqlite', coun
       let body = ''
       for await (const chunk of req) {
         body += chunk
-        if (Buffer.byteLength(body) > (path === '/auth/profile' ? 131072 : path === '/auth/google' ? 12288 : 4096)) {reply(res, 413, { error: 'Request too large.' }); return}
+        if (Buffer.byteLength(body) > (path === '/auth/profile' ? 131072 : path === '/reports' ? 32768 : path === '/auth/google' ? 12288 : 4096)) {reply(res, 413, { error: 'Request too large.' }); return}
       }
       let data
       try {data = JSON.parse(body)} catch {reply(res, 400, { error: 'Invalid JSON.' }); return}
       if (!data || typeof data !== 'object' || Array.isArray(data)) {reply(res, 400, { error: 'Invalid request.' }); return}
+      if (path === '/reports') {const result = reports.submit(data, accounts.user(req)); reply(res, result.status, result.report || { error: result.error }); return}
       if (path === '/auth/google') {
         const account = await accounts.login(req, res, data.credential)
         reply(res, account ? 200 : 401, account ? { user: account } : { error: 'Google sign-in could not be verified. Try again.' }); return
@@ -124,7 +129,7 @@ export function createRankingServer({ databasePath = '.local/atlas.sqlite', coun
       else res.end()
     }
   })
-  server.on('close', () => db.close())
+  server.on('close', () => {reports.close(); db.close()})
   return server
 }
 

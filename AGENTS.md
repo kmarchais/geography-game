@@ -28,6 +28,7 @@
 - A successful login must be confirmed by `/auth/session`. Show an explicit status for a connection that was cancelled, failed, or did not retain a session.
 - Google can return a cancellation exception for a configuration failure. Do not silently discard it or automatically reopen the chooser.
 - Guest score claims require the private token issued at run creation and an authenticated account. Keep claims idempotent, reject incomplete runs, and prevent transfer to another account.
+- Bug reports are saved before GitHub publication. Keep retry IDs, public-posting notice, rate limits, and duplicate recovery. Never include account credentials, photos, email addresses, or private host addresses in report context. Browser/API tests must inject or mock the publisher and must not create live GitHub issues.
 - Preserve `.local/atlas.sqlite` across builds and deployments. Use SQLite's backup API before a schema change on a running installation.
 - Never claim that a mocked Google callback proves real account login. Record browser, native, and provider verification separately.
 

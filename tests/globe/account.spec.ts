@@ -47,7 +47,7 @@ test('Google connection restores account best and sign-out returns to guest play
   await expect(page.getByText('or play as a guest', { exact: true })).toBeHidden()
   await expect(page.getByRole('button', { name: 'Edit profile', exact: true })).toBeVisible()
   const card = (await page.locator('.account-row').boundingBox())!
-  const play = (await page.locator('form .primary-button').boundingBox())!
+  const play = (await page.getByRole('button', { name: 'Play', exact: true }).boundingBox())!
   expect(play.y - card.y - card.height).toBeGreaterThanOrEqual(16)
   expect(play.width).toBeCloseTo(card.width, 0)
   await page.screenshot({ path: test.info().outputPath('atlas-connected-account.png'), fullPage: true })

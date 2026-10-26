@@ -96,10 +96,19 @@ bun run icons
 
 The script generates PWA icons, the favicon, the Apple touch icon, Android launcher images, and legacy splash images from the same vector. Android 13 and newer also use a separate monochrome vector for themed launcher icons. Keep the globe and pin inside the adaptive icon's safe area. Rebuild and reinstall the APK to update its launcher icon.
 
+## Report a bug
+
+Choose **Menu → Report a bug** in the website or Android app. Guests can report problems too. The form explains that the description will be public and shows the technical context being sent: platform, build version, viewport, and active country. It does not collect login tokens, account photos, email addresses, or machine URLs.
+
+The API saves each report in the existing SQLite database before publishing an issue in `kmarchais/geography-game`. A background publisher retries outages; stable report IDs and an issue-body marker prevent duplicate submissions and recover a lost GitHub response. Report text stays in the form if the API itself cannot be reached.
+
+The API host needs GitHub CLI authenticated as `kmarchais` with permission to create issues. Its existing credential store is used; no GitHub token goes into the app or website. The publisher verifies the active account before posting and passes report text as JSON input rather than shell commands. Trial limits allow three reports per player per hour and twenty reports and automatic issue publications per day. The publisher scans the hundred most recent repository issues when recovering an uncertain submission; increase that window if repository traffic requires it.
+
 ## Code ownership
 
 - `src/globe/game.ts`: rules, score ordering, and local best validation.
 - `src/globe/ranking.ts` and `server/ranking.mjs`: HTTP client and SQLite service.
+- `server/reports.mjs` and `src/components/BugReportDialog.vue`: durable bug reports and automatic GitHub issues.
 - `src/globe/geography.ts`, `detail.ts`, and `terrain.ts`: picking and imagery.
 - `src/components/EarthGlobe.vue`: Three.js and input.
 - `src/views/GlobeGame.vue`: challenge UI and session lifecycle.
