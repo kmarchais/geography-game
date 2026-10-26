@@ -4,7 +4,7 @@ The base globe's assets are checked in. Ordinary builds and the whole-planet vie
 
 | Asset | Source | Terms |
 | --- | --- | --- |
-| Country outlines | [Natural Earth 5.1.2](https://github.com/nvkelso/natural-earth-vector/tree/v5.1.2), 50m countries with 10m replacements for small quiz countries | [Public domain](https://www.naturalearthdata.com/about/terms-of-use/) |
+| Country outlines | [Natural Earth 5.1.2](https://github.com/nvkelso/natural-earth-vector/tree/v5.1.2), 10m countries with shared boundaries simplified once and small-territory boundaries retained | [Public domain](https://www.naturalearthdata.com/about/terms-of-use/) |
 | Country names, regions, and quiz membership | [world-countries 5.1.0](https://www.npmjs.com/package/world-countries), from mledoze/countries | Open Database License. Included in `public/data/globe/LICENSE-world-countries.txt`. The derived country snapshot is available under those terms. |
 | Blue Marble Earth image | NASA imagery distributed with [three-globe 2.44.0](https://www.npmjs.com/package/three-globe) examples | Distributor's MIT license is included in `public/data/globe/LICENSE-three-globe.txt`. |
 | Zoom imagery | [NASA GIBS](https://nasa-gibs.github.io/gibs-api-docs/access-basics/), BlueMarble_ShadedRelief_Bathymetry, geographic 500m tile matrix | NASA imagery. Requested directly from NASA, without an API key. Maximum source resolution is approximately 500 metres. |

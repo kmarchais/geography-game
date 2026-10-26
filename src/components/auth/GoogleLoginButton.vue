@@ -40,7 +40,9 @@
       </button>
       <div
         v-else
+        v-show="buttonReady"
         ref="buttonHost"
+        class="google-web-button"
         :inert="disabled || busy"
         :aria-disabled="disabled || busy"
       />
@@ -72,6 +74,16 @@ const emit = defineEmits<{ busy: [value: boolean]; connected: [user: AtlasUser] 
 const buttonHost = ref<HTMLDivElement>(), buttonReady = ref(false), busy = ref(false), error = ref('')
 let alive = true, refresh: ReturnType<typeof setTimeout> | undefined
 let preparing = false
+let resize: ResizeObserver | undefined
+let renderedWidth = 0
+function renderButton() {
+  if (!buttonHost.value || !window.google?.accounts?.id || !buttonReady.value) {return}
+  const width = Math.min(400, Math.floor(buttonHost.value.clientWidth))
+  if (width < 120 || width === renderedWidth) {return}
+  renderedWidth = width
+  buttonHost.value.replaceChildren()
+  window.google.accounts.id.renderButton(buttonHost.value, { type: 'standard', theme: 'filled_black', shape: 'pill', size: 'large', text: 'signin_with', width })
+}
 function setBusy(value: boolean) {busy.value = value; emit('busy', value)}
 async function finish(credential?: string) {
   if (!alive || props.disabled || !credential) {return}
@@ -100,9 +112,12 @@ async function prepare() {
     await nextTick()
     window.google.accounts.id.initialize({ client_id: googleClientId.value, nonce: challenge.nonce, callback: response => {finish(response.credential)} })
     if (buttonHost.value) {
-      buttonHost.value.replaceChildren()
-      window.google.accounts.id.renderButton(buttonHost.value, { type: 'standard', theme: 'outline', size: 'large', text: 'signin_with', width: 240 })
       buttonReady.value = true
+      renderedWidth = 0
+      renderButton()
+      resize?.disconnect()
+      resize = new ResizeObserver(renderButton)
+      resize.observe(buttonHost.value)
     }
     error.value = ''
     refresh = setTimeout(prepare, 240000)
@@ -132,5 +147,5 @@ async function disconnect() {
 }
 watch(() => props.disabled, (disabled, previous) => {if (previous && !disabled) {prepare()}})
 onMounted(prepare)
-onBeforeUnmount(() => {alive = false; clearTimeout(refresh); emit('busy', false)})
+onBeforeUnmount(() => {alive = false; clearTimeout(refresh); resize?.disconnect(); emit('busy', false)})
 </script>

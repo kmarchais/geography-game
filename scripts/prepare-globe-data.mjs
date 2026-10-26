@@ -2,11 +2,13 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { gzipSync } from 'node:zlib'
 import { createCountryPicker } from '../src/globe/geography.ts'
+import { topology } from 'topojson-server'
+import { feature } from 'topojson-client'
+import { presimplify, simplify } from 'topojson-simplify'
 
 // Run only when deliberately updating the checked-in geography snapshot.
 const sources = {
-  borders: 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_50m_admin_0_countries.geojson',
-  detail: 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_admin_0_countries.geojson',
+  borders: 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_admin_0_countries.geojson',
   countries: 'https://cdn.jsdelivr.net/npm/world-countries@5.1.0/countries.json',
   earth: 'https://cdn.jsdelivr.net/npm/three-globe@2.44.0/example/img/earth-blue-marble.jpg',
 }
@@ -37,19 +39,24 @@ const countries = JSON.parse(buffers.borders).features.map(feature => {
         * (Math.max(...ring.map(v => v[1])) - Math.min(...ring.map(v => v[1])))
     })) < 2,
     playable: Boolean(entry),
-    polygons: polygons.map(polygon => polygon.map(ring => ring.map(([x, y]) => [Number(x.toFixed(4)), Number(y.toFixed(4))]))),
+    polygons: polygons.map(polygon => polygon.map(ring => ring.map(([x, y]) => [Number(x.toFixed(5)), Number(y.toFixed(5))]))),
   }
 })
 for (const entry of catalog.filter(c => !seen.has(c.cca3))) {
   countries.push({ id: entry.cca3, name: entry.name.common, continent: entry.region, center: [entry.latlng[1], entry.latlng[0]], small: true, playable: true, polygons: [] })
 }
-// The 50m map displaces some microstates for readability. Use 10m geometry for them.
-const detailed = new Map(JSON.parse(buffers.detail).features.map(f => [f.properties.ISO_A3 !== '-99' ? f.properties.ISO_A3 : f.properties.ADM0_A3, f]))
-for (const country of countries.filter(c => c.playable && c.small)) {
-  const feature = detailed.get(country.id)
-  if (!feature) throw new Error(`Missing detailed geometry for ${country.id}`)
-  const polygons = feature.geometry.type === 'Polygon' ? [feature.geometry.coordinates] : feature.geometry.coordinates
-  country.polygons = polygons.map(polygon => polygon.map(ring => ring.map(([x, y]) => [Number(x.toFixed(5)), Number(y.toFixed(5))])))
+// Simplify shared arcs once, retaining full microstate borders on BOTH sides.
+// These tools run only when preparing data, never in the game bundle.
+const shapes = {type: 'FeatureCollection', features: countries.map(c => ({type: 'Feature', id: c.id, properties: {}, geometry: {type: 'MultiPolygon', coordinates: c.polygons}}))}
+const shared = presimplify(topology({countries: shapes}))
+for (const shape of shared.objects.countries.geometries) {
+  if (!countries.find(c => c.id === shape.id).small) continue
+  for (const polygon of shape.arcs) for (const ring of polygon) for (const arc of ring) {
+    for (const point of shared.arcs[arc < 0 ? ~arc : arc]) point[2] = Infinity
+  }
+}
+for (const shape of feature(simplify(shared, .0005), shared.objects.countries).features) {
+  countries.find(c => c.id === shape.id).polygons = shape.geometry.coordinates
 }
 countries.sort((a, b) => a.name.localeCompare(b.name, 'en'))
 // Cartographic label positions may be offshore. A locate hint needs an interior point.

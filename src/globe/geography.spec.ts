@@ -22,6 +22,16 @@ describe('the checked-in geography', () => {
     expect(pick([-30, 0])).toBeUndefined()
     expect(pick([0, 0])).toBeUndefined()
   })
+  it.each([
+    ['AND', ['FRA', 'ESP']], ['LIE', ['AUT', 'CHE']], ['VAT', ['ITA']], ['MCO', ['FRA']], ['SMR', ['ITA']],
+  ] as const)('%s shares its detailed border with its neighbours', (id, neighbours) => {
+    const country = countries.find(c => c.id === id)!
+    const neighbourPoints = new Set(countries.filter(c => (neighbours as readonly string[]).includes(c.id)).flatMap(c => c.polygons.flat(2).map(p => p.join(','))))
+    const boundary = country.polygons.flat(2)
+    // Monaco also has a coastline; the other four are completely landlocked.
+    const shared = boundary.filter(p => neighbourPoints.has(p.join(','))).length / boundary.length
+    expect(shared).toBeGreaterThan(id === 'MCO' ? .3 : .95)
+  })
   it('keeps every country label inside its own geographic feature', () => {
     const failures = countries.filter(c => c.playable && pick(c.center)?.id !== c.id).map(c => `${c.id}: picked ${pick(c.center)?.id}`)
     expect(failures).toEqual([])

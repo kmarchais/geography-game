@@ -25,7 +25,7 @@ export function countrySurface(country: Country): THREE.BufferGeometry {
     const vertices = rings.flat()
     for (const triangle of triangles) {for (const index of triangle) {
       const p = vertices[index]!
-      points.push(...coordinateToVector([p.x, p.y]).map(v => v * 1.00027))
+      points.push(...coordinateToVector([p.x, p.y]).map(v => v * 1.0003))
     }}
   }
   return new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(points, 3))

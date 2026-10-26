@@ -41,6 +41,7 @@ import { coordinateToVector, createCountryPicker, unwrapRing, vectorToCoordinate
 import type { Answer } from '@/globe/game'
 import { countryAngularSize, islandBlend, rotationSpeed } from '@/globe/detail'
 import { countryOutlines, countrySurface, GlobeImagery } from '@/globe/terrain'
+import { zoomAtPointer } from '@/globe/navigation'
 
 const props = defineProps<{ countries: Country[]; borders: boolean; paintFound: boolean; markers: boolean; answers: Answer[]; reveal?: string; disabled: boolean }>()
 const emit = defineEmits<{ select: [country: Country | undefined]; ready: []; error: [message: string]; warning: [message: string] }>()
@@ -78,10 +79,12 @@ const overlayWidth = navigator.maxTouchPoints > 0 || window.innerWidth < 800 ? 2
 const overlayHeight = overlayWidth / 2
 let pickCountry = createCountryPicker(props.countries)
 const raycaster = new THREE.Raycaster()
-const pickingSphere = new THREE.Sphere(new THREE.Vector3(), 1.0002)
+const pickingSphere = new THREE.Sphere(new THREE.Vector3(), 1.0003)
 const hitPoint = new THREE.Vector3()
 const mouse = new THREE.Vector2()
-const markerPositions: { country: Country; position: THREE.Vector3; sprite: THREE.Sprite; surface: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>; angularSize: number; blend: number }[] = []
+const previousPosition = new THREE.Vector3()
+const previousRotation = new THREE.Quaternion()
+const markerPositions: { country: Country; position: THREE.Vector3; sprite: THREE.Sprite; surface: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>; angularSize: number; blend: number; highlighted: boolean }[] = []
 let markerTexture: THREE.CanvasTexture
 let fillCanvas: HTMLCanvasElement
 let fillTexture: THREE.CanvasTexture
@@ -104,14 +107,22 @@ function render() {
     earth.geometry = geometry
     fillMesh.geometry = geometry
   }
+  previousPosition.copy(camera.position)
+  previousRotation.copy(camera.quaternion)
   controls?.update()
+  // OrbitControls' change threshold is too coarse at street-scale zoom.
+  // Keep damping frames alive until the camera actually settles.
+  if (previousPosition.distanceToSquared(camera.position) > 1e-18 || previousRotation.angleTo(camera.quaternion) > 1e-7) {
+    invalidate()
+    scheduleDetail()
+  }
   const focalLength = host.value!.clientHeight / (2 * Math.tan(21 * Math.PI / 180))
   for (const marker of markerPositions) {
     marker.blend = islandBlend(marker.angularSize * focalLength / camera.position.distanceTo(marker.position), camera.position.length())
     marker.sprite.material.opacity = 1 - marker.blend
     marker.sprite.visible = (props.markers || marker.country.id === props.reveal) && marker.blend < 1
-    marker.surface.visible = marker.blend > 0
-    marker.surface.material.opacity = marker.blend
+    marker.surface.visible = marker.highlighted && marker.blend > 0
+    marker.surface.material.opacity = marker.blend * .65
   }
   renderer.render(scene, camera)
 }
@@ -134,10 +145,10 @@ function configureCountries() {
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: markerTexture, sizeAttenuation: false, depthTest: true, transparent: true }))
     sprite.position.copy(position)
     sprite.scale.setScalar(.009)
-    const surface = new THREE.Mesh(countrySurface(country), new THREE.MeshBasicMaterial({ color: '#779c79', transparent: true, depthWrite: false, opacity: 0, side: THREE.DoubleSide }))
+    const surface = new THREE.Mesh(countrySurface(country), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, opacity: 0, side: THREE.DoubleSide }))
     surface.renderOrder = 2
     markerGroup.add(surface, sprite)
-    markerPositions.push({ country, position, sprite, surface, angularSize: countryAngularSize(country), blend: 0 })
+    markerPositions.push({ country, position, sprite, surface, angularSize: countryAngularSize(country), blend: 0, highlighted: false })
   }
   updateHighlights()
 }
@@ -186,19 +197,24 @@ function updateHighlights() {
   const context = fillCanvas.getContext('2d')!
   context.clearRect(0, 0, overlayWidth, overlayHeight)
   const answers = new Map(props.answers.map(answer => [answer.id, answer]))
+  let hasFill = false
   for (const country of props.countries) {
+    if (country.small) {continue} // Small countries use their exact vector surface.
     const answer = answers.get(country.id)
     if (country.id === props.reveal) {context.fillStyle = 'rgba(255, 194, 100, .75)'}
     else if (props.paintFound && answer?.outcome === 'correct') {context.fillStyle = 'rgba(72, 231, 176, .65)'}
     else {continue}
     drawCountry(context, country)
+    hasFill = true
   }
+  fillMesh.visible = hasFill
   fillTexture.needsUpdate = true
   markerPositions.forEach(marker => {
     const answer = answers.get(marker.country.id)
     const color = marker.country.id === props.reveal ? '#ffc264' : props.paintFound && answer?.outcome === 'correct' ? '#63edb8' : undefined
     marker.sprite.material.color.set(color ?? '#ccddd9')
-    marker.surface.material.color.set(color ?? '#779c79')
+    marker.highlighted = Boolean(color)
+    if (color) {marker.surface.material.color.set(color)}
   })
   invalidate()
 }
@@ -255,6 +271,7 @@ function onPointerDown(event: PointerEvent) {
 }
 function onPointerMove(event: PointerEvent) {
   if (pointerStart && Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) > 6) {dragged = true}
+  if (pointers.size) {invalidate()}
 }
 function onPointerUp(event: PointerEvent) {
   if (!pointers.has(event.pointerId)) {return}
@@ -263,6 +280,23 @@ function onPointerUp(event: PointerEvent) {
   if (!pointers.size) {pointerStart = undefined}
 }
 function cancelPointer() { pointers.clear(); pointerStart = undefined; dragged = true }
+
+function onWheel(event: WheelEvent) {
+  if (!controls || !canvas.value) {return}
+  event.preventDefault()
+  event.stopImmediatePropagation()
+  const bounds = canvas.value.getBoundingClientRect()
+  mouse.set((event.clientX - bounds.left) / bounds.width * 2 - 1, -(event.clientY - bounds.top) / bounds.height * 2 + 1)
+  const pixels = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? bounds.height : 1)
+  const distance = THREE.MathUtils.clamp(1 + (camera.position.length() - 1) * Math.exp(THREE.MathUtils.clamp(pixels, -500, 500) * .002), controls.minDistance, controls.maxDistance)
+  controls.enableDamping = false
+  controls.update()
+  zoomAtPointer(camera, mouse, distance)
+  controls.update()
+  controls.enableDamping = true
+  scheduleDetail()
+  invalidate()
+}
 
 function onKey(event: KeyboardEvent) {
   if (!controls) {return}
@@ -302,6 +336,7 @@ onMounted(async () => {
     controls.zoomSpeed = .8
     controls.minDistance = 1.002
     controls.maxDistance = 5
+    canvas.value!.addEventListener('wheel', onWheel, { capture: true, passive: false })
     controls.addEventListener('change', () => { invalidate(); scheduleDetail() })
     controls.addEventListener('start', () => { dragged = pointers.size > 1 || dragged })
     const geometry = new THREE.SphereGeometry(1, 96, 64)
@@ -415,6 +450,7 @@ onBeforeUnmount(() => {
   canvas.value?.removeEventListener('pointermove', onPointerMove)
   canvas.value?.removeEventListener('pointerup', onPointerUp)
   canvas.value?.removeEventListener('pointercancel', cancelPointer)
+  canvas.value?.removeEventListener('wheel', onWheel, true)
   canvas.value?.removeEventListener('webglcontextlost', onContextLost)
   const geometries = new Set<THREE.BufferGeometry>()
   scene?.traverse(object => {

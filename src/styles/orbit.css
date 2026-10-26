@@ -40,9 +40,14 @@ body { margin: 0; background: #090f13; }
 .orbit-dialog summary { cursor: pointer; color: var(--mint); }
 .orbit-dialog details a { text-decoration: underline; }
 .country-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 6px 20px; max-height: 240px; overflow: auto; padding: 8px 0 8px 20px; }
-.account-panel { margin-top: 16px; order: 0; }
+.account-panel { margin: 16px 0; order: 0; width: 100%; }
+.start-card .account-panel { margin: 0; }
+.account-panel > div:not(.account-row) { width: 100%; min-height: 44px; display: flex; justify-content: center; align-items: center; }
+.guest-divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 11px; margin: 20px 0; }
+.guest-divider::before, .guest-divider::after { content: ''; height: 1px; flex: 1; background: var(--line); }
 .account-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; }
-.google-connect { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 44px; padding: 10px 16px; border: 1px solid #747775; border-radius: 4px; background: #fff; color: #1f1f1f; }
+.google-connect { display: flex; width: 100%; max-width: 400px; margin: 0 auto; align-items: center; justify-content: center; gap: 12px; min-height: 44px; padding: 10px 16px; border: 1px solid #8e918f; border-radius: 24px; background: #131314; color: #e3e3e3; }
+.google-connect:hover { background: #202124; }
 .google-connect svg { width: 20px; height: 20px; }
 .account-panel [inert] { opacity: .45; }
 .account-error { color: var(--muted); margin: 8px 0 0; }

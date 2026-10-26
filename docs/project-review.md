@@ -58,7 +58,7 @@ The planet starts with a 1024 by 512 local preview while compressed geography do
 
 ## Geography and scoring policy
 
-The source snapshot is Natural Earth 5.1.2 at 1:50 million. Small quiz countries use its 1:10 million polygons because some generalized 50m microstate shapes are displaced. Country metadata comes from `world-countries` 5.1.0. Source URLs and SHA-256 hashes are in `public/data/globe/sources.json`. The generator checks the expected count and finds an interior location for every quiz hint.
+The source snapshot is Natural Earth 5.1.2 at 1:10 million. The data generator simplifies shared boundaries once with TopoJSON and preserves the small-territory arcs on both sides of each border. This replaces the earlier mix of 50m neighbours and 10m microstates, which produced border crossings at Andorra. These tools are development dependencies and are not bundled in the game. Country metadata comes from `world-countries` 5.1.0. Source URLs and SHA-256 hashes are in `public/data/globe/sources.json`. The generator checks the expected count and finds an interior location for every quiz hint.
 
 Natural Earth is a generalized map, not a cadastral boundary service. Some coastal city coordinates lie outside its simplified coastline. The tests use inland points, real Vatican coordinates, islands on both sides of the date line, and enclave points. The two raster overlay resolutions do not change the geometric hit test.
 
@@ -68,7 +68,7 @@ Correct guesses earn 4, 2, or 1 points by attempt. A locate hint caps the answer
 
 ## Performance and verification limits
 
-The production build separates the globe from legacy chunks. After zoom improvements, it measured approximately 123 kB for the entry JavaScript and 600 kB for the globe chunk before gzip, approximately 48 kB and 155 kB after gzip. The country snapshot is approximately 2.11 MB, 762 kB with gzip. Earth imagery is approximately 1.46 MB and its first-load preview is approximately 132 kB. Serve text assets with compression in production. [The validation report](validation.md) records the checks and the failures corrected during implementation.
+The production build separates the globe from legacy chunks. The earlier zoom build measured approximately 123 kB for the entry JavaScript and 600 kB for the globe chunk before gzip, approximately 48 kB and 155 kB after gzip. The shared-boundary country snapshot is 4,098,160 bytes, or 1,481,577 bytes with gzip. It replaces the earlier 2.11 MB snapshot, which compressed to 762 kB. Earth imagery is approximately 1.46 MB and its first-load preview is approximately 132 kB. Serve text assets with compression in production. [The validation report](validation.md) records the checks and the failures corrected during implementation.
 
 These are measured build sizes, not a claim of a phone frame rate. Device emulation tests layout, browser behavior, and touch events; it does not reproduce a physical phone's GPU, thermal limits, memory pressure, or battery use. The Android build was also exercised on a physical Pixel 10 Pro XL, including selection, microstate zoom, gestures, orientation and offline reload. The validation report distinguishes that short observation from sustained performance measurements. Safari on an iPhone remains a release check. A WebGL 2 failure shows recovery guidance instead of an empty game.
 

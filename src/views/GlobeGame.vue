@@ -35,6 +35,17 @@
           <p class="muted">
             193 UN members + 2 observer states.
           </p>
+          <GoogleLoginButton
+            :disabled="starting || saving"
+            @busy="authBusy = $event"
+            @connected="connected"
+          />
+          <div
+            v-if="!account"
+            class="guest-divider"
+          >
+            <span>or play as a guest</span>
+          </div>
           <form @submit.prevent="start">
             <label
               class="name-label"
@@ -124,7 +135,7 @@
           </p>
         </section>
         <GoogleLoginButton
-          v-if="!playing"
+          v-if="session && !playing"
           :disabled="starting || saving"
           @busy="authBusy = $event"
           @connected="connected"

@@ -2,6 +2,8 @@ import { test, expect, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { readFileSync } from 'node:fs'
 import { formatTime } from '../../src/globe/game'
+import { PerspectiveCamera, Vector3 } from 'three'
+import { coordinateToVector } from '../../src/globe/geography'
 
 const countries = JSON.parse(readFileSync('public/data/globe/countries.json', 'utf8')).filter((c: { playable: boolean }) => c.playable)
 const order = ['TCD', ...countries.map((c: { id: string }) => c.id).filter((id: string) => id !== 'TCD')]
@@ -39,6 +41,89 @@ test('Atlas has one minimal mode and fills a wide screen', async ({ page }) => {
   if (!test.info().project.use.isMobile) {expect((await page.locator('.orbit-app').boundingBox())!.width).toBe(2560)}
   expect((await earth(page).screenshot()).length).toBeGreaterThan(30000)
   await page.screenshot({ path: test.info().outputPath('atlas-layout.png'), fullPage: true })
+})
+
+test('close-zoom dragging redraws even below the controls change threshold', async ({ page }) => {
+  await page.addInitScript(() => {
+    const counter = window as unknown as { atlasDraws: number }
+    counter.atlasDraws = 0
+    const draw = WebGL2RenderingContext.prototype.drawElements
+    WebGL2RenderingContext.prototype.drawElements = function(...args) {counter.atlasDraws++; return draw.apply(this, args)}
+  })
+  await open(page)
+  for (let i = 0; i < 21; i++) {await earth(page).press('+')}
+  const box = (await earth(page).boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  const frames: number[] = []
+  for (let i = 1; i <= 16; i++) {
+    await page.mouse.move(box.x + box.width / 2 + i, box.y + box.height / 2)
+    frames.push(await page.evaluate(() => new Promise<number>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve((window as unknown as { atlasDraws: number }).atlasDraws))))))
+  }
+  await page.mouse.up()
+  expect(frames.filter((draws, i) => i > 0 && draws > frames[i - 1]!).length).toBeGreaterThanOrEqual(12)
+})
+
+test('Andorra is unpainted before finding it and its zoomed territory remains selectable', async ({ page }) => {
+  await page.route('https://gibs.earthdata.nasa.gov/**', route => route.abort())
+  await mockRun(page)
+  await page.route('**/atlas-api/runs', route => route.fulfill({ json: { id: '11111111-1111-4111-8111-111111111111', deck: ['AND', ...order.filter(id => id !== 'AND')] } }))
+  await open(page)
+  await page.getByRole('button', { name: 'Play', exact: true }).click()
+  let longitude = 18, latitude = 16, distance = 3.1
+  // Navigate through the same keyboard controls as a player, refining at each zoom.
+  for (let level = 0; level <= 20; level++) {
+    const step = Math.max(.002, (distance - 1) * 2)
+    for (const [axis, target] of [['longitude', 1.57], ['latitude', 42.54]] as const) {
+      const current = axis === 'longitude' ? longitude : latitude
+      const count = Math.round((target - current) / step)
+      const key = axis === 'longitude' ? count > 0 ? 'ArrowRight' : 'ArrowLeft' : count > 0 ? 'ArrowUp' : 'ArrowDown'
+      for (let n = 0; n < Math.abs(count); n++) {await earth(page).press(key)}
+      if (axis === 'longitude') {longitude += count * step}
+      else {latitude += count * step}
+    }
+    if (level < 20) {
+      await earth(page).press('+')
+      distance = Math.max(1.002, 1 + (distance - 1) * .7)
+    }
+  }
+  const before = await earth(page).screenshot({ path: test.info().outputPath('andorra-unanswered.png') })
+  const pixel = await page.evaluate(async source => {
+    const image = new Image(); image.src = source
+    await image.decode()
+    const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height
+    const context = canvas.getContext('2d')!; context.drawImage(image, 0, 0)
+    return [...context.getImageData(Math.floor(image.width / 2) + 12, Math.floor(image.height / 2), 1, 1).data]
+  }, `data:image/png;base64,${before.toString('base64')}`)
+  expect(Math.abs(pixel[0]! - 119) + Math.abs(pixel[1]! - 156) + Math.abs(pixel[2]! - 121)).toBeGreaterThan(20)
+  await tapCenter(page)
+  await expect(page.getByTestId('progress')).toHaveText('2 / 195')
+  await expect(page.getByTestId('accuracy')).toHaveText('0.5%')
+  await earth(page).screenshot({ path: test.info().outputPath('andorra-found.png') })
+})
+
+test('wheel zoom keeps Andorra under the mouse until its territory is directly selectable', async ({ page }) => {
+  test.skip(!!test.info().project.use.isMobile, 'Mouse wheel interaction is a desktop control')
+  await page.route('https://gibs.earthdata.nasa.gov/**', route => route.abort())
+  await mockRun(page)
+  await page.route('**/atlas-api/runs', route => route.fulfill({ json: { id: '11111111-1111-4111-8111-111111111111', deck: ['AND', ...order.filter(id => id !== 'AND')] } }))
+  await open(page)
+  await page.getByRole('button', { name: 'Play', exact: true }).click()
+  const box = (await earth(page).boundingBox())!
+  const camera = new PerspectiveCamera(42, box.width / box.height, .01, 100)
+  camera.position.fromArray(coordinateToVector([18, 16])).multiplyScalar(3.1)
+  camera.lookAt(0, 0, 0); camera.updateMatrixWorld()
+  const andorra = countries.find((c: { id: string }) => c.id === 'AND')
+  const point = new Vector3(...coordinateToVector(andorra.center)).multiplyScalar(1.0003).project(camera)
+  const x = box.x + (point.x + 1) * box.width / 2, y = box.y + (1 - point.y) * box.height / 2
+  await page.mouse.move(x, y)
+  for (let i = 0; i < 8; i++) {
+    await page.mouse.wheel(0, -500)
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+  }
+  await page.mouse.click(x, y)
+  await expect(page.getByTestId('accuracy')).toHaveText('0.5%')
+  await expect(page.getByTestId('progress')).toHaveText('2 / 195')
 })
 
 test('shows the preview before the full image and country data arrive', async ({ page }) => {
