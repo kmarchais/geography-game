@@ -430,7 +430,7 @@ function positionMenu(event: MouseEvent) {
 function menuKey(event: KeyboardEvent) {
   if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {return}
   event.preventDefault()
-  const buttons = [...menu.value!.querySelectorAll<HTMLButtonElement>('button')]
+  const buttons = Array.from(menu.value!.querySelectorAll<HTMLButtonElement>('button'))
   const index = buttons.indexOf(document.activeElement as HTMLButtonElement)
   const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length
   buttons[next]?.focus()
