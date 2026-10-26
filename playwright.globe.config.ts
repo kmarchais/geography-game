@@ -13,6 +13,7 @@ export default defineConfig({
   timeout: 45000,
   reporter: [['list'], ['html', { outputFolder: 'playwright-report/globe', open: 'never' }]],
   use: {
+    channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
     baseURL: `http://127.0.0.1:${port}${base}`,
     serviceWorkers: 'block',
     screenshot: 'only-on-failure',

@@ -10,18 +10,31 @@ function gh(args, input = '') {
     child.stdin.end(input)
   })
 }
-export async function publishGithubReport(report, request = gh) {
-  await request(['auth', 'switch', '--hostname', 'github.com', '--user', 'kmarchais'])
-  await request(['auth', 'status', '--hostname', 'github.com'])
-  if ((await request(['api', 'user', '--jq', '.login'])).trim() !== 'kmarchais') {throw new Error('Wrong GitHub account')}
+export async function publishGithubReport(report, request = gh, { token = process.env.ATLAS_GITHUB_TOKEN, fetcher = fetch } = {}) {
   const marker = `<!-- atlas-report:${report.id} -->`
-  // ponytail: inspect 100 recent issues; paginate if this repo exceeds that retry window.
-  const existing = await request(['api', `repos/${repository}/issues?state=all&per_page=100&sort=created&direction=desc`, '--jq', `.[] | select((.body // "") | contains(${JSON.stringify(marker)})) | .html_url`])
-  if (existing.trim()) {return existing.trim().split('\n')[0]}
   const context = JSON.parse(report.context)
   const quiet = text => text.replace(/@/g, '@\u200b')
   const body = `${quiet(report.description)}\n\n---\nReported from Atlas\n\n- Platform: ${context.platform}\n- Version: ${context.version}\n- Screen: ${context.width} × ${context.height}\n- Country: ${context.country || 'No active question'}\n\n${marker}`
-  const result = await request(['api', '--method', 'POST', `repos/${repository}/issues`, '--input', '-'], JSON.stringify({ title: `[Atlas bug] ${quiet(report.title)}`, body }))
+  const issue = { title: `[Atlas bug] ${quiet(report.title)}`, body }
+  // Hosted deployments use a repository-scoped token instead of a local CLI credential store.
+  if (token && request === gh) {
+    const api = async (path, data) => {
+      const response = await fetcher(`https://api.github.com/${path}`, { method: data ? 'POST' : 'GET', headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${token}`, 'User-Agent': 'Atlas-geography-game', 'X-GitHub-Api-Version': '2022-11-28', ...(data ? { 'Content-Type': 'application/json' } : {}) }, ...(data ? { body: JSON.stringify(data) } : {}), signal: AbortSignal.timeout(15000) })
+      if (!response.ok) {throw new Error('GitHub unavailable')}
+      return response.json()
+    }
+    if ((await api('user')).login !== 'kmarchais') {throw new Error('Wrong GitHub account')}
+    const recent = await api(`repos/${repository}/issues?state=all&per_page=100&sort=created&direction=desc`)
+    const existing = recent.find(item => (item.body || '').includes(marker))
+    return existing?.html_url || (await api(`repos/${repository}/issues`, issue)).html_url
+  }
+  await request(['auth', 'switch', '--hostname', 'github.com', '--user', 'kmarchais'])
+  await request(['auth', 'status', '--hostname', 'github.com'])
+  if ((await request(['api', 'user', '--jq', '.login'])).trim() !== 'kmarchais') {throw new Error('Wrong GitHub account')}
+  // ponytail: inspect 100 recent issues; paginate if this repo exceeds that retry window.
+  const existing = await request(['api', `repos/${repository}/issues?state=all&per_page=100&sort=created&direction=desc`, '--jq', `.[] | select((.body // "") | contains(${JSON.stringify(marker)})) | .html_url`])
+  if (existing.trim()) {return existing.trim().split('\n')[0]}
+  const result = await request(['api', '--method', 'POST', `repos/${repository}/issues`, '--input', '-'], JSON.stringify(issue))
   return JSON.parse(result).html_url
 }
 

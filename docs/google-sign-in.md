@@ -30,7 +30,7 @@ GitHub Pages serves the website while the existing ranking host serves the API. 
 
 See [Google web setup](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid), [server verification](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token), and [Android implementation](https://developer.android.com/identity/sign-in/credential-manager-siwg-implementation).
 
-## Verification and current blocker
+## Verification history before Android OAuth registration
 
 Queued job 915 passes type-checking, 609 unit tests, ten HTTP tests, scoped lint, 42 desktop/phone/tablet browser tests, and Android compilation. Another 26 legacy unit tests remain skipped. Browser account flows use a simulated Google callback. The verifier tests sign JWTs with a local test key and use Google's actual cryptographic verification code to reject bad signatures, audiences, issuers, and expiry. These are not real Google-account login tests.
 

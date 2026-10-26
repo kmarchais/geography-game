@@ -28,6 +28,8 @@ The ranking service stores `.local/atlas.sqlite`. Back it up with SQLite's backu
 
 ## Host the game
 
+For one public origin without a local-network permission prompt, use the [Railway deployment configuration](docs/railway.md). It serves the website and API together and keeps SQLite on a persistent volume. The configuration is prepared; live migration still requires an available Railway plan, database transfer, and verification. Keep the legacy PostgreSQL volume intact.
+
 Build with `bun run build`, then keep `bun run ranking` running independently of the build terminal. Serve `dist` over HTTPS and proxy `/atlas-api` to `http://127.0.0.1:4178`. Allow the exact HTTPS origin through `ATLAS_ALLOWED_ORIGINS`.
 
 For Tailscale Serve, configure a static route to `dist` at `/geography-game` and a proxy route at `/atlas-api`. Keep machine addresses in local configuration. Players need access to the tailnet and the host must stay awake. Public hosting requires a public HTTPS origin and the same API route.
@@ -106,7 +108,7 @@ Choose **Menu → Report a bug** in the website or Android app. Guests can repor
 
 The API saves each report in the existing SQLite database before publishing an issue in `kmarchais/geography-game`. A background publisher retries outages; stable report IDs and an issue-body marker prevent duplicate submissions and recover a lost GitHub response. Report text stays in the form if the API itself cannot be reached.
 
-The API host needs GitHub CLI authenticated as `kmarchais` with permission to create issues. Its existing credential store is used; no GitHub token goes into the app or website. The publisher verifies the active account before posting and passes report text as JSON input rather than shell commands. Trial limits allow three reports per player per hour and twenty reports and automatic issue publications per day. The publisher scans the hundred most recent repository issues when recovering an uncertain submission; increase that window if repository traffic requires it.
+The local API host uses GitHub CLI authenticated as `kmarchais`. A hosted API can instead use an `ATLAS_GITHUB_TOKEN` secret limited to this repository's issues. The publisher verifies that the token or CLI account belongs to `kmarchais` before posting; no GitHub token goes into the app or website. Report text is passed as JSON rather than shell commands. Trial limits allow three reports per player per hour and twenty reports and automatic issue publications per day. The publisher scans the hundred most recent repository issues when recovering an uncertain submission; increase that window if repository traffic requires it.
 
 ## Code ownership
 

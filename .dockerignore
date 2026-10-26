@@ -1,0 +1,15 @@
+.git
+.railway
+.local
+.env
+.env.*
+node_modules
+dist
+android
+playwright-report
+test-results
+.venv
+db
+tools
+__pycache__
+*.log

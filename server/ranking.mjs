@@ -7,10 +7,11 @@ import { fileURLToPath } from 'node:url'
 import { isGuestId } from '../src/globe/game.ts'
 import { createAccounts } from './auth.mjs'
 import { createBugReports } from './reports.mjs'
+import { serveStatic } from './static.mjs'
 
 const snapshot = JSON.parse(readFileSync(new URL('../public/data/globe/countries.json', import.meta.url)))
 
-export function createRankingServer({ databasePath = '.local/atlas.sqlite', countries = snapshot, now = Date.now, origins = [], googleClientId = '', verifyGoogle, reportPublisher, crossSiteOrigins = ['https://localhost'] } = {}) {
+export function createRankingServer({ databasePath = '.local/atlas.sqlite', countries = snapshot, now = Date.now, origins = [], googleClientId = '', verifyGoogle, reportPublisher, crossSiteOrigins = ['https://localhost'], staticDirectory } = {}) {
   if (databasePath !== ':memory:') mkdirSync(dirname(resolve(databasePath)), { recursive: true })
   const db = new DatabaseSync(databasePath)
   db.exec(`PRAGMA journal_mode=WAL;
@@ -31,6 +32,8 @@ export function createRankingServer({ databasePath = '.local/atlas.sqlite', coun
   const reply = (res, status, data) => { res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(JSON.stringify(data)) }
   const server = createServer(async (req, res) => {
     try {
+      const pathname = new URL(req.url, 'http://localhost').pathname
+      if (staticDirectory && pathname !== '/health' && !/^\/atlas-api(?:\/|$)/.test(pathname)) {await serveStatic(req, res, staticDirectory); return}
       const origin = req.headers.origin
       if (origin && !origins.includes(origin)) {reply(res, 403, { error: 'Origin not allowed.' }); return}
       if (origin) {res.setHeader('Access-Control-Allow-Origin', origin); res.setHeader('Access-Control-Allow-Credentials', 'true'); res.setHeader('Vary', 'Origin')}
@@ -134,8 +137,10 @@ export function createRankingServer({ databasePath = '.local/atlas.sqlite', coun
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const server = createRankingServer({ databasePath: process.env.ATLAS_DB || '.local/atlas.sqlite', googleClientId: process.env.GOOGLE_CLIENT_ID || '', crossSiteOrigins: (process.env.ATLAS_CROSS_SITE_ORIGINS || 'https://localhost').split(','), origins: (process.env.ATLAS_ALLOWED_ORIGINS || 'https://localhost,http://127.0.0.1:3000,http://127.0.0.1:4174').split(',') })
-  server.listen(Number(process.env.ATLAS_PORT) || 4178, '127.0.0.1', () => console.log('Atlas ranking service ready'))
+  if (process.env.RAILWAY_ENVIRONMENT_ID && !process.env.RAILWAY_VOLUME_MOUNT_PATH) {throw new Error('Attach a persistent Railway volume before starting Atlas.')}
+  const publicOrigin = process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : ''
+  const server = createRankingServer({ databasePath: process.env.ATLAS_DB || '.local/atlas.sqlite', googleClientId: process.env.GOOGLE_CLIENT_ID || '', staticDirectory: process.env.ATLAS_STATIC_DIR, crossSiteOrigins: (process.env.ATLAS_CROSS_SITE_ORIGINS || 'https://localhost').split(','), origins: (process.env.ATLAS_ALLOWED_ORIGINS || ['https://localhost', 'http://127.0.0.1:3000', 'http://127.0.0.1:4174', publicOrigin].filter(Boolean).join(',')).split(',') })
+  server.listen(Number(process.env.PORT || process.env.ATLAS_PORT) || 4178, process.env.ATLAS_HOST || (process.env.PORT ? '0.0.0.0' : '127.0.0.1'), () => console.log('Atlas service ready'))
   process.on('SIGTERM', () => server.close())
   process.on('SIGINT', () => server.close())
 }

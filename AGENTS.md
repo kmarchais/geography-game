@@ -31,6 +31,7 @@
 - Guest score claims require the private token issued at run creation and an authenticated account. Keep claims idempotent, reject incomplete runs, and prevent transfer to another account.
 - Bug reports are saved before GitHub publication. Keep retry IDs, public-posting notice, rate limits, and duplicate recovery. Never include account credentials, photos, email addresses, or private host addresses in report context. Browser/API tests must inject or mock the publisher and must not create live GitHub issues.
 - Preserve `.local/atlas.sqlite` across builds and deployments. Use SQLite's backup API before a schema change on a running installation.
+- Railway serves the site and API together using `Dockerfile` and the service settings in `docs/railway.md`. Keep SQLite on a persistent volume, one replica, and the startup volume guard. Do not replace the legacy PostgreSQL volume or activate a paid plan without explicit approval.
 - Never claim that a mocked Google callback proves real account login. Record browser, native, and provider verification separately.
 
 ## Changes and verification

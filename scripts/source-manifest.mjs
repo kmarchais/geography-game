@@ -18,7 +18,7 @@ function walk(directory) {
   }
 }
 for (const directory of ['src', 'public', 'scripts', 'tests', 'server', 'android', '.github']) {walk(directory)}
-for (const name of readdirSync('.').filter(name => /^(package\.json|bun\.lock|index\.html|env\.d\.ts|eslint\.config\.cjs|\.stylelintrc\.json|capacitor\.config\.ts|vite\.config\.mts|vitest\.config\.ts|playwright\.globe\.config\.ts|tsconfig.*\.json)$/.test(name))) {add(name)}
+for (const name of readdirSync('.').filter(name => /^(Dockerfile|\.dockerignore|railway\.toml|package\.json|bun\.lock|index\.html|env\.d\.ts|eslint\.config\.cjs|\.stylelintrc\.json|capacitor\.config\.ts|vite\.config\.mts|vitest\.config\.ts|playwright\.globe\.config\.ts|tsconfig.*\.json)$/.test(name))) {add(name)}
 files.sort((a, b) => a.path.localeCompare(b.path, 'en'))
 const sha256 = createHash('sha256').update(files.map(file => `${file.sha256} ${file.path}\n`).join('')).digest('hex')
 const output = JSON.stringify({ algorithm: 'SHA-256', sha256, files }, null, 2) + '\n'

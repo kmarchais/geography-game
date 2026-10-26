@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      target:
+        description: Verification scope
+        type: choice
+        options: [all, hosting]
+        default: all
 
 permissions:
   contents: read
@@ -19,7 +25,10 @@ env:
 
 jobs:
   build:
+    if: github.event.inputs.target != 'hosting'
     runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_CHANNEL: chrome
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -34,7 +43,7 @@ jobs:
       - run: bun run type-check
       - run: bun run test
       - run: bun run test:ranking
-      - run: bunx playwright install --with-deps chromium
+      - run: google-chrome --version
       # Tests use their own in-memory API, never the live ranking database.
       - run: bun run test:globe
         timeout-minutes: 10
@@ -76,7 +85,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   android:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.target != 'hosting'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -116,3 +125,27 @@ jobs:
             android-source-manifest.json
             android-source-commit.txt
           retention-days: 14
+
+  hosting:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build the Railway image
+        run: docker build --build-arg ATLAS_BUILD=${{ github.sha }} -t atlas-hosting .
+      - name: Verify hosting integration in the production image
+        run: docker run --rm --entrypoint node --mount type=bind,src="$PWD/tests",dst=/app/tests,readonly atlas-hosting --test tests/server/static.test.mjs
+      - name: Check the production website and durable API
+        run: |
+          mkdir -p "$RUNNER_TEMP/atlas-data"
+          docker run -d --name atlas-hosting -p 127.0.0.1:4180:8080 -e PORT=8080 -e RAILWAY_ENVIRONMENT_ID=test -e RAILWAY_VOLUME_MOUNT_PATH=/data -e RAILWAY_PUBLIC_DOMAIN=atlas.example --mount type=bind,src="$RUNNER_TEMP/atlas-data",dst=/data atlas-hosting
+          node tests/server/container-smoke.mjs start
+          docker restart atlas-hosting
+          node tests/server/container-smoke.mjs verify
+      - name: Container logs
+        if: always()
+        run: docker logs atlas-hosting || true
