@@ -91,6 +91,10 @@ test('profile username, preset and uploaded photo persist, while cancelling disc
   await expect(page.locator('.account-avatar img')).toHaveAttribute('src', 'https://lh3.googleusercontent.com/atlas-test')
   await page.getByRole('button', { name: 'Edit profile', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Your profile' })
+  const heading = (await dialog.locator('.profile-heading').boundingBox())!
+  const preview = (await dialog.locator('.profile-preview').boundingBox())!
+  expect(preview.y).toBeGreaterThanOrEqual(heading.y + heading.height)
+  expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
   await expect(dialog.getByRole('button', { name: 'Google photo', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await dialog.getByRole('button', { name: 'Compass avatar' }).click()
   await dialog.getByRole('button', { name: 'Close profile' }).click()

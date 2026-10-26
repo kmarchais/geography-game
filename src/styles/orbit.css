@@ -141,7 +141,7 @@ body { margin: 0; background: #090f13; }
   .mission-panel { display: contents; }
   .start-card, .mission-card { order: 0; width: 100%; padding: 26px 0 12px; }
   .start-card h1 { font-size: 32px; }
-  .start-card form { display: grid; grid-template-columns: 1fr 120px; gap: 10px; align-items: center; }
+  .start-card > form { display: grid; grid-template-columns: 1fr 120px; gap: 10px; align-items: center; }
   .name-label { grid-column: 1 / -1; margin: 0; }
   .start-card input { margin: 0; }
   .session-stats { margin-top: 20px; }
