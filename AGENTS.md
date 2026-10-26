@@ -6,7 +6,7 @@
 - Web and Android share `src/views/GlobeGame.vue`. Keep the same game and account behavior on both.
 - The current challenge includes all 193 UN members plus Palestine and the Holy See, represented by Vatican City. Keep the explanation behind the country-count tooltip and the exact list in Help.
 - One guess per country. Correct answers, wrong answers, and skips advance immediately. Rank completed runs by correct answers, then by the elapsed time of the last correct answer.
-- Google sign-in is optional before play and after a guest run. A confirmed account replaces the sign-in button and guest form. Never infer connection from choosing a Google account or receiving a token alone.
+- Keep Google sign-in in the top-right header. A confirmed account replaces it with the profile picture, which opens the shared menu for profile editing, sign-out, Help, and bug reports. Remove the guest name field when connected. Account changes stay disabled during a run. Never infer connection from choosing a Google account or receiving a token alone.
 - Let players choose a username and avatar independently of their Google identity. Preserve those choices across Google logins. Only use the verified Google photo URL or validated, bounded image uploads; never accept arbitrary avatar URLs or SVG uploads.
 - Do not use Claude.
 - Keep visible text and accessibility labels in the typed English and French catalogs in `src/globe/locales`. Detect French from the primary system language and use English otherwise. Translate country names by ISO ID; never translate score IDs, usernames, or user-submitted reports. Keep catalog keys and interpolation parameters identical.

@@ -47,7 +47,7 @@ test('a confirmed native session replaces Google sign-in with the connected acco
   keepSession = true
   wrapper = mount(GoogleLoginButton); await flushPromises()
   await wrapper.get('button').trigger('click'); await flushPromises()
-  expect(wrapper.get('.account-row').text()).toContain('Connected as Alex')
+  expect(wrapper.get('.account-status').text()).toContain('Connected as Alex')
   expect(wrapper.find('.google-connect').exists()).toBe(false)
   expect(wrapper.emitted('connected')).toHaveLength(1)
   expect(mocks.persistCookies).toHaveBeenCalledOnce()

@@ -22,7 +22,7 @@ body { margin: 0; background: #090f13; }
 .orbit-header { height: 76px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
 .wordmark { display: inline-flex; align-items: center; gap: 12px; font-size: 29px; font-weight: 650; letter-spacing: -.06em; }
 .wordmark img { width: 42px; height: 42px; border-radius: 10px; }
-.header-actions { display: flex; gap: 18px; align-items: center; }
+.header-actions { position: relative; display: flex; gap: 18px; align-items: center; }
 .quiet-button, .icon-button { color: #b6c5cb; background: none; border: 0; min-height: 44px; padding: 10px; }
 .quiet-button:hover, .icon-button:hover { color: var(--mint); }
 .icon-button { width: 44px; border: 1px solid var(--line); border-radius: 50%; font-size: 18px !important; }
@@ -45,26 +45,24 @@ body { margin: 0; background: #090f13; }
 .orbit-dialog summary { cursor: pointer; color: var(--mint); }
 .orbit-dialog details a { text-decoration: underline; }
 .country-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 6px 20px; max-height: 240px; overflow: auto; padding: 8px 0 8px 20px; }
-.account-panel { margin: 16px 0; order: 0; width: 100%; }
-.start-card .account-panel { margin: 0; }
+.account-panel { margin: 0; width: clamp(128px, 18vw, 200px); }
+.account-panel.has-account { width: 0; }
+.header-actions:has(.has-account) { gap: 0; }
 .account-play { margin-top: 20px; }
 .account-play .primary-button { grid-column: 1 / -1; }
-.account-panel > div:not(.account-row) { width: 100%; min-height: 44px; display: flex; justify-content: center; align-items: center; }
-.google-web-button { color-scheme: light; }
-.guest-divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 11px; margin: 20px 0; }
-.guest-divider::before, .guest-divider::after { content: ''; height: 1px; flex: 1; background: var(--line); }
-.account-row { display: flex; align-items: center; gap: 12px; padding: 16px; background: #10251f; border: 1px solid #285744; border-radius: 12px; font-size: 12px; }
-.account-avatar { display: grid; place-items: center; flex: 0 0 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: transparent; }
+.google-web-button { width: 100%; min-height: 44px; display: flex; justify-content: center; align-items: center; color-scheme: light; }
+.account-avatar { position: relative; display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; border: 1px solid #376c59; border-radius: 50%; background: transparent; }
+.account-check { position: absolute; right: -3px; bottom: -3px; display: grid; place-items: center; width: 17px; height: 17px; border: 2px solid #090f13; border-radius: 50%; background: var(--mint); color: #092219; font-size: 10px; }
 .profile-avatar { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; overflow: hidden; color: var(--mint); font-size: 26px; font-weight: 700; }
 .profile-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.account-identity { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 5px; }
+.account-identity { padding: 10px 14px 14px; margin-bottom: 4px; border-bottom: 1px solid var(--line); max-width: 260px; font-size: 12px; }
 .account-identity strong { color: var(--mint); overflow-wrap: anywhere; }
-.profile-edit { align-self: flex-start; min-height: 32px; padding: 0; border: 0; background: transparent; color: #b2cac3; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
-.account-row .quiet-button { flex-shrink: 0; }
+.account-panel > .account-error, .account-panel > .account-notice { position: absolute; z-index: 30; top: calc(100% + 12px); right: 0; width: min(320px, calc(100vw - 40px)); padding: 12px; border: 1px solid #30444d; border-radius: 9px; background: #142128; }
 .account-notice { color: #c0cece; margin: 10px 0 0; padding: 10px 12px; background: #142128; border: 1px solid #30444d; border-radius: 8px; }
 .google-connect { display: flex; width: 100%; max-width: 400px; margin: 0 auto; align-items: center; justify-content: center; gap: 12px; min-height: 44px; padding: 10px 16px; border: 1px solid #8e918f; border-radius: 24px; background: #131314; color: #e3e3e3; }
 .google-connect:hover { background: #202124; }
 .google-connect svg { width: 20px; height: 20px; }
+.header-actions .google-connect { font-size: 12px; gap: 8px; padding: 10px 12px; }
 .account-panel [inert] { opacity: .45; }
 .account-error { color: #f2b3a7; margin: 8px 0 0; }
 .mission-topline { display: flex; justify-content: space-between; color: var(--muted); margin-bottom: 14px; font-size: 12px; }

@@ -1,40 +1,20 @@
 <template>
-  <div class="account-panel">
+  <div
+    class="account-panel"
+    :class="{ 'has-account': account }"
+  >
     <div
       v-if="account"
-      class="account-row"
+      class="account-status sr-only"
       role="status"
     >
-      <button
-        class="account-avatar"
-        :aria-label="t('changePicture')"
-        :disabled="disabled || busy"
-        @click="profile?.open()"
-      >
-        <ProfileAvatar :user="account" />
-      </button>
-      <div class="account-identity">
-        <strong>{{ t('connectedAs', { name: account.name }) }} <span aria-hidden="true">✓</span></strong>
-        <button
-          class="profile-edit"
-          :disabled="disabled || busy"
-          @click="profile?.open()"
-        >
-          {{ t('editProfile') }}
-        </button>
-      </div>
-      <button
-        class="quiet-button"
-        :disabled="disabled || busy"
-        @click="disconnect"
-      >
-        {{ t('signOut') }}
-      </button>
+      {{ t('connectedAs', { name: account.name }) }}
     </div>
     <template v-else>
       <button
         v-if="nativeAccount"
         class="google-connect"
+        :aria-label="t('signInGoogle')"
         :disabled="disabled || busy || !googleClientId"
         @click="connectNative"
       >
@@ -54,7 +34,7 @@
           fill="#34A853"
           d="M24 48c6.48 0 11.93-2.13 15.91-5.8l-7.73-6C30.03 37.65 27.26 38.5 24 38.5c-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z"
         /></svg>
-        {{ busy ? t('connecting') : t('signInGoogle') }}
+        {{ busy ? t('connecting') : t('signIn') }}
       </button>
       <div
         v-else
@@ -99,7 +79,6 @@ import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { account, googleClientId, refreshAccount, type AtlasUser } from '@/globe/auth'
 import { loadGoogle, nativeAccount, nativeGoogle } from '@/globe/google'
 import { rankingRequest } from '@/globe/ranking'
-import ProfileAvatar from './ProfileAvatar.vue'
 import ProfileDialog from './ProfileDialog.vue'
 import { t, language, type MessageKey } from '@/globe/i18n'
 const props = defineProps<{ disabled?: boolean }>()
@@ -117,7 +96,7 @@ function renderButton() {
   if (width < 120 || width === renderedWidth) {return}
   renderedWidth = width
   buttonHost.value.replaceChildren()
-  window.google.accounts.id.renderButton(buttonHost.value, { type: 'standard', theme: 'filled_black', shape: 'pill', size: 'large', text: 'signin_with', locale: language.value, width })
+  window.google.accounts.id.renderButton(buttonHost.value, { type: 'standard', theme: 'filled_black', shape: 'pill', size: 'large', text: 'signin', locale: language.value, width })
 }
 function setBusy(value: boolean) {busy.value = value; emit('busy', value)}
 async function finish(credential?: string) {
@@ -190,6 +169,7 @@ async function disconnect() {
 }
 watch(() => props.disabled, (disabled, previous) => {if (previous && !disabled) {prepare()}})
 watch(language, () => {renderedWidth = 0; renderButton()})
+defineExpose({ openProfile: () => profile.value?.open(), disconnect })
 onMounted(prepare)
 onBeforeUnmount(() => {alive = false; clearTimeout(refresh); resize?.disconnect(); emit('busy', false)})
 </script>

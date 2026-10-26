@@ -9,20 +9,29 @@
         alt=""
       >Atlas</a>
       <div class="header-actions">
+        <GoogleLoginButton
+          ref="login"
+          :disabled="playing || starting || saving"
+          @busy="authBusy = $event"
+          @connected="connected"
+        />
         <button
-          v-if="playing"
-          class="quiet-button"
-          @click="restart?.showModal()"
-        >
-          {{ t('restart') }}
-        </button>
-        <button
-          class="icon-button"
+          :class="account ? 'account-avatar' : 'icon-button'"
           :aria-label="t('menu')"
+          :title="account ? t('connectedAs', { name: account.name }) : t('menu')"
           popovertarget="atlas-menu"
           @click="positionMenu"
         >
-          ⋯
+          <ProfileAvatar
+            v-if="account"
+            :user="account"
+          />
+          <span v-else>⋯</span>
+          <span
+            v-if="account"
+            class="account-check"
+            aria-hidden="true"
+          >✓</span>
         </button>
         <div
           id="atlas-menu"
@@ -33,6 +42,35 @@
           :aria-label="t('atlasMenu')"
           @keydown="menuKey"
         >
+          <div
+            v-if="account"
+            class="account-identity"
+          >
+            <strong>{{ t('connectedAs', { name: account.name }) }}</strong>
+          </div>
+          <button
+            v-if="account"
+            role="menuitem"
+            :disabled="playing || starting || saving || authBusy"
+            @click="menu?.hidePopover(); login?.openProfile()"
+          >
+            {{ t('editProfile') }}
+          </button>
+          <button
+            v-if="account"
+            role="menuitem"
+            :disabled="playing || starting || saving || authBusy"
+            @click="menu?.hidePopover(); login?.disconnect()"
+          >
+            {{ t('signOut') }}
+          </button>
+          <button
+            v-if="playing"
+            role="menuitem"
+            @click="menu?.hidePopover(); restart?.showModal()"
+          >
+            {{ t('restart') }}
+          </button>
           <button
             role="menuitem"
             autofocus
@@ -76,17 +114,6 @@
             >
               {{ countryCountExplanation }}
             </div>
-          </div>
-          <GoogleLoginButton
-            :disabled="starting || saving"
-            @busy="authBusy = $event"
-            @connected="connected"
-          />
-          <div
-            v-if="!account"
-            class="guest-divider"
-          >
-            <span>{{ t('guestDivider') }}</span>
           </div>
           <form
             :class="{ 'account-play': account }"
@@ -182,12 +209,6 @@
             {{ t('savingScore') }}
           </p>
         </section>
-        <GoogleLoginButton
-          v-if="session && !playing"
-          :disabled="starting || saving"
-          @busy="authBusy = $event"
-          @connected="connected"
-        />
         <p
           v-if="!playing && pendingClaim && !account"
           class="muted small"
@@ -412,6 +433,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import EarthGlobe from '@/components/EarthGlobe.vue'
 import GoogleLoginButton from '@/components/auth/GoogleLoginButton.vue'
+import ProfileAvatar from '@/components/auth/ProfileAvatar.vue'
 import BugReportDialog from '@/components/BugReportDialog.vue'
 import { account, accountBest, refreshAccount, type AtlasUser } from '@/globe/auth'
 import { fetchCountries, type Country } from '@/globe/geography'
@@ -425,15 +447,16 @@ const quizCountries = computed(() => countries.value.filter(country => country.p
 const globe = ref<InstanceType<typeof EarthGlobe>>(), help = ref<HTMLDialogElement>(), restart = ref<HTMLDialogElement>()
 const countryCount = ref<HTMLElement>()
 const menu = ref<HTMLElement>(), bugReport = ref<InstanceType<typeof BugReportDialog>>()
+const login = ref<InstanceType<typeof GoogleLoginButton>>()
 function positionMenu(event: MouseEvent) {
   const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect()
-  menu.value!.style.top = `${Math.max(16, Math.min(bounds.bottom + 8, innerHeight - 140))}px`
+  menu.value!.style.top = `${Math.max(16, Math.min(bounds.bottom + 8, innerHeight - 300))}px`
   menu.value!.style.right = `${Math.max(16, innerWidth - bounds.right)}px`
 }
 function menuKey(event: KeyboardEvent) {
   if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {return}
   event.preventDefault()
-  const buttons = Array.from(menu.value!.querySelectorAll<HTMLButtonElement>('button'))
+  const buttons = Array.from(menu.value!.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'))
   const index = buttons.indexOf(document.activeElement as HTMLButtonElement)
   const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length
   buttons[next]?.focus()

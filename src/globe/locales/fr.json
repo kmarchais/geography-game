@@ -25,7 +25,7 @@
   "skip": "Passer",
   "playAgain": "Rejouer",
   "savingScore": "Enregistrement du score…",
-  "signInToKeepScore": "Connectez-vous pour rattacher ce score à votre compte.",
+  "signInToKeepScore": "Connectez-vous en haut à droite pour rattacher ce score à votre compte.",
   "saveScoreToAccount": "Enregistrer le score sur mon compte",
   "yourBest": "Votre record",
   "onThisDevice": "Sur cet appareil",
@@ -121,5 +121,6 @@
   "globePosition": "Globe centré sur {coordinates} degrés",
   "graphicsLost": "La connexion graphique a été interrompue. Rechargez le globe pour continuer.",
   "imageryUnavailable": "L'imagerie satellite est indisponible. Les frontières restent utilisables.",
-  "webglError": "Impossible de démarrer WebGL 2. Essayez un navigateur récent avec l'accélération graphique activée."
+  "webglError": "Impossible de démarrer WebGL 2. Essayez un navigateur récent avec l'accélération graphique activée.",
+  "signIn": "Connexion"
 }

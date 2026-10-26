@@ -44,8 +44,9 @@ test.describe('French system language', () => {
   test('translates the connected profile and avatar choices', async ({ page }) => {
     await page.route('**/atlas-api/auth/session', route => route.fulfill({ json: { user: { id: '11111111-1111-4111-8111-111111111111', name: 'Alex', avatar: 'preset:earth' }, best: null } }))
     await page.goto('./')
+    await page.getByRole('button', { name: 'Menu', exact: true }).click()
     await expect(page.locator('.account-identity strong')).toContainText('Connecté : Alex')
-    await page.getByRole('button', { name: 'Modifier le profil', exact: true }).click()
+    await page.getByRole('menuitem', { name: 'Modifier le profil', exact: true }).click()
     const dialog = page.getByRole('dialog', { name: 'Votre profil' })
     await expect(dialog.getByRole('button', { name: 'Avatar Boussole', exact: true })).toBeVisible()
     await expect(dialog.getByLabel('Choisir une photo', { exact: true })).toBeAttached()

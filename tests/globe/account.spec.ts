@@ -21,47 +21,53 @@ async function googleAccount(page: import('@playwright/test').Page, reject = fal
   })
 }
 
-test('Google entry is aligned above guest play and adapts to the available width', async ({ page }) => {
-  await googleAccount(page)
-  await page.goto('./')
-  const button = page.locator('.start-card .google-web-button').getByRole('button', { name: 'Sign in with Google', exact: true })
+async function editProfile(page: import('@playwright/test').Page) {
+  await page.getByRole('button', { name: 'Menu', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Edit profile', exact: true }).click()
+}
+
+test('Google entry stays in the top-right header at desktop and narrow widths', async ({ page }) => {
+  await googleAccount(page); await page.goto('./')
+  const button = page.locator('.orbit-header .google-web-button').getByRole('button', { name: 'Sign in with Google', exact: true })
   await expect(button).toBeVisible()
-  const { entry, form } = await page.locator('.start-card').evaluate(card => ({
-    entry: card.querySelector('.google-web-button button')!.getBoundingClientRect().toJSON(),
-    form: card.querySelector('form')!.getBoundingClientRect().toJSON(),
-  }))
-  expect(entry.y + entry.height).toBeLessThan(form.y)
-  expect(entry.width).toBeCloseTo(Math.min(400, form.width), 0)
-  expect(await page.evaluate(() => (window as unknown as { atlasGoogleButtonOptions: { theme: string; shape: string } }).atlasGoogleButtonOptions)).toMatchObject({ theme: 'filled_black', shape: 'pill' })
-  await page.setViewportSize({ width: 600, height: 900 })
-  await expect.poll(async () => (await button.boundingBox())?.width).toBe(400)
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  for (const width of [1440, 600, 320]) {
+    await page.setViewportSize({ width, height: 900 })
+    const entry = (await button.boundingBox())!, menu = (await page.getByRole('button', { name: 'Menu', exact: true }).boundingBox())!
+    const header = (await page.locator('.orbit-header').boundingBox())!
+    expect(entry.x + entry.width / 2).toBeGreaterThan(width / 2)
+    expect(entry.y).toBeGreaterThanOrEqual(header.y)
+    expect(entry.y + entry.height).toBeLessThanOrEqual(header.y + header.height)
+    expect(entry.x + entry.width).toBeLessThanOrEqual(menu.x)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  }
+  expect(await page.evaluate(() => (window as unknown as { atlasGoogleButtonOptions: { theme: string; shape: string; text: string } }).atlasGoogleButtonOptions)).toMatchObject({ theme: 'filled_black', shape: 'pill', text: 'signin' })
 })
-test('Google connection restores account best and sign-out returns to guest play', async ({ page }) => {
-  await googleAccount(page)
-  await page.goto('./')
+
+test('the profile picture opens account actions and sign-out restores header login', async ({ page }) => {
+  await googleAccount(page); await page.goto('./')
   await page.getByRole('button', { name: 'Sign in with Google', exact: true }).click()
-  await expect(page.getByText('Connected as Alex')).toBeVisible()
+  const avatar = page.locator('.orbit-header .account-avatar')
+  await expect(avatar).toHaveAttribute('title', 'Connected as Alex')
   await expect(page.getByRole('button', { name: 'Sign in with Google', exact: true })).toBeHidden()
   await expect(page.getByLabel('Name', { exact: true })).toBeHidden()
-  await expect(page.getByText('or play as a guest', { exact: true })).toBeHidden()
-  await expect(page.getByRole('button', { name: 'Edit profile', exact: true })).toBeVisible()
-  const card = (await page.locator('.account-row').boundingBox())!
-  const play = (await page.getByRole('button', { name: 'Play', exact: true }).boundingBox())!
-  expect(play.y - card.y - card.height).toBeGreaterThanOrEqual(16)
-  expect(play.width).toBeCloseTo(card.width, 0)
-  await page.screenshot({ path: test.info().outputPath('atlas-connected-account.png'), fullPage: true })
+  await expect(page.getByRole('menuitem', { name: 'Sign out', exact: true })).toBeHidden()
+  await avatar.click()
+  await expect(page.locator('#atlas-menu .account-identity')).toContainText('Connected as Alex')
+  await expect(page.getByRole('menuitem', { name: 'Edit profile', exact: true })).toBeVisible()
+  await page.keyboard.press('Escape')
   await expect(page.locator('.personal-best')).toContainText('51.3%')
   expect(await page.evaluate(() => Object.keys(localStorage).some(k => /session|credential|token/i.test(k)))).toBe(false)
   await page.reload()
-  await expect(page.getByText('Connected as Alex')).toBeVisible()
-  await page.getByRole('button', { name: 'Sign out', exact: true }).click()
+  await expect(avatar).toHaveAttribute('title', 'Connected as Alex')
+  await avatar.click()
+  await page.getByRole('menuitem', { name: 'Sign out', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Sign in with Google', exact: true })).toBeVisible()
-  await expect(page.getByText('Connected as Alex')).not.toBeVisible()
+  await expect(avatar).toBeHidden()
   await expect(page.getByLabel('Name', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Play', exact: true }).click()
   await expect(page.getByTestId('progress')).toHaveText('1 / 195')
-  await expect(page.locator('.account-panel')).toHaveCount(0)
+  await expect(page.locator('.account-panel')).toHaveCount(1)
+  await expect(page.locator('.google-web-button')).toHaveAttribute('aria-disabled', 'true')
 })
 
 test('Google login without a retained session explicitly stays disconnected', async ({ page }) => {
@@ -69,7 +75,7 @@ test('Google login without a retained session explicitly stays disconnected', as
   await page.goto('./')
   await page.getByRole('button', { name: 'Sign in with Google', exact: true }).click()
   await expect(page.getByText('Google connection could not be confirmed. You are not connected. Please try again.')).toBeVisible()
-  await expect(page.locator('.account-row')).toBeHidden()
+  await expect(page.locator('.account-avatar')).toBeHidden()
   await expect(page.getByLabel('Name', { exact: true })).toBeVisible()
 })
 
@@ -78,7 +84,7 @@ test('connected play uses the account name instead of a previously saved guest n
   await page.addInitScript(() => localStorage.setItem('atlas-name', 'Previous guest'))
   await page.goto('./')
   await page.getByRole('button', { name: 'Sign in with Google', exact: true }).click()
-  await expect(page.getByText('Connected as Alex')).toBeVisible()
+  await expect(page.locator('.account-avatar')).toHaveAttribute('title', 'Connected as Alex')
   const started = page.waitForRequest(request => request.url().endsWith('/atlas-api/runs') && request.method() === 'POST')
   await page.getByRole('button', { name: 'Play', exact: true }).click()
   expect((await started).postDataJSON().name).toBe('Alex')
@@ -89,7 +95,7 @@ test('profile username, preset and uploaded photo persist, while cancelling disc
   await googleAccount(page); await page.goto('./')
   await page.getByRole('button', { name: 'Sign in with Google', exact: true }).click()
   await expect(page.locator('.account-avatar img')).toHaveAttribute('src', 'https://lh3.googleusercontent.com/atlas-test')
-  await page.getByRole('button', { name: 'Edit profile', exact: true }).click()
+  await editProfile(page)
   const dialog = page.getByRole('dialog', { name: 'Your profile' })
   const heading = (await dialog.locator('.profile-heading').boundingBox())!
   const preview = (await dialog.locator('.profile-preview').boundingBox())!
@@ -99,16 +105,16 @@ test('profile username, preset and uploaded photo persist, while cancelling disc
   await dialog.getByRole('button', { name: 'Compass avatar' }).click()
   await dialog.getByRole('button', { name: 'Close profile' }).click()
   await expect(page.locator('.account-avatar img')).toHaveAttribute('src', 'https://lh3.googleusercontent.com/atlas-test')
-  await page.getByRole('button', { name: 'Edit profile', exact: true }).click()
+  await editProfile(page)
   await dialog.getByLabel('Username', { exact: true }).fill('Cartographer')
   await dialog.getByRole('button', { name: 'Compass avatar' }).click()
   await dialog.getByRole('button', { name: 'Save profile', exact: true }).click()
-  await expect(page.getByText('Connected as Cartographer')).toBeVisible()
+  await expect(page.locator('.account-avatar')).toHaveAttribute('title', 'Connected as Cartographer')
   await expect(page.locator('.account-avatar')).toContainText('🧭')
   await page.reload()
-  await expect(page.getByText('Connected as Cartographer')).toBeVisible()
+  await expect(page.locator('.account-avatar')).toHaveAttribute('title', 'Connected as Cartographer')
   await expect(page.locator('.account-avatar')).toContainText('🧭')
-  await page.getByRole('button', { name: 'Edit profile', exact: true }).click()
+  await editProfile(page)
   const png = await page.evaluate(() => {
     const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 8
     const context = canvas.getContext('2d')!; context.fillStyle = '#99edc5'; context.fillRect(0, 0, 16, 8)
@@ -129,7 +135,7 @@ test('profile username, preset and uploaded photo persist, while cancelling disc
 test('profile save failure keeps the draft available for retry', async ({ page }) => {
   await googleAccount(page); await page.goto('./')
   await page.getByRole('button', { name: 'Sign in with Google', exact: true }).click()
-  await page.getByRole('button', { name: 'Edit profile', exact: true }).click()
+  await editProfile(page)
   const dialog = page.getByRole('dialog', { name: 'Your profile' })
   await dialog.getByLabel('Username', { exact: true }).fill('Navigator')
   const fail = (route: import('@playwright/test').Route) => route.fulfill({ status: 503, json: { error: 'Unavailable' } })
@@ -139,7 +145,7 @@ test('profile save failure keeps the draft available for retry', async ({ page }
   await expect(dialog.getByLabel('Username', { exact: true })).toHaveValue('Navigator')
   await page.unroute('**/atlas-api/auth/profile', fail)
   await dialog.getByRole('button', { name: 'Save profile', exact: true }).click()
-  await expect(page.getByText('Connected as Navigator')).toBeVisible()
+  await expect(page.locator('.account-avatar')).toHaveAttribute('title', 'Connected as Navigator')
 })
 
 test('unavailable Google script leaves one entry button without an empty row', async ({ page }) => {
@@ -183,7 +189,7 @@ test('guest results offer Google sign-in and retry saving the completed score wi
   for (let i = 0; i < 195; i++) {await page.getByRole('button', { name: 'Skip' }).click()}
   await expect(page.getByRole('heading', { name: 'Your score' })).toBeVisible()
   await expect(page.getByText('Saving score…')).toBeHidden({ timeout: 20000 })
-  await expect(page.getByText('Sign in to keep this score with your account.')).toBeVisible()
+  await expect(page.getByText('Sign in at the top right to keep this score with your account.')).toBeVisible()
   await page.getByRole('button', { name: 'Sign in with Google', exact: true }).click()
   await expect(page.getByText('Could not save to your account. Try again.')).toBeVisible()
   expect(attempts).toBe(3)

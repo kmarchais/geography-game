@@ -25,7 +25,7 @@
   "skip": "Skip",
   "playAgain": "Play again",
   "savingScore": "Saving score…",
-  "signInToKeepScore": "Sign in to keep this score with your account.",
+  "signInToKeepScore": "Sign in at the top right to keep this score with your account.",
   "saveScoreToAccount": "Save score to account",
   "yourBest": "Your best",
   "onThisDevice": "On this device",
@@ -121,5 +121,6 @@
   "globePosition": "Globe centered at {coordinates} degrees",
   "graphicsLost": "The graphics connection was interrupted. Reload the globe to continue.",
   "imageryUnavailable": "Satellite imagery is unavailable. The country borders still work.",
-  "webglError": "Your browser could not start WebGL 2. Try a recent browser with hardware acceleration enabled."
+  "webglError": "Your browser could not start WebGL 2. Try a recent browser with hardware acceleration enabled.",
+  "signIn": "Sign in"
 }
