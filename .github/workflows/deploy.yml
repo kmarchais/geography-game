@@ -174,3 +174,8 @@ jobs:
           done
           ATLAS_WORKER_TEST_URL=http://127.0.0.1:8787 node --test tests/server/cloudflare-runtime.test.mjs
           cat "$RUNNER_TEMP/atlas-worker.log"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: atlas-cloudflare-web
+          path: dist/
+          retention-days: 14
