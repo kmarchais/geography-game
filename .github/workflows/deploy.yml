@@ -132,9 +132,13 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.20
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - run: bun install --frozen-lockfile
       - name: Build the Railway image
         run: docker build --build-arg ATLAS_BUILD=${{ github.sha }} -t atlas-hosting .
       - name: Verify hosting integration in the production image
@@ -146,6 +150,15 @@ jobs:
           node tests/server/container-smoke.mjs start
           docker restart atlas-hosting
           node tests/server/container-smoke.mjs verify
+      - name: Check the actual production UI with unavailable Google configuration
+        env:
+          PLAYWRIGHT_CHANNEL: chrome
+        run: node scripts/check-hosted-ui.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hosting-ui
+          path: .local/hosting-ui/
       - name: Container logs
         if: always()
         run: docker logs atlas-hosting || true
