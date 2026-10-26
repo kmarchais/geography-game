@@ -65,3 +65,9 @@ Evidence is retained in `.local/atlas-guest-claim-final-verification.json`, `.lo
 The earlier configuration blockers above are historical. After the user registered the Android OAuth client and accepted Google's consent on the Pixel, a real provider login succeeded. Atlas confirmed the server session, hid the Google and guest-name controls, and displayed the connected account. The same account and its verified Google photo survived an APK update and app restart. Evidence: `.local/phone/google-real-login-before-update.json`, `.local/phone/google-profile-photo-verified.json`, and `.local/phone/atlas-account-restored-after-update.json`. These private artifacts contain no login tokens.
 
 Profiles now support a separate public username, the verified Google photo, six preset avatars, or a resized JPEG upload. The server preserves a chosen username and avatar during later Google logins. Browser profile flows and Google callbacks are tested separately with isolated mocks. Successful real web Google login, Safari, and iOS remain unverified.
+
+## Final header and session verification
+
+The verified interface release is source `8ed9fa8`, published by [workflow 40406810967](https://github.com/kmarchais/geography-game/actions/runs/40406810967). Sign-in is in the header. A confirmed session replaces it with the profile picture; tapping the picture opens the shared profile, sign-out, Help, and report menu. Google failure or cancellation feedback appears below the header so it cannot cover game controls.
+
+The final Pixel APK retains the real Google session and photo after updating and restarting. The deployed website's real Google button renders correctly in the header in Pixel Chrome. This confirms provider-button availability and layout, not a completed web login. Desktop/phone/tablet account and profile flows also pass with isolated Google callbacks. See `docs/atlas-validation.md` for versioned artifact hashes and physical evidence.
