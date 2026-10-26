@@ -14,11 +14,11 @@
           class="quiet-button"
           @click="restart?.showModal()"
         >
-          Restart
+          {{ t('restart') }}
         </button>
         <button
           class="icon-button"
-          aria-label="Menu"
+          :aria-label="t('menu')"
           popovertarget="atlas-menu"
           @click="positionMenu"
         >
@@ -30,7 +30,7 @@
           popover
           class="atlas-menu"
           role="menu"
-          aria-label="Atlas menu"
+          :aria-label="t('atlasMenu')"
           @keydown="menuKey"
         >
           <button
@@ -38,13 +38,13 @@
             autofocus
             @click="menu?.hidePopover(); help?.showModal()"
           >
-            How to play
+            {{ t('howToPlay') }}
           </button>
           <button
             role="menuitem"
             @click="menu?.hidePopover(); bugReport?.open()"
           >
-            Report a bug
+            {{ t('reportBug') }}
           </button>
         </div>
       </div>
@@ -56,10 +56,10 @@
           class="start-card"
         >
           <div class="challenge-heading">
-            <h1>195 countries.</h1>
+            <h1>{{ t('countriesTitle') }}</h1>
             <button
               class="count-info-button"
-              aria-label="Why 195 countries?"
+              :aria-label="t('whyCountries')"
               aria-describedby="country-count-info"
               :title="countryCountExplanation"
               popovertarget="country-count-info"
@@ -86,31 +86,32 @@
             v-if="!account"
             class="guest-divider"
           >
-            <span>or play as a guest</span>
+            <span>{{ t('guestDivider') }}</span>
           </div>
           <form
             :class="{ 'account-play': account }"
+            novalidate
             @submit.prevent="start"
           >
             <template v-if="!account">
               <label
                 class="name-label"
                 for="player-name"
-              >Name</label>
+              >{{ t('name') }}</label>
               <input
                 id="player-name"
                 v-model="playerName"
                 maxlength="24"
                 required
                 autocomplete="nickname"
-                placeholder="Your name"
+                :placeholder="t('namePlaceholder')"
               >
             </template>
             <button
               class="primary-button"
               :disabled="!canPlay || starting || authBusy"
             >
-              {{ starting ? 'Starting…' : canPlay ? 'Play' : 'Loading Earth…' }}
+              {{ starting ? t('starting') : canPlay ? t('play') : t('loadingEarth') }}
             </button>
           </form>
         </section>
@@ -121,26 +122,26 @@
         >
           <template v-if="playing">
             <div class="mission-topline">
-              <span>Find</span><span data-testid="progress">{{ session.answers.length + 1 }} / {{ session.deck.length }}</span>
+              <span>{{ t('find') }}</span><span data-testid="progress">{{ session.answers.length + 1 }} / {{ session.deck.length }}</span>
             </div>
             <h1 id="target-name">
-              {{ target?.name }}
+              {{ countryName(target) }}
             </h1>
           </template>
           <h1
             v-else
             id="target-name"
           >
-            Your score
+            {{ t('yourScore') }}
           </h1>
           <div class="session-stats">
-            <div><span>Correct</span><strong data-testid="accuracy">{{ accuracy.toFixed(1) }}%</strong></div>
-            <div><span>{{ playing ? 'Time' : 'Time to score' }}</span><strong data-testid="timer">{{ formatTime(playing ? elapsed : resultTime) }}</strong></div>
+            <div><span>{{ t('correct') }}</span><strong data-testid="accuracy">{{ formatPercent(accuracy) }}</strong></div>
+            <div><span>{{ playing ? t('time') : t('timeToScore') }}</span><strong data-testid="timer">{{ formatTime(playing ? elapsed : resultTime) }}</strong></div>
           </div>
           <div
             class="progress-track"
             role="progressbar"
-            aria-label="Countries answered"
+            :aria-label="t('countriesAnswered')"
             :aria-valuenow="session.answers.length"
             :aria-valuemax="session.deck.length"
             aria-valuemin="0"
@@ -148,14 +149,14 @@
             <span :style="{ width: `${session.answers.length / session.deck.length * 100}%` }" />
           </div>
           <p class="round-count">
-            {{ found }} / {{ session.deck.length }} correct
+            {{ t('correctCount', { correct: found, total: session.deck.length }) }}
           </p>
           <button
             v-if="playing"
             class="secondary-button skip-button"
             @click="answer(null)"
           >
-            Skip <span aria-hidden="true">→</span>
+            {{ t('skip') }} <span aria-hidden="true">→</span>
           </button>
           <button
             v-else
@@ -163,7 +164,7 @@
             :disabled="starting || saving || authBusy"
             @click="start"
           >
-            Play again
+            {{ t('playAgain') }}
           </button>
           <p
             class="answer-feedback"
@@ -178,7 +179,7 @@
             class="muted small"
             role="status"
           >
-            Saving score…
+            {{ t('savingScore') }}
           </p>
         </section>
         <GoogleLoginButton
@@ -191,14 +192,14 @@
           v-if="!playing && pendingClaim && !account"
           class="muted small"
         >
-          Sign in to keep this score with your account.
+          {{ t('signInToKeepScore') }}
         </p>
         <p
           v-if="claimMessage"
           class="small"
           role="status"
         >
-          {{ claimMessage }}
+          {{ t(claimMessage) }}
         </p>
         <button
           v-if="!playing && pendingClaim && account && claimMessage && !saving"
@@ -206,13 +207,13 @@
           :disabled="authBusy"
           @click="claimScore"
         >
-          Save score to account
+          {{ t('saveScoreToAccount') }}
         </button>
         <p
           v-if="!playing && best"
           class="personal-best small muted"
         >
-          {{ account ? 'Your best' : 'On this device' }} {{ percentage(best.correct, best.total).toFixed(1) }}% · {{ formatTime(best.timeMs) }}
+          {{ account ? t('yourBest') : t('onThisDevice') }} {{ formatPercent(percentage(best.correct, best.total)) }} · {{ formatTime(best.timeMs) }}
         </p>
         <p
           v-if="rankingError || unranked"
@@ -228,10 +229,10 @@
         >
           <div class="ranking-heading">
             <h2 id="ranking-title">
-              Shared ranking
+              {{ t('sharedRanking') }}
             </h2><button
               class="quiet-button"
-              aria-label="Refresh ranking"
+              :aria-label="t('refreshRanking')"
               @click="refreshRanking"
             >
               ↻
@@ -241,11 +242,11 @@
             <thead>
               <tr>
                 <th scope="col">
-                  Player
+                  {{ t('player') }}
                 </th><th scope="col">
-                  Correct
+                  {{ t('correct') }}
                 </th><th scope="col">
-                  Time
+                  {{ t('time') }}
                 </th>
               </tr>
             </thead><tbody>
@@ -253,7 +254,7 @@
                 v-for="(row, i) in rankings"
                 :key="row.id"
               >
-                <td><span class="rank-number">{{ i + 1 }}</span>{{ row.name }}</td><td>{{ percentage(row.correct, row.total).toFixed(1) }}%</td><td>{{ formatTime(row.timeMs) }}</td>
+                <td><span class="rank-number">{{ i + 1 }}</span>{{ row.name }}</td><td>{{ formatPercent(percentage(row.correct, row.total)) }}</td><td>{{ formatTime(row.timeMs) }}</td>
               </tr>
             </tbody>
           </table>
@@ -261,13 +262,13 @@
             v-else
             class="muted small"
           >
-            {{ rankingError ? 'Try again when connected.' : 'No scores yet.' }}
+            {{ rankingError ? t('tryWhenConnected') : t('noScores') }}
           </p>
         </section>
       </aside>
       <section
         class="planet-panel"
-        aria-label="Earth"
+        :aria-label="t('earth')"
       >
         <div class="planet-stage">
           <EarthGlobe
@@ -293,32 +294,32 @@
             <span
               v-if="!error"
               class="loading-orbit"
-            /><p>{{ error || 'Loading Earth…' }}</p><button
+            /><p>{{ error ? t(error, { status: errorStatus }) : t('loadingEarth') }}</p><button
               v-if="error"
               class="secondary-button"
               @click="load"
             >
-              Retry
+              {{ t('retry') }}
             </button>
           </div>
           <div
             class="globe-tools"
-            aria-label="Globe controls"
+            :aria-label="t('globeControls')"
           >
             <button
-              aria-label="Zoom in"
+              :aria-label="t('zoomIn')"
               :disabled="!ready"
               @click="globe?.zoom(1)"
             >
               +
             </button><button
-              aria-label="Zoom out"
+              :aria-label="t('zoomOut')"
               :disabled="!ready"
               @click="globe?.zoom(-1)"
             >
               −
             </button><button
-              aria-label="Reset globe view"
+              :aria-label="t('resetView')"
               :disabled="!ready"
               @click="globe?.reset()"
             >
@@ -331,7 +332,7 @@
           class="planet-warning"
           role="status"
         >
-          {{ warning }}
+          {{ t(warning) }}
         </p>
       </section>
     </main>
@@ -341,66 +342,66 @@
     />
     <dialog
       ref="help"
-      aria-label="How to play Atlas"
+      :aria-label="t('helpTitle')"
       class="orbit-dialog"
     >
       <form method="dialog">
         <button
           class="dialog-close"
-          aria-label="Close help"
+          :aria-label="t('closeHelp')"
         >
           ×
         </button>
       </form>
-      <h2>Find all 195 countries.</h2>
+      <h2>{{ t('findAll') }}</h2>
       <details>
-        <summary>Why 195? See the country list</summary>
-        <p>The 193 UN member states plus its two non-member observer states: Palestine and the Holy See, represented here by Vatican City. This is a membership-based quiz list, not a list of states recognized by every country.</p>
+        <summary>{{ t('whyList') }}</summary>
+        <p>{{ t('membership') }}</p>
         <p>
           <a
             href="https://www.un.org/about-us/member-states"
             target="_blank"
             rel="noopener noreferrer"
-          >UN members</a> · <a
+          >{{ t('unMembers') }}</a> · <a
             href="https://www.un.org/en/about-us/non-member-states"
             target="_blank"
             rel="noopener noreferrer"
-          >UN observer states</a>
+          >{{ t('unObservers') }}</a>
         </p>
         <ul class="country-list">
           <li
-            v-for="country in countries.filter(country => country.playable)"
+            v-for="country in quizCountries"
             :key="country.id"
           >
-            {{ country.name }}
+            {{ countryName(country) }}
           </li>
         </ul>
       </details>
-      <p>Drag to rotate. Scroll or pinch to zoom. Click a country, or skip it. One guess per country.</p>
-      <p>Accuracy is out of 195. Ties use the time of your last correct answer. The clock never pauses.</p>
+      <p>{{ t('instructions') }}</p>
+      <p>{{ t('rankingInstructions') }}</p>
       <p class="muted small">
-        Keyboard: arrows rotate, +/− zoom, Enter selects the center.
+        {{ t('keyboardInstructions') }}
       </p>
       <p class="muted small">
-        Natural Earth boundaries · NASA imagery. Generalized coastlines and disputed boundaries. Guest rankings are for practice.
+        {{ t('credits') }}
       </p>
     </dialog>
     <dialog
       ref="restart"
-      aria-label="Restart challenge"
+      :aria-label="t('restartDialog')"
       class="orbit-dialog"
     >
-      <h2>Restart?</h2><p>The current run won't be ranked.</p><div class="dialog-actions">
+      <h2>{{ t('restartConfirm') }}</h2><p>{{ t('restartNotice') }}</p><div class="dialog-actions">
         <button
           class="secondary-button"
           @click="restart?.close()"
         >
-          Continue
+          {{ t('continue') }}
         </button><button
           class="primary-button"
           @click="reset"
         >
-          Restart
+          {{ t('restart') }}
         </button>
       </div>
     </dialog>
@@ -414,11 +415,13 @@ import GoogleLoginButton from '@/components/auth/GoogleLoginButton.vue'
 import BugReportDialog from '@/components/BugReportDialog.vue'
 import { account, accountBest, refreshAccount, type AtlasUser } from '@/globe/auth'
 import { fetchCountries, type Country } from '@/globe/geography'
-import { answerCountry, compareScores, correctCount, createSession, formatTime, isGuestId, percentage, readPersonalScores, type Answer, type RankedScore, type Session } from '@/globe/game'
+import { answerCountry, compareScores, correctCount, createSession, isGuestId, percentage, readPersonalScores, type Answer, type RankedScore, type Session } from '@/globe/game'
 import { rankingRequest, validRanking } from '@/globe/ranking'
+import { t, language, countryName, formatPercent, formatTime, type MessageKey } from '@/globe/i18n'
 
 const base = import.meta.env.BASE_URL
 const countries = shallowRef<Country[]>([]), session = shallowRef<Session>()
+const quizCountries = computed(() => countries.value.filter(country => country.playable).sort((a, b) => countryName(a).localeCompare(countryName(b), language.value)))
 const globe = ref<InstanceType<typeof EarthGlobe>>(), help = ref<HTMLDialogElement>(), restart = ref<HTMLDialogElement>()
 const countryCount = ref<HTMLElement>()
 const menu = ref<HTMLElement>(), bugReport = ref<InstanceType<typeof BugReportDialog>>()
@@ -435,14 +438,14 @@ function menuKey(event: KeyboardEvent) {
   const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length
   buttons[next]?.focus()
 }
-const countryCountExplanation = '193 UN members + 2 observer states.'
+const countryCountExplanation = computed(() => t('countryCountInfo'))
 function positionCountryCount(event: MouseEvent) {
   const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect()
   countryCount.value!.style.left = `${Math.max(20, Math.min(bounds.left, innerWidth - 300))}px`
   countryCount.value!.style.top = `${Math.max(20, Math.min(bounds.bottom + 8, innerHeight - 100))}px`
 }
-const ready = ref(false), error = ref(''), warning = ref(''), globeKey = ref(0)
-const playerName = ref(''), rankings = ref<RankedScore[]>([]), rankingError = ref('')
+const ready = ref(false), error = ref<MessageKey | ''>(''), warning = ref<MessageKey | ''>(''), errorStatus = ref(''), globeKey = ref(0)
+const playerName = ref(''), rankings = ref<RankedScore[]>([]), rankingError = ref<MessageKey | ''>('')
 const starting = ref(false), saving = ref(false), unranked = ref(false), localBest = ref<RankedScore>()
 const locallySaved = ref(false), uploadUnconfirmed = ref(false)
 const authBusy = ref(false)
@@ -453,7 +456,7 @@ function connected(user: AtlasUser) {
   if (session.value?.phase === 'complete' && !saving.value && !claimMessage.value) {claimScore()}
 }
 const pendingClaim = ref<{ id: string; claimToken: string }>()
-const claimMessage = ref('')
+const claimMessage = ref<MessageKey | ''>('')
 async function claimScore() {
   const claim = pendingClaim.value, current = generation
   if (!claim || !account.value || saving.value) {return}
@@ -464,13 +467,14 @@ async function claimScore() {
     await rankingRequest(`/runs/${claim.id}/claim`, { claimToken: claim.claimToken }, 2)
     if (!mounted || current !== generation) {return}
     pendingClaim.value = undefined
-    claimMessage.value = 'Score saved to your account.'
+    claimMessage.value = 'claimSaved'
     await Promise.all([refreshAccount(), refreshRanking()])
   } catch {
-    if (mounted && current === generation) {claimMessage.value = pendingClaim.value ? 'Could not save to your account. Try again.' : 'Score saved. Could not refresh your best.'}
+    if (mounted && current === generation) {claimMessage.value = pendingClaim.value ? 'claimRetry' : 'claimRefreshFailed'}
   } finally {if (mounted && current === generation) {saving.value = false}}
 }
-const elapsed = ref(0), verifiedTime = ref<number>(), feedback = ref(''), feedbackOutcome = ref('')
+const elapsed = ref(0), verifiedTime = ref<number>(), feedbackKind = ref<'correct' | 'wrong' | 'skip' | 'land' | ''>(''), feedbackCountry = shallowRef<Country>(), feedbackOutcome = ref('')
+const feedback = computed(() => feedbackKind.value === 'land' ? t('clickLand') : !feedbackKind.value ? '' : feedbackKind.value === 'skip' ? t('skippedCountry', { country: countryName(feedbackCountry.value) }) : `${feedbackKind.value === 'correct' ? '✓' : '×'} ${countryName(feedbackCountry.value)}`)
 const noAnswers: Answer[] = []
 const playing = computed(() => session.value?.phase === 'playing')
 const canPlay = computed(() => ready.value && countries.value.length > 0 && !error.value)
@@ -479,12 +483,12 @@ const found = computed(() => session.value ? correctCount(session.value) : 0)
 const accuracy = computed(() => percentage(found.value, session.value?.deck.length ?? 195))
 const resultTime = computed(() => verifiedTime.value ?? session.value?.lastCorrectMs ?? 0)
 const serviceNote = computed(() => {
-  if (playing.value && unranked.value) {return uploadUnconfirmed.value ? 'Ranking connection lost.' : 'Offline · unranked run'}
+  if (playing.value && unranked.value) {return uploadUnconfirmed.value ? t('rankingLost') : t('offlineUnranked')}
   if (session.value && unranked.value) {
-    if (!locallySaved.value) {return 'Ranking unavailable. This device could not save your score.'}
-    return uploadUnconfirmed.value ? 'Shared score not confirmed. Saved on this device.' : 'Saved on this device. Shared ranking unavailable.'
+    if (!locallySaved.value) {return t('localSaveFailed')}
+    return uploadUnconfirmed.value ? t('sharedUnconfirmed') : t('localOnly')
   }
-  return rankingError.value
+  return rankingError.value ? t(rankingError.value) : ''
 })
 let startedAt = 0, generation = 0, runId: string | undefined
 let controller: AbortController | undefined, timer: ReturnType<typeof setInterval>
@@ -493,23 +497,23 @@ let playerId: string = crypto.randomUUID()
 
 async function refreshRanking() {
   try { const rows = validRanking(await rankingRequest<unknown>('/leaderboard')); if (mounted) {rankings.value = rows; rankingError.value = ''} }
-  catch { if (mounted) {rankingError.value = 'Shared ranking unavailable.'} }
+  catch { if (mounted) {rankingError.value = 'rankingUnavailable'} }
 }
 async function load() {
   controller?.abort(); controller = new AbortController()
   if (error.value) {globeKey.value++}
   ready.value = false; error.value = ''; warning.value = ''
   try {const data = await fetchCountries(base, controller.signal); if (mounted) {countries.value = data}}
-  catch (e) {if (mounted && !(e instanceof DOMException && e.name === 'AbortError')) {error.value = e instanceof Error ? e.message : 'Could not load countries.'}}
+  catch (e) {if (mounted && !(e instanceof DOMException && e.name === 'AbortError')) {const status = e instanceof Error ? /HTTP (\d+)/.exec(e.message)?.[1] : undefined; errorStatus.value = status || ''; error.value = status ? 'countryLoadHttp' : 'countryLoadFail'}}
 }
 async function start() {
   if (!canPlay.value || starting.value || authBusy.value) {return}
   const name = playerName.value.normalize('NFKC').trim()
-  if (!/^[\p{L}\p{N} ._'’-]{1,24}$/u.test(name)) {rankingError.value = 'Enter a name of 1–24 letters or numbers.'; return}
+  if (!/^[\p{L}\p{N} ._'’-]{1,24}$/u.test(name)) {rankingError.value = 'invalidName'; return}
   starting.value = true
   const current = ++generation
   pendingClaim.value = undefined; claimMessage.value = ''
-  runId = undefined; verifiedTime.value = undefined; feedback.value = ''; unranked.value = false; saving.value = false; locallySaved.value = false; uploadUnconfirmed.value = false
+  runId = undefined; verifiedTime.value = undefined; feedbackKind.value = ''; unranked.value = false; saving.value = false; locallySaved.value = false; uploadUnconfirmed.value = false
   try {localStorage.setItem('atlas-name', name)} catch { /* Play remains available without storage. */ }
   let next: Session
   try {
@@ -535,7 +539,7 @@ function saveLocal() {
     localStorage.setItem('atlas-runs', JSON.stringify(rows.slice(0, 20)))
     localBest.value = rows[0]
     locallySaved.value = true
-  } catch { if (unranked.value) {rankingError.value = 'This run could not be saved.'} }
+  } catch { if (unranked.value) {rankingError.value = 'localRunSaveFailed'} }
 }
 function sendAnswer(index: number, guess: string | null, elapsedMs: number) {
   const id = runId, current = generation
@@ -555,25 +559,26 @@ function sendAnswer(index: number, guess: string | null, elapsedMs: number) {
 }
 function answer(country: Country | null | undefined) {
   if (!session.value || !playing.value) {return}
-  if (country === undefined) {feedback.value = 'Click land.'; return}
+  if (country === undefined) {feedbackKind.value = 'land'; return}
   tick()
   const previous = target.value!, index = session.value.answers.length, correct = country?.id === previous.id
   if (country) {globe.value?.showFeedback(correct)}
   session.value = answerCountry(session.value, country, elapsed.value)
-  feedback.value = correct ? `✓ ${previous.name}` : country === null ? `Skipped ${previous.name}` : `× ${previous.name}`
+  feedbackCountry.value = previous; feedbackKind.value = correct ? 'correct' : country === null ? 'skip' : 'wrong'
   feedbackOutcome.value = correct ? 'success' : country === null ? 'muted' : 'missed'
   sendAnswer(index, country?.id ?? null, Math.floor(elapsed.value))
   if (session.value.phase === 'complete') {saveLocal(); showMission()}
 }
 function showMission() { if (innerWidth <= 720 || import.meta.env.VITE_NATIVE === 'true') {nextTick(() => document.querySelector('.mission-card')?.scrollIntoView({ block: 'start' }))} }
 function viewportChanged() {
+  if (menu.value?.matches(':popover-open')) {menu.value.hidePopover()}
   if (countryCount.value?.matches(':popover-open')) {
     const bounds = countryCount.value.getBoundingClientRect()
     if (bounds.right > innerWidth || bounds.bottom > innerHeight) {countryCount.value.hidePopover()}
   }
   if (session.value) {showMission()}
 }
-function reset() {generation++; runId = undefined; pendingClaim.value = undefined; claimMessage.value = ''; session.value = undefined; starting.value = false; saving.value = false; feedback.value = ''; restart.value?.close(); globe.value?.reset()}
+function reset() {generation++; runId = undefined; pendingClaim.value = undefined; claimMessage.value = ''; session.value = undefined; starting.value = false; saving.value = false; feedbackKind.value = ''; restart.value?.close(); globe.value?.reset()}
 onMounted(() => {
   try {
     const saved = localStorage.getItem('atlas-player-id')

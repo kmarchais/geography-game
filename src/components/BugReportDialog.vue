@@ -8,11 +8,11 @@
   >
     <div class="profile-heading">
       <h2 id="bug-title">
-        Report a bug
+        {{ t('reportBug') }}
       </h2>
       <button
         class="icon-button"
-        aria-label="Close bug report"
+        :aria-label="t('closeBug')"
         :disabled="sending"
         @click="dialog?.close()"
       >
@@ -21,7 +21,7 @@
     </div>
     <template v-if="receipt">
       <p role="status">
-        {{ receipt.issueUrl ? 'GitHub issue created. Thank you!' : 'Report saved. The GitHub issue will be created when the connection is available.' }}
+        {{ receipt.issueUrl ? t('bugCreated') : t('bugQueued') }}
       </p>
       <a
         v-if="receipt.issueUrl"
@@ -29,22 +29,23 @@
         :href="receipt.issueUrl"
         target="_blank"
         rel="noopener noreferrer"
-      >View issue</a>
+      >{{ t('viewIssue') }}</a>
       <button
         class="primary-button"
         @click="dialog?.close()"
       >
-        Done
+        {{ t('done') }}
       </button>
     </template>
     <form
       v-else
+      novalidate
       @submit.prevent="send"
     >
       <p class="small muted">
-        Reports are public on GitHub. Do not include passwords or private information.
+        {{ t('bugPrivacy') }}
       </p>
-      <label for="bug-summary">Title</label>
+      <label for="bug-summary">{{ t('bugSummary') }}</label>
       <input
         id="bug-summary"
         v-model="title"
@@ -52,18 +53,18 @@
         required
         :disabled="sending"
       >
-      <label for="bug-description">What happened?</label>
+      <label for="bug-description">{{ t('bugWhat') }}</label>
       <textarea
         id="bug-description"
         v-model="description"
         rows="5"
         maxlength="5000"
         required
-        placeholder="What did you do, what did you expect, and what happened instead?"
+        :placeholder="t('bugPlaceholder')"
         :disabled="sending"
       />
       <details class="report-context">
-        <summary>Technical details included</summary>
+        <summary>{{ t('bugTechnical') }}</summary>
         <p class="small muted">
           {{ context.platform }} · {{ context.version }} · {{ context.width }} × {{ context.height }}{{ context.country ? ` · ${context.country}` : '' }}
         </p>
@@ -73,13 +74,13 @@
         class="account-error small"
         role="status"
       >
-        {{ error }}
+        {{ t(error) }}
       </p>
       <button
         class="primary-button"
         :disabled="sending"
       >
-        {{ sending ? 'Sending…' : 'Send report' }}
+        {{ sending ? t('sendingReport') : t('sendReport') }}
       </button>
     </form>
   </dialog>
@@ -90,9 +91,10 @@ import { version } from '../../package.json'
 import { nativeAccount } from '@/globe/google'
 import { rankingRequest } from '@/globe/ranking'
 import { isGuestId } from '@/globe/game'
+import { t, type MessageKey } from '@/globe/i18n'
 const props = defineProps<{ country?: string }>()
 type Receipt = { id: string; state: string; issueUrl: string | null }
-const dialog = ref<HTMLDialogElement>(), title = ref(''), description = ref(''), error = ref(''), sending = ref(false), receipt = ref<Receipt>()
+const dialog = ref<HTMLDialogElement>(), title = ref(''), description = ref(''), error = ref<MessageKey | ''>(''), sending = ref(false), receipt = ref<Receipt>()
 const context = ref({ platform: nativeAccount ? 'Android' : 'Web', version: `${version} (${import.meta.env.VITE_ATLAS_BUILD?.slice(0, 7) || 'local'})`, width: innerWidth, height: innerHeight, country: null as string | null })
 let id = crypto.randomUUID(), alive = true, generation = 0, playerId: string = crypto.randomUUID()
 let requestBody: { id: string; playerId: string; title: string; description: string; context: unknown } | undefined
@@ -106,7 +108,8 @@ function open() {
 }
 function closed() {generation++}
 async function send() {
-  if (sending.value || !title.value.trim() || !description.value.trim()) {return}
+  if (sending.value) {return}
+  if (!title.value.trim() || !description.value.trim()) {error.value = 'reportRequired'; return}
   const current = generation, summary = title.value.trim(), details = description.value.trim()
   if (!requestBody || requestBody.title !== summary || requestBody.description !== details) {
     if (requestBody) {id = crypto.randomUUID()}
@@ -127,7 +130,7 @@ async function send() {
         receipt.value = progress
       } catch {break}
     }
-  } catch {if (alive && current === generation) {error.value = 'Could not send the report. Your text is still here. Please try again.'}}
+  } catch {if (alive && current === generation) {error.value = 'reportFailed'}}
   finally {if (alive && current === generation) {sending.value = false}}
 }
 onBeforeUnmount(() => {alive = false})

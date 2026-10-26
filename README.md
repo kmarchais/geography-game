@@ -12,6 +12,10 @@ Drag to rotate, scroll or pinch to zoom, and tap land to answer. Small-country m
 
 ## Run locally
 
+Atlas follows the primary system or browser language: French for `fr` locales, English otherwise. Country names, controls, account forms, messages, and Help use the same language on web and Android. Usernames and report text stay as entered.
+
+Interface translations live in `src/globe/locales/en.json` and `fr.json`, with shared typed keys in `src/globe/i18n.ts`. Add both translations when adding a message. Tests compare keys and interpolation parameters and verify French names for all 195 countries. Country IDs and scoring never depend on translated names. Run `bun run data:names` to regenerate the checked-in French names from the pinned source.
+
 Use Node 24.15 or newer and Bun 1.2.20.
 
 ```sh

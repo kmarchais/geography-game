@@ -1,22 +1,22 @@
 export const avatarPresets = [
-  { id: 'earth', name: 'Earth', symbol: '🌍', color: '#194337' },
-  { id: 'compass', name: 'Compass', symbol: '🧭', color: '#423522' },
-  { id: 'mountain', name: 'Mountain', symbol: '🏔️', color: '#283a51' },
-  { id: 'island', name: 'Island', symbol: '🏝️', color: '#254743' },
-  { id: 'volcano', name: 'Volcano', symbol: '🌋', color: '#4a302e' },
-  { id: 'wave', name: 'Wave', symbol: '🌊', color: '#1b3c56' },
+  { id: 'earth', nameKey: 'avatarEarth', symbol: '🌍', color: '#194337' },
+  { id: 'compass', nameKey: 'avatarCompass', symbol: '🧭', color: '#423522' },
+  { id: 'mountain', nameKey: 'avatarMountain', symbol: '🏔️', color: '#283a51' },
+  { id: 'island', nameKey: 'avatarIsland', symbol: '🏝️', color: '#254743' },
+  { id: 'volcano', nameKey: 'avatarVolcano', symbol: '🌋', color: '#4a302e' },
+  { id: 'wave', nameKey: 'avatarWave', symbol: '🌊', color: '#1b3c56' },
 ] as const
 
 export async function resizeAvatar(file: File): Promise<string> {
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 10 * 1024 * 1024) {
-    throw new Error('Choose a PNG, JPEG, or WebP photo under 10 MB.')
+    throw new Error('photoType')
   }
   const url = URL.createObjectURL(file)
   try {
     const image = new Image(); image.src = url
-    try {await image.decode()} catch {throw new Error('Could not read this photo. Try another image.')}
+    try {await image.decode()} catch {throw new Error('photoRead')}
     if (!image.naturalWidth || !image.naturalHeight || image.naturalWidth * image.naturalHeight > 40000000) {
-      throw new Error('Choose a photo smaller than 40 megapixels.')
+      throw new Error('photoSize')
     }
     const canvas = document.createElement('canvas'); canvas.width = canvas.height = 256
     const context = canvas.getContext('2d')!

@@ -20,7 +20,7 @@ export default defineConfig({
       configResolved(config) { outputDirectory = config.build.outDir },
       closeBundle() {
         const manifest: Manifest = JSON.parse(readFileSync(`${outputDirectory}/.vite/manifest.json`, 'utf8'))
-        const files = new Set(['./', 'index.html', 'manifest.webmanifest', 'atlas.svg', 'atlas-192.png', 'atlas-512.png', 'apple-touch-icon.png', 'data/globe/countries.json', 'data/globe/countries.json.gz', 'data/globe/earth-preview.jpg', 'data/globe/earth.jpg', 'fonts/dm-sans.woff2', 'fonts/manrope.woff2'])
+        const files = new Set(['./', 'index.html', 'manifest.webmanifest', 'manifest.fr.webmanifest', 'atlas.svg', 'atlas-192.png', 'atlas-512.png', 'apple-touch-icon.png', 'data/globe/countries.json', 'data/globe/countries.json.gz', 'data/globe/earth-preview.jpg', 'data/globe/earth.jpg', 'fonts/dm-sans.woff2', 'fonts/manrope.woff2'])
         const visited = new Set<string>()
         function include(key: string) {
           if (visited.has(key)) {return}

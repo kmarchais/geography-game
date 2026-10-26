@@ -9,7 +9,7 @@
       ref="canvas"
       tabindex="0"
       role="application"
-      aria-label="Interactive Earth. Drag to rotate, pinch or scroll to zoom. Arrow keys rotate, plus and minus zoom, Enter selects the crosshair country."
+      :aria-label="t('interactiveEarth')"
       @keydown="onKey"
     />
     <span
@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { coordinateToVector, createCountryPicker, unwrapRing, vectorToCoordinate, type Country, type Coordinate } from '@/globe/geography'
@@ -42,12 +42,14 @@ import type { Answer } from '@/globe/game'
 import { countryAngularSize, islandBlend, rotationSpeed } from '@/globe/detail'
 import { countryOutlines, countrySurface, outlineBatches, outlineHorizon, GlobeImagery } from '@/globe/terrain'
 import { zoomAtPointer } from '@/globe/navigation'
+import { t, language, formatCoordinate, type MessageKey } from '@/globe/i18n'
 
 const props = defineProps<{ countries: Country[]; borders: boolean; paintFound: boolean; markers: boolean; answers: Answer[]; reveal?: string; disabled: boolean }>()
-const emit = defineEmits<{ select: [country: Country | undefined]; ready: []; error: [message: string]; warning: [message: string] }>()
+const emit = defineEmits<{ select: [country: Country | undefined]; ready: []; error: [message: MessageKey]; warning: [message: MessageKey] }>()
 const host = ref<HTMLElement>()
 const canvas = ref<HTMLCanvasElement>()
-const positionText = ref('')
+const positionCoordinates = ref<Coordinate>()
+const positionText = computed(() => positionCoordinates.value ? t('globePosition', { coordinates: positionCoordinates.value.map(formatCoordinate).join(language.value === 'fr' ? ' ; ' : ', ') }) : '')
 const baseDetail = ref('preview')
 const feedback = ref<{ id: number; outcome: 'correct' | 'wrong'; x: number; y: number }>()
 let feedbackId = 0
@@ -329,14 +331,14 @@ function onKey(event: KeyboardEvent) {
     selectAt(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2)
   } else {return}
   event.preventDefault()
-  positionText.value = `Globe centered at ${vectorToCoordinate(camera.position).map(n => n.toFixed(1)).join(', ')} degrees`
+  positionCoordinates.value = vectorToCoordinate(camera.position)
 }
 
 function onVisibility() {
   if (document.hidden) { cancelAnimationFrame(frame); frame = 0 }
   else {invalidate()}
 }
-function onContextLost(event: Event) { event.preventDefault(); emit('error', 'The graphics connection was interrupted. Reload the globe to continue.') }
+function onContextLost(event: Event) { event.preventDefault(); emit('error', 'graphicsLost') }
 
 onMounted(async () => {
   try {
@@ -427,7 +429,7 @@ onMounted(async () => {
       material.color.set('#d8e3e7')
       material.needsUpdate = true
     } catch {
-      if (!disposed) {emit('warning', 'Satellite imagery is unavailable. The country borders still work.')}
+      if (!disposed) {emit('warning', 'imageryUnavailable')}
     }
     if (!disposed) { invalidate(); emit('ready') }
     const prepareGeometry = () => {
@@ -447,7 +449,7 @@ onMounted(async () => {
       invalidate()
     }).catch(() => { /* The small local image remains playable offline. */ })
   } catch {
-    if (!disposed) {emit('error', 'Your browser could not start WebGL 2. Try a recent browser with hardware acceleration enabled.')}
+    if (!disposed) {emit('error', 'webglError')}
   }
 })
 

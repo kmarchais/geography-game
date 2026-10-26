@@ -13,7 +13,7 @@ declare namespace google.accounts.id {
       shape?: 'rectangular' | 'pill' | 'circle' | 'square';
       logo_alignment?: 'left' | 'center';
       width?: number;
-      local?: string;
+      locale?: string;
     }
 
     interface InitConfiguration {

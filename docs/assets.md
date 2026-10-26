@@ -16,3 +16,5 @@ The base globe's assets are checked in. Ordinary builds and the whole-planet vie
 The snapshot is also checked in as gzip for hosts without automatic compression. After changing `earth.jpg`, regenerate its 1024 by 512 preview with `powershell -NoProfile -File scripts/prepare-earth-preview.ps1` on Windows, or resize the source to those dimensions with an image tool on another platform. The preview lets the planet appear before the full image arrives.
 
 Zoom tiles use at most four concurrent requests and retain at most 32 textures. Requests expire after twelve seconds, and temporary failures are retried after five seconds or when connectivity returns. Tile failures leave the local Earth visible. Natural Earth boundaries remain a generalized map at close zoom; they are not survey data.
+
+French country names in `public/data/globe/names.fr.json` come from the same pinned world-countries 5.1.0 catalog and use its included Open Database License. `bun run data:names` regenerates only the name map and checks coverage of all 195 quiz countries. It does not change geometry or country IDs.

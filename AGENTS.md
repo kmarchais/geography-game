@@ -9,6 +9,7 @@
 - Google sign-in is optional before play and after a guest run. A confirmed account replaces the sign-in button and guest form. Never infer connection from choosing a Google account or receiving a token alone.
 - Let players choose a username and avatar independently of their Google identity. Preserve those choices across Google logins. Only use the verified Google photo URL or validated, bounded image uploads; never accept arbitrary avatar URLs or SVG uploads.
 - Do not use Claude.
+- Keep visible text and accessibility labels in the typed English and French catalogs in `src/globe/locales`. Detect French from the primary system language and use English otherwise. Translate country names by ISO ID; never translate score IDs, usernames, or user-submitted reports. Keep catalog keys and interpolation parameters identical.
 
 ## Ownership
 

@@ -7,20 +7,20 @@
     >
       <button
         class="account-avatar"
-        aria-label="Change profile picture"
+        :aria-label="t('changePicture')"
         :disabled="disabled || busy"
         @click="profile?.open()"
       >
         <ProfileAvatar :user="account" />
       </button>
       <div class="account-identity">
-        <strong>Connected as {{ account.name }} <span aria-hidden="true">✓</span></strong>
+        <strong>{{ t('connectedAs', { name: account.name }) }} <span aria-hidden="true">✓</span></strong>
         <button
           class="profile-edit"
           :disabled="disabled || busy"
           @click="profile?.open()"
         >
-          Edit profile
+          {{ t('editProfile') }}
         </button>
       </div>
       <button
@@ -28,7 +28,7 @@
         :disabled="disabled || busy"
         @click="disconnect"
       >
-        Sign out
+        {{ t('signOut') }}
       </button>
     </div>
     <template v-else>
@@ -54,7 +54,7 @@
           fill="#34A853"
           d="M24 48c6.48 0 11.93-2.13 15.91-5.8l-7.73-6C30.03 37.65 27.26 38.5 24 38.5c-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z"
         /></svg>
-        {{ busy ? 'Connecting…' : 'Sign in with Google' }}
+        {{ busy ? t('connecting') : t('signInGoogle') }}
       </button>
       <div
         v-else
@@ -70,7 +70,7 @@
         :disabled="disabled || busy || !error"
         @click="prepare"
       >
-        {{ busy ? 'Connecting…' : 'Sign in with Google' }}
+        {{ busy ? t('connecting') : t('signInGoogle') }}
       </button>
     </template>
     <ProfileDialog
@@ -83,14 +83,14 @@
       class="account-notice small"
       role="status"
     >
-      {{ notice }}
+      {{ t(notice) }}
     </p>
     <p
       v-if="error"
       class="account-error small"
       role="status"
     >
-      {{ error }}
+      {{ t(error) }}
     </p>
   </div>
 </template>
@@ -101,10 +101,11 @@ import { loadGoogle, nativeAccount, nativeGoogle } from '@/globe/google'
 import { rankingRequest } from '@/globe/ranking'
 import ProfileAvatar from './ProfileAvatar.vue'
 import ProfileDialog from './ProfileDialog.vue'
+import { t, language, type MessageKey } from '@/globe/i18n'
 const props = defineProps<{ disabled?: boolean }>()
 const emit = defineEmits<{ busy: [value: boolean]; connected: [user: AtlasUser] }>()
-const buttonHost = ref<HTMLDivElement>(), buttonReady = ref(false), busy = ref(false), error = ref('')
-const notice = ref('')
+const buttonHost = ref<HTMLDivElement>(), buttonReady = ref(false), busy = ref(false), error = ref<MessageKey | ''>('')
+const notice = ref<MessageKey | ''>('')
 const profile = ref<InstanceType<typeof ProfileDialog>>()
 let alive = true, refresh: ReturnType<typeof setTimeout> | undefined
 let preparing = false
@@ -116,7 +117,7 @@ function renderButton() {
   if (width < 120 || width === renderedWidth) {return}
   renderedWidth = width
   buttonHost.value.replaceChildren()
-  window.google.accounts.id.renderButton(buttonHost.value, { type: 'standard', theme: 'filled_black', shape: 'pill', size: 'large', text: 'signin_with', width })
+  window.google.accounts.id.renderButton(buttonHost.value, { type: 'standard', theme: 'filled_black', shape: 'pill', size: 'large', text: 'signin_with', locale: language.value, width })
 }
 function setBusy(value: boolean) {busy.value = value; emit('busy', value)}
 async function finish(credential?: string) {
@@ -130,7 +131,7 @@ async function finish(credential?: string) {
     await refreshAccount()
     if (!account.value) {throw new Error('Session not retained')}
     if (alive && account.value) {emit('connected', account.value)}
-  } catch {if (alive) {await prepare(); if (!account.value) {error.value = accepted ? 'Google connection could not be confirmed. You are not connected. Please try again.' : 'Google connection failed. Please try again.'}}}
+  } catch {if (alive) {await prepare(); if (!account.value) {error.value = accepted ? 'googleUnconfirmed' : 'googleFailed'}}}
   finally {if (alive) {setBusy(false)}}
 }
 async function prepare() {
@@ -158,7 +159,7 @@ async function prepare() {
     }
     error.value = ''
     refresh = setTimeout(prepare, 240000)
-  } catch {if (alive) {error.value = 'Google connection unavailable. You can still play as a guest.'}}
+  } catch {if (alive) {error.value = 'googleUnavailable'}}
   finally {preparing = false}
 }
 async function connectNative() {
@@ -171,8 +172,8 @@ async function connectNative() {
     await finish(result.credential)
   } catch (e) {
     if (alive) {
-      if ((e as { code?: string }).code === 'CANCELLED') {notice.value = 'Google sign-in was not completed. You are not connected.'}
-      else {error.value = 'Google connection failed. Please try again.'}
+      if ((e as { code?: string }).code === 'CANCELLED') {notice.value = 'googleIncomplete'}
+      else {error.value = 'googleFailed'}
     }
   }
   finally {if (alive) {setBusy(false)}}
@@ -184,10 +185,11 @@ async function disconnect() {
     if (nativeAccount) {await nativeGoogle.signOut()}
     else {window.google?.accounts?.id?.disableAutoSelect()}
     await refreshAccount(); await nextTick(); await prepare()
-  } catch {error.value = 'Could not sign out. Try again.'}
+  } catch {error.value = 'signOutFailed'}
   finally {setBusy(false)}
 }
 watch(() => props.disabled, (disabled, previous) => {if (previous && !disabled) {prepare()}})
+watch(language, () => {renderedWidth = 0; renderButton()})
 onMounted(prepare)
 onBeforeUnmount(() => {alive = false; clearTimeout(refresh); resize?.disconnect(); emit('busy', false)})
 </script>

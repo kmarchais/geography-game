@@ -5,15 +5,18 @@
     aria-labelledby="profile-title"
     @cancel="(saving || processing) && $event.preventDefault()"
   >
-    <form @submit.prevent="save">
+    <form
+      novalidate
+      @submit.prevent="save"
+    >
       <div class="profile-heading">
         <h2 id="profile-title">
-          Your profile
+          {{ t('yourProfile') }}
         </h2>
         <button
           type="button"
           class="icon-button"
-          aria-label="Close profile"
+          :aria-label="t('closeProfile')"
           :disabled="saving || processing"
           @click="dialog?.close()"
         >
@@ -25,7 +28,7 @@
         class="profile-preview"
         :user="{ ...account, name, avatar }"
       />
-      <label for="profile-name">Username</label>
+      <label for="profile-name">{{ t('username') }}</label>
       <input
         id="profile-name"
         v-model="name"
@@ -35,10 +38,10 @@
         :disabled="saving"
       >
       <p class="small muted">
-        Your username appears in the ranking.
+        {{ t('publicUsername') }}
       </p>
       <fieldset :disabled="saving || processing">
-        <legend>Picture</legend>
+        <legend>{{ t('picture') }}</legend>
         <button
           v-if="account?.picture"
           type="button"
@@ -51,7 +54,7 @@
             alt=""
             referrerpolicy="no-referrer"
           >
-          Google photo
+          {{ t('googlePhoto') }}
         </button>
         <div class="avatar-options">
           <button
@@ -60,7 +63,7 @@
             type="button"
             class="avatar-option"
             :style="{ background: preset.color }"
-            :aria-label="`${preset.name} avatar`"
+            :aria-label="t('avatarChoice', { name: t(preset.nameKey) })"
             :aria-pressed="avatar === `preset:${preset.id}`"
             @click="avatar = `preset:${preset.id}`"
           >
@@ -70,7 +73,7 @@
         <label
           class="photo-upload"
           for="profile-photo"
-        >{{ processing ? 'Preparing photo…' : 'Choose a photo' }}</label>
+        >{{ processing ? t('preparingPhoto') : t('choosePhoto') }}</label>
         <input
           id="profile-photo"
           class="visually-hidden"
@@ -84,13 +87,13 @@
         class="account-error small"
         role="status"
       >
-        {{ error }}
+        {{ t(error) }}
       </p>
       <button
         class="primary-button"
         :disabled="saving || processing"
       >
-        {{ saving ? 'Saving…' : 'Save profile' }}
+        {{ saving ? t('savingProfile') : t('saveProfile') }}
       </button>
     </form>
   </dialog>
@@ -101,9 +104,10 @@ import ProfileAvatar from './ProfileAvatar.vue'
 import { account, refreshAccount, type AtlasUser } from '@/globe/auth'
 import { avatarPresets, resizeAvatar } from '@/globe/avatars'
 import { rankingRequest } from '@/globe/ranking'
+import { t, type MessageKey } from '@/globe/i18n'
 const emit = defineEmits<{ updated: [user: AtlasUser] }>()
 const dialog = ref<HTMLDialogElement>()
-const name = ref(''), avatar = ref('google'), error = ref(''), saving = ref(false), processing = ref(false)
+const name = ref(''), avatar = ref('google'), error = ref<MessageKey | ''>(''), saving = ref(false), processing = ref(false)
 let generation = 0
 function open() {
   if (!account.value) {return}
@@ -115,19 +119,19 @@ async function choosePhoto(event: Event) {
   if (!file) {return}
   processing.value = true; error.value = ''
   try {const photo = await resizeAvatar(file); if (current === generation) {avatar.value = photo}}
-  catch (reason) {if (current === generation) {error.value = reason instanceof Error ? reason.message : 'Could not read this photo.'}}
+  catch (reason) {if (current === generation) {const code = reason instanceof Error ? reason.message : ''; error.value = code === 'photoType' || code === 'photoSize' ? code : 'photoRead'}}
   finally {input.value = ''; if (current === generation) {processing.value = false}}
 }
 async function save() {
   if (saving.value || processing.value) {return}
   const username = name.value.normalize('NFKC').trim()
-  if (!/^[\p{L}\p{N} ._'’-]{1,24}$/u.test(username)) {error.value = 'Use a username of 1–24 letters or numbers.'; return}
+  if (!/^[\p{L}\p{N} ._'’-]{1,24}$/u.test(username)) {error.value = 'profileInvalidName'; return}
   saving.value = true; error.value = ''
   try {
     const result = await rankingRequest<{ user: AtlasUser }>('/auth/profile', { name: username, avatar: avatar.value }, 1)
     account.value = result.user; emit('updated', result.user); dialog.value?.close()
     try {await refreshAccount()} catch { /* The profile save succeeded; the next account refresh updates the best. */ }
-  } catch {error.value = 'Could not save your profile. Try again.'}
+  } catch {error.value = 'profileSaveFailed'}
   finally {saving.value = false}
 }
 defineExpose({ open })
