@@ -39,3 +39,9 @@ The temporary laptop website was rejected by Google's origin check. The user cho
 Evidence is retained in `.local/atlas-auth-final-verification.json`, `.local/atlas-auth-check-status.json`, `.local/atlas-google-live-check.json`, `.local/phone/atlas-google-cancel.json`, `.local/phone/atlas-google-cookie-persistence.json`, `.local/phone/atlas-google-package-proof.json`, and `.local/atlas-google-apk-certificate.txt`.
 
 An independent GPT-5.6-sol review requested explicit cross-site cookie policy and offline handling of retired routes. Both were fixed and covered in the final passing run. A malformed TSV record was repaired without changing its six recorded fields. Real Google consent, web/native account switching, and authenticated native session restoration remain open checks.
+
+## Current button layout and browser permission
+
+The account entry is now inside the start card above guest play. Web uses Google's dark pill; Android uses the matching dark native button. The iframe opts into its own light document colour scheme so its backing stays transparent on the dark page. Loading and failure states collapse the unused iframe host. The real provider button was visually checked on desktop and phone layouts, and the physical Pixel passed native layout and chooser cancellation checks. See [the latest validation](atlas-validation.md#territory-rendering-navigation-and-account-layout).
+
+On Tailscale-enabled devices, the API hostname can resolve to a local-network address. Chrome can then block the public website's API requests until local-network permission is allowed for the website origin. On the Pixel this permission was automatically blocked. It was enabled through Chrome's site information, Permissions, Local network control, and the live ranking request then succeeded. This is separate from Google's OAuth configuration. See [Chrome's local-network access documentation](https://developer.chrome.com/blog/local-network-access).
