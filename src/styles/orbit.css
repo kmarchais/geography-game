@@ -43,6 +43,7 @@ body { margin: 0; background: #090f13; }
 .account-panel { margin: 16px 0; order: 0; width: 100%; }
 .start-card .account-panel { margin: 0; }
 .account-panel > div:not(.account-row) { width: 100%; min-height: 44px; display: flex; justify-content: center; align-items: center; }
+.google-web-button { color-scheme: light; }
 .guest-divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 11px; margin: 20px 0; }
 .guest-divider::before, .guest-divider::after { content: ''; height: 1px; flex: 1; background: var(--line); }
 .account-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; }

@@ -17,6 +17,27 @@ export function countryOutlines(countries: Country[]): THREE.BufferGeometry {
   return new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(points, 3))
 }
 
+/** Spatial batches let the renderer cull distant borders during close-up views. */
+export function outlineBatches(geometry: THREE.BufferGeometry): THREE.BufferGeometry[] {
+  const positions = geometry.getAttribute('position'), cells = new Map<string, number[]>()
+  for (let i = 0; i < positions.count; i += 2) {
+    const key = [0, 1, 2].map(axis => Math.floor((positions.getComponent(i, axis) + positions.getComponent(i + 1, axis)) * 4)).join(',')
+    const points = cells.get(key) ?? []
+    for (const vertex of [i, i + 1]) {points.push(positions.getX(vertex), positions.getY(vertex), positions.getZ(vertex))}
+    cells.set(key, points)
+  }
+  return [...cells.values()].map(points => {
+    const batch = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(points, 3))
+    batch.computeBoundingSphere()
+    return batch
+  })
+}
+
+// The raised border shell remains visible slightly beyond the ground tangent.
+export function outlineHorizon(distance: number): number {
+  return 1 - Math.sqrt(Math.max(0, distance * distance - 1) * (1.00031 ** 2 - 1))
+}
+
 export function countrySurface(country: Country): THREE.BufferGeometry {
   const points: number[] = []
   for (const polygon of country.polygons) {

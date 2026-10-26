@@ -40,7 +40,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { coordinateToVector, createCountryPicker, unwrapRing, vectorToCoordinate, type Country, type Coordinate } from '@/globe/geography'
 import type { Answer } from '@/globe/game'
 import { countryAngularSize, islandBlend, rotationSpeed } from '@/globe/detail'
-import { countryOutlines, countrySurface, GlobeImagery } from '@/globe/terrain'
+import { countryOutlines, countrySurface, outlineBatches, outlineHorizon, GlobeImagery } from '@/globe/terrain'
 import { zoomAtPointer } from '@/globe/navigation'
 
 const props = defineProps<{ countries: Country[]; borders: boolean; paintFound: boolean; markers: boolean; answers: Answer[]; reveal?: string; disabled: boolean }>()
@@ -66,6 +66,7 @@ let atmosphere: THREE.Mesh
 let baseGeometry: THREE.SphereGeometry
 let detailedGeometry: THREE.SphereGeometry | undefined
 let borderMesh: THREE.LineSegments<THREE.BufferGeometry, THREE.LineBasicMaterial>
+let nearbyBorders: THREE.Group
 let fillMesh: THREE.Mesh
 let markerGroup: THREE.Group
 let frame = 0
@@ -117,10 +118,19 @@ function render() {
     scheduleDetail()
   }
   const focalLength = host.value!.clientHeight / (2 * Math.tan(21 * Math.PI / 180))
+  const distance = camera.position.length()
+  borderMesh.visible = props.borders && distance >= 1.4
+  nearbyBorders.visible = props.borders && distance < 1.4
+  const horizon = outlineHorizon(distance)
+  if (nearbyBorders.visible) {for (const border of nearbyBorders.children as THREE.LineSegments[]) {
+    const bounds = border.geometry.boundingSphere!
+    // A conservative horizon test complements Three's frustum culling.
+    border.visible = bounds.center.dot(camera.position) + bounds.radius * distance > horizon
+  }}
   for (const marker of markerPositions) {
     marker.blend = islandBlend(marker.angularSize * focalLength / camera.position.distanceTo(marker.position), camera.position.length())
     marker.sprite.material.opacity = 1 - marker.blend
-    marker.sprite.visible = (props.markers || marker.country.id === props.reveal) && marker.blend < 1
+    marker.sprite.visible = marker.position.dot(camera.position) > marker.position.lengthSq() && (props.markers || marker.country.id === props.reveal) && marker.blend < 1
     marker.surface.visible = marker.highlighted && marker.blend > 0
     marker.surface.material.opacity = marker.blend * .65
   }
@@ -137,6 +147,13 @@ function configureCountries() {
   pickCountry = createCountryPicker(props.countries)
   borderMesh.geometry.dispose()
   borderMesh.geometry = countryOutlines(props.countries)
+  for (const border of nearbyBorders.children as THREE.LineSegments[]) {border.geometry.dispose()}
+  nearbyBorders.clear()
+  for (const geometry of outlineBatches(borderMesh.geometry)) {
+    const border = new THREE.LineSegments(geometry, borderMesh.material)
+    border.renderOrder = 3
+    nearbyBorders.add(border)
+  }
   for (const marker of markerPositions) { marker.sprite.material.dispose(); marker.surface.geometry.dispose(); marker.surface.material.dispose() }
   markerGroup.clear()
   markerPositions.length = 0
@@ -357,6 +374,8 @@ onMounted(async () => {
     borderMesh.renderOrder = 3
     borderMesh.visible = props.borders
     scene.add(borderMesh)
+    nearbyBorders = new THREE.Group()
+    scene.add(nearbyBorders)
     const fill = makeOverlay()
     fillCanvas = fill.image
     fillTexture = fill.texture
@@ -453,14 +472,16 @@ onBeforeUnmount(() => {
   canvas.value?.removeEventListener('wheel', onWheel, true)
   canvas.value?.removeEventListener('webglcontextlost', onContextLost)
   const geometries = new Set<THREE.BufferGeometry>()
+  const materials = new Set<THREE.Material>()
   scene?.traverse(object => {
     if (object instanceof THREE.Mesh || object instanceof THREE.Sprite || object instanceof THREE.LineSegments) {
       if (object instanceof THREE.Mesh || object instanceof THREE.LineSegments) {geometries.add(object.geometry)}
-      const materials = Array.isArray(object.material) ? object.material : [object.material]
-      materials.forEach(material => material.dispose())
+      const objectMaterials = Array.isArray(object.material) ? object.material : [object.material]
+      objectMaterials.forEach(material => materials.add(material))
     }
   })
   geometries.forEach(geometry => geometry.dispose())
+  materials.forEach(material => material.dispose())
   baseGeometry?.dispose()
   detailedGeometry?.dispose()
   textures.forEach(texture => texture.dispose())

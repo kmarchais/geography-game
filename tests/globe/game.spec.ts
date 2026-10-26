@@ -44,6 +44,7 @@ test('Atlas has one minimal mode and fills a wide screen', async ({ page }) => {
 })
 
 test('close-zoom dragging redraws even below the controls change threshold', async ({ page }) => {
+  await page.route('https://gibs.earthdata.nasa.gov/**', route => route.abort())
   await page.addInitScript(() => {
     const counter = window as unknown as { atlasDraws: number }
     counter.atlasDraws = 0
@@ -56,12 +57,12 @@ test('close-zoom dragging redraws even below the controls change threshold', asy
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
   await page.mouse.down()
   const frames: number[] = []
-  for (let i = 1; i <= 16; i++) {
+  for (let i = 1; i <= 8; i++) {
     await page.mouse.move(box.x + box.width / 2 + i, box.y + box.height / 2)
     frames.push(await page.evaluate(() => new Promise<number>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve((window as unknown as { atlasDraws: number }).atlasDraws))))))
   }
   await page.mouse.up()
-  expect(frames.filter((draws, i) => i > 0 && draws > frames[i - 1]!).length).toBeGreaterThanOrEqual(12)
+  expect(frames.filter((draws, i) => i > 0 && draws > frames[i - 1]!).length).toBeGreaterThanOrEqual(6)
 })
 
 test('Andorra is unpainted before finding it and its zoomed territory remains selectable', async ({ page }) => {

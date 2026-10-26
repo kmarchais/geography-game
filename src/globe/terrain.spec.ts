@@ -1,11 +1,39 @@
 import { expect, it, vi } from 'vitest'
 import * as THREE from 'three'
 import { readFileSync } from 'node:fs'
-import { countrySurface, GlobeImagery } from './terrain'
+import { countryOutlines, countrySurface, outlineBatches, outlineHorizon, GlobeImagery } from './terrain'
 import { countryAngularSize, islandBlend } from './detail'
 import { coordinateToVector, validateCountries } from './geography'
 
 const countries = validateCountries(JSON.parse(readFileSync('public/data/globe/countries.json', 'utf8')))
+it('spatial border batches preserve every original segment exactly', () => {
+  const outlines = countryOutlines(countries), batches = outlineBatches(outlines)
+  const segments = (geometry: THREE.BufferGeometry) => {
+    const positions = geometry.getAttribute('position'), result: string[] = []
+    for (let i = 0; i < positions.count; i += 2) {result.push(Array.from({ length: 6 }, (_, n) => positions.getComponent(i + Math.floor(n / 3), n % 3)).join(','))}
+    return result
+  }
+  expect(batches.flatMap(segments).sort()).toEqual(segments(outlines).sort())
+  expect(batches.every(batch => batch.boundingSphere!.radius < .3)).toBe(true)
+  const camera = new THREE.PerspectiveCamera(42, 1054 / 925, .0001, 100)
+  camera.position.fromArray(coordinateToVector([1.57, 42.54])).multiplyScalar(1.0025)
+  camera.lookAt(0, 0, 0); camera.updateMatrixWorld()
+  const frustum = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse))
+  const visible = batches.filter(batch => batch.boundingSphere!.center.dot(camera.position) + batch.boundingSphere!.radius * camera.position.length() > outlineHorizon(camera.position.length()) && frustum.intersectsSphere(batch.boundingSphere!))
+  expect(visible.length).toBeGreaterThan(0)
+  expect(visible.reduce((sum, batch) => sum + batch.getAttribute('position').count, 0)).toBeLessThan(outlines.getAttribute('position').count * .1)
+  outlines.dispose(); batches.forEach(batch => batch.dispose())
+})
+
+it('keeps raised island borders visible just beyond the ground tangent', () => {
+  const camera = new THREE.Vector3(0, 0, 1.4)
+  const angle = Math.acos(1 / 1.4) + .5 * Math.PI / 180
+  const point = new THREE.Vector3(Math.sin(angle), 0, Math.cos(angle)).multiplyScalar(1.0003)
+  const ray = new THREE.Ray(camera, point.clone().sub(camera).normalize())
+  expect(ray.intersectSphere(new THREE.Sphere(new THREE.Vector3(), 1), new THREE.Vector3())).toBeNull()
+  expect(point.dot(camera)).toBeLessThan(1)
+  expect(point.dot(camera)).toBeGreaterThan(outlineHorizon(camera.length()))
+})
 it.each(['VAT', 'NRU'])('replaces the %s marker with pickable territory at maximum zoom', id => {
   const country = countries.find(c => c.id === id)!
   const distance = 1.002
