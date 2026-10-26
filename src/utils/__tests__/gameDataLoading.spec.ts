@@ -151,12 +151,10 @@ describeOrSkip('Game Data Loading Integration Tests', () => {
         console.log(`[${name}] Fetching from: ${resolvedUrl}`);
 
         let data: FeatureCollection;
-        let fetchError: Error | null = null;
 
         try {
           data = await fetchGeoJSON(resolvedUrl);
         } catch (error) {
-          fetchError = error as Error;
           console.error(`[${name}] ❌ FETCH FAILED:`, error);
           throw new Error(`Failed to fetch GeoJSON: ${error}`);
         }

@@ -6,6 +6,9 @@ const vueParser = require('vue-eslint-parser');
 
 module.exports = [
   {
+    ignores: ['node_modules/**', 'dist/**', 'dist-ssr/**', 'coverage/**', '.venv/**', '__pycache__/**', '.idea/**', '.vscode/**', '.windsurf/**', '.claude/**', '.local/**', 'tools/**', 'playwright-report/**', 'test-results/**'],
+  },
+  {
     name: 'app/base',
     files: ['**/*.{ts,mts,tsx,vue}'],
     ignores: ['**/dist/**', '**/dist-ssr/**', '**/coverage/**', '**/.venv/**', '**/node_modules/**'],

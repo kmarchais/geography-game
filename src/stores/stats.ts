@@ -208,7 +208,6 @@ export const useStatsStore = defineStore('stats', () => {
   watch(
     stats,
     () => {
-      stats.value.updatedAt = Date.now()
       saveToStorage()
     },
     { deep: true }
@@ -280,7 +279,7 @@ export const useStatsStore = defineStore('stats', () => {
     if (stats.value.recentGames.length > 20) {
       stats.value.recentGames = stats.value.recentGames.slice(0, 20)
     }
-
+    stats.value.updatedAt = Date.now()
   }
 
   function resetStats() {

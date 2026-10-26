@@ -1,0 +1,15 @@
+{
+  "id": "./",
+  "name": "Atlas · Geography challenge",
+  "short_name": "Atlas",
+  "description": "195 countries. One guess each.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#090f13",
+  "theme_color": "#090f13",
+  "icons": [
+    { "src": "atlas-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "atlas-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

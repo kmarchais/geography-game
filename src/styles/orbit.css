@@ -1,0 +1,119 @@
+@font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 100 1000; font-display: swap; src: url('/fonts/dm-sans.woff2') format('woff2'); }
+@font-face { font-family: 'Manrope'; font-style: normal; font-weight: 200 800; font-display: swap; src: url('/fonts/manrope.woff2') format('woff2'); }
+:root { color-scheme: dark; }
+body { margin: 0; background: #090f13; }
+* { box-sizing: border-box; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.orbit-app { --mint: #99edc5; --muted: #97a7ae; --line: #25343d; width: 100%; min-height: 100svh; padding: env(safe-area-inset-top, 0px) max(clamp(20px, 3vw, 64px), env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(clamp(20px, 3vw, 64px), env(safe-area-inset-left, 0px)); color: #edf3f0; font: 14px 'DM Sans', system-ui, sans-serif; background: radial-gradient(ellipse at 70% 45%, #10222d66, transparent 65%); }
+.orbit-app::before, .orbit-app::after { content: ''; position: fixed; left: 0; right: 0; z-index: 20; background: #090f13; pointer-events: none; }
+.orbit-app::before { top: 0; height: env(safe-area-inset-top, 0px); }
+.orbit-app::after { bottom: 0; height: env(safe-area-inset-bottom, 0px); }
+.orbit-app button, .orbit-app input { font: inherit; }
+.orbit-app button { cursor: pointer; }
+.orbit-app button:disabled { opacity: .45; cursor: default; }
+.orbit-app button, .orbit-app a { -webkit-tap-highlight-color: transparent; }
+.orbit-app a { color: inherit; text-decoration: none; }
+.orbit-app :is(button,a,input,canvas):focus-visible { outline: 2px solid var(--mint); outline-offset: 4px; }
+.orbit-app h1, .orbit-app h2 { font-family: 'Manrope', system-ui, sans-serif; font-weight: 600; letter-spacing: -.045em; }
+.orbit-app h1 { margin: 0 0 12px; font-size: clamp(30px, 2.6vw, 44px); line-height: 1.2; overflow-wrap: anywhere; }
+.orbit-app h2 { font-size: 20px; margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; line-height: 1.6; }
+.orbit-header { height: 76px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
+.wordmark { display: inline-flex; align-items: center; gap: 12px; font-size: 29px; font-weight: 650; letter-spacing: -.06em; }
+.wordmark img { width: 34px; height: 34px; }
+.header-actions { display: flex; gap: 18px; align-items: center; }
+.quiet-button, .icon-button { color: #b6c5cb; background: none; border: 0; min-height: 44px; padding: 10px; }
+.quiet-button:hover, .icon-button:hover { color: var(--mint); }
+.icon-button { width: 44px; border: 1px solid var(--line); border-radius: 50%; font-size: 18px !important; }
+.orbit-workspace { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: clamp(28px, 4vw, 72px); min-height: calc(100svh - 76px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); align-items: center; }
+.mission-panel { padding: 32px 0; min-width: 0; }
+.start-card > p { margin: 0 0 32px; }
+.name-label { display: block; color: var(--muted); margin-bottom: 8px; font-size: 12px; }
+.orbit-app input { display: block; width: 100%; padding: 12px 14px; min-height: 48px; background: #101b21; color: #edf3f0; border: 1px solid #30434d; border-radius: 9px; margin-bottom: 12px; }
+.primary-button, .secondary-button { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; min-height: 48px; border-radius: 9px; padding: 12px 18px; font-weight: 600 !important; }
+.primary-button { border: 1px solid var(--mint); background: var(--mint); color: #092219; }
+.primary-button:hover { background: #b4f5d5; }
+.secondary-button { border: 1px solid #344a56; background: #14212a; color: #d9e7e5; }
+.secondary-button:hover { border-color: #729e94; background: #1a3037; }
+.mission-card { scroll-margin-top: max(16px, env(safe-area-inset-top, 0px)); }
+.orbit-dialog summary { cursor: pointer; color: var(--mint); }
+.orbit-dialog details a { text-decoration: underline; }
+.country-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 6px 20px; max-height: 240px; overflow: auto; padding: 8px 0 8px 20px; }
+.account-panel { margin-top: 16px; order: 0; }
+.account-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; }
+.google-connect { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 44px; padding: 10px 16px; border: 1px solid #747775; border-radius: 4px; background: #fff; color: #1f1f1f; }
+.google-connect svg { width: 20px; height: 20px; }
+.account-panel [inert] { opacity: .45; }
+.account-error { color: var(--muted); margin: 8px 0 0; }
+.mission-topline { display: flex; justify-content: space-between; color: var(--muted); margin-bottom: 14px; font-size: 12px; }
+.session-stats { display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px; margin-top: 30px; }
+.session-stats > div { display: flex; flex-direction: column; gap: 8px; }
+.session-stats span { color: var(--muted); font-size: 11px; }
+.session-stats strong { font: 500 clamp(22px, 2.1vw, 31px) 'Manrope', sans-serif; font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
+.session-stats > div:first-child strong { color: var(--mint); }
+.progress-track { height: 3px; background: #23363d; margin-top: 25px; overflow: hidden; border-radius: 3px; }
+.progress-track > span { display: block; height: 100%; background: var(--mint); transition: width .15s; }
+.round-count { color: var(--muted); font-size: 12px; margin: 10px 0 25px; }
+.skip-button { justify-content: space-between; }
+.answer-feedback { min-height: 20px; font-size: 12px; margin: 16px 0 0; color: var(--muted); }
+.answer-feedback.success { color: var(--mint); }
+.answer-feedback.missed { color: #ffaba2; }
+.service-note { color: #e9c58c; font-size: 12px; line-height: 1.5; }
+.ranking-panel { border-top: 1px solid var(--line); margin-top: 32px; padding-top: 20px; }
+.ranking-heading { display: flex; align-items: center; justify-content: space-between; }
+.ranking-panel h2 { font-size: 16px; letter-spacing: -.02em; }
+.ranking-panel table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; font-variant-numeric: tabular-nums; }
+.ranking-panel :is(th,td) { padding: 11px 0; border-bottom: 1px solid #203039; text-align: right; }
+.ranking-panel th { color: var(--muted); font-size: 10px; font-weight: 400; }
+.ranking-panel :is(th,td):first-child { text-align: left; max-width: 140px; overflow-wrap: anywhere; }
+.rank-number { color: #92aaa5; display: inline-block; min-width: 24px; }
+.planet-panel { min-width: 0; }
+.planet-stage { position: relative; height: max(520px, calc(100svh - 132px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))); isolation: isolate; }
+.planet-stage::before { content: ''; position: absolute; inset: 5%; z-index: -1; border-radius: 50%; background: radial-gradient(ellipse, #18364644, transparent 66%); }
+.globe-tools { position: absolute; right: 0; bottom: 24px; display: flex; flex-direction: column; padding: 5px; background: #101b24e6; border: 1px solid #30444f; border-radius: 10px; backdrop-filter: blur(12px); }
+.globe-tools button { width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: none; color: #e0ebe7; border-radius: 5px; font-size: 24px; }
+.globe-tools button:hover { background: #29444980; color: var(--mint); }
+.planet-loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; gap: 15px; text-align: center; background: #090f1399; }
+.planet-loading p { max-width: 320px; color: #b2c3c9; }
+.loading-orbit { width: 30px; height: 30px; border: 1px solid #526a69; border-top-color: var(--mint); border-radius: 50%; animation: atlas-spin 1s linear infinite; }
+@keyframes atlas-spin { to { transform: rotate(360deg); } }
+.planet-warning { text-align: center; color: #e9c58c; font-size: 11px; }
+.orbit-dialog { border: 1px solid #36505c; border-radius: 14px; background: #101b22; color: #e4ece9; max-width: 440px; width: calc(100% - 40px); max-height: 85svh; padding: 32px; font-family: 'DM Sans', sans-serif; }
+.orbit-dialog::backdrop { background: #03090dcc; backdrop-filter: blur(5px); }
+.orbit-dialog p { line-height: 1.7; }
+.dialog-close { position: absolute; right: 6px; top: 4px; width: 44px; height: 44px; background: none; color: #c0d0d3; border: 0; font-size: 25px !important; }
+.dialog-actions { display: flex; gap: 12px; margin-top: 24px; }
+@media (min-width: 1800px) { .orbit-workspace { grid-template-columns: 360px minmax(0, 1fr); } }
+@media (max-width: 1000px) { .orbit-workspace { grid-template-columns: 270px minmax(0, 1fr); gap: 25px; } }
+@media (max-width: 720px) {
+  .orbit-header { height: 65px; }
+  .wordmark { font-size: 25px; gap: 8px; }
+  .wordmark img { width: 29px; height: 29px; }
+  .header-actions { gap: 8px; }
+  .orbit-workspace { display: flex; flex-direction: column; gap: 0; min-height: 0; }
+  .mission-panel { display: contents; }
+  .start-card, .mission-card { order: 0; width: 100%; padding: 26px 0 12px; }
+  .start-card h1 { font-size: 32px; }
+  .start-card > p { margin-bottom: 20px; }
+  .start-card form { display: grid; grid-template-columns: 1fr 120px; gap: 10px; align-items: center; }
+  .name-label { grid-column: 1 / -1; margin: 0; }
+  .start-card input { margin: 0; }
+  .session-stats { margin-top: 20px; }
+  .session-stats strong { font-size: 26px; }
+  .progress-track { margin-top: 18px; }
+  .round-count { margin-bottom: 16px; }
+  .skip-button { min-height: 46px; }
+  .answer-feedback { margin-top: 10px; }
+  .planet-panel { order: 1; width: 100%; }
+  .planet-stage { margin: 0 -12px; height: clamp(320px, 90vw, 460px); }
+  .globe-tools { right: 3px; bottom: 12px; padding: 3px; }
+  .ranking-panel { order: 3; width: 100%; margin: 20px 0 30px; }
+  .service-note { order: 2; }
+}
+@media (prefers-reduced-motion: reduce) { .orbit-app *, .orbit-app *::after { animation: none !important; transition: none !important; } }
+@media (orientation: landscape) and (max-height: 600px) {
+  .orbit-workspace { align-items: start; }
+  .planet-stage { height: max(280px, calc(100svh - 100px - env(safe-area-inset-top, 0px))); }
+  .mission-panel { padding-top: 24px; }
+}

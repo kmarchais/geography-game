@@ -154,10 +154,6 @@ const navigateToGame = () => {
   router.push(props.game.route);
 };
 
-const getDifficultyColor = (difficulty: number): string => {
-  const colors = ['green', 'light-green', 'orange', 'deep-orange', 'red'];
-  return colors[difficulty - 1] || 'grey';
-};
 </script>
 
 <style scoped>

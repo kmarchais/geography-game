@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url'
 import { mergeConfig, defineConfig, configDefaults } from 'vitest/config'
 import viteConfig from './vite.config.mts'
 
-const isCI = process.env.SKIP_INTEGRATION_TESTS === 'true';
+const skipRemoteTests = process.env.RUN_REMOTE_TESTS !== 'true';
 
 export default mergeConfig(
   viteConfig,
@@ -14,11 +14,12 @@ export default mergeConfig(
         'e2e/**',
         'tests/e2e/**',
         'tests/**/*.spec.ts', // Exclude all Playwright E2E tests
+        'tests/server/**',
         // Exclude Leaflet-dependent tests (happy-dom doesn't support Leaflet's window requirements)
         'src/composables/useCapitalGameLogic.spec.ts',
         'src/config/games/divisions/french-departments.test.ts',
         // In CI, skip game config tests (they fetch external GeoJSON and are flaky)
-        ...(isCI ? [
+        ...(skipRemoteTests ? [
           '**/src/config/games/**/*.test.ts',
           'src/config/games/**',
           '**/config/games/**/*.test.ts',

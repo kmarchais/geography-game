@@ -1,49 +1,12 @@
-/**
- * main.ts
- *
- * Bootstraps Vuetify and other plugins then mounts the App`
- */
+import { createApp } from 'vue'
+import App from './App.vue'
+import router from './router'
+import './styles/orbit.css'
 
-import { registerPlugins } from '@/plugins';
-import 'leaflet/dist/leaflet.css';
+createApp(App).use(router).mount('#app')
 
-import App from './App.vue';
-
-import { createApp } from 'vue';
-
-// Import Vuetify and its styles
-import 'vuetify/styles'
-import '@mdi/font/css/materialdesignicons.css' // if you're using Material Design Icons
-
-// Import service worker registration
-import { register as registerServiceWorker } from './utils/serviceWorkerRegistration';
-
-const app = createApp(App)
-
-registerPlugins(app)
-
-app.mount('#app')
-
-// Register service worker
-registerServiceWorker({
-  onSuccess: () => {
-    if (import.meta.env.DEV) {
-      console.log('[App] Service worker registered successfully');
-    }
-  },
-  onUpdate: () => {
-    if (import.meta.env.DEV) {
-      console.log('[App] New version available! Please refresh to update.');
-    }
-  },
-  onOffline: () => {
-    if (import.meta.env.DEV) {
-      console.log('[App] App is offline');
-    }
-  },
-  onOnline: () => {
-    if (import.meta.env.DEV) {
-      console.log('[App] App is back online');
-    }
-  },
-});
+if ('serviceWorker' in navigator && import.meta.env.PROD && import.meta.env.VITE_NATIVE !== 'true') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}service-worker.js`).catch(() => {})
+  })
+}

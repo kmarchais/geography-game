@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "mobile": {
+      "command": "npx",
+      "args": ["-y", "@mobilenext/mobile-mcp@1.0.13"]
+    },
+    "playwright-desktop": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@0.0.83", "--browser", "chrome", "--isolated", "--viewport-size", "1440x1000"]
+    },
+    "playwright-phone": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@0.0.83", "--browser", "chrome", "--isolated", "--device", "Pixel 7"]
+    }
+  }
+}

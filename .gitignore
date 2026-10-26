@@ -36,3 +36,5 @@ tools
 
 # Local TODO file (not committed)
 TODO.md
+playwright-report/
+test-results/

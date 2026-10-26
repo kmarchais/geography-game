@@ -6,6 +6,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useStatsStore, type GameResult } from './stats'
 import { useAuthStore } from './auth'
+import { nextTick } from 'vue'
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -26,6 +27,19 @@ Object.defineProperty(globalThis, 'localStorage', {
 })
 
 describe('Stats Store', () => {
+  it('saves a mutation without repeatedly updating its own watched timestamp', async () => {
+    setActivePinia(createPinia())
+    const store = useStatsStore()
+    let clock = 2000000000000
+    const now = vi.spyOn(Date, 'now').mockImplementation(() => clock++)
+    try {
+      store.stats.totalGamesPlayed += 1
+      await nextTick()
+      expect(now.mock.calls.length).toBeLessThan(5)
+    } finally {
+      now.mockRestore()
+    }
+  })
   beforeEach(() => {
     // Create a new pinia instance for each test
     setActivePinia(createPinia())

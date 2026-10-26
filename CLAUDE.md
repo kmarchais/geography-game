@@ -4,6 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
+The active country-finder mode is now a Vue/TypeScript and Three.js globe at `/`.
+Read `README.md` and `docs/project-review.md` first. `src/globe` owns the rules and
+geographic picking, `EarthGlobe.vue` owns rendering, and `GlobeGame.vue` owns the UI.
+Classic modes remain under `/classic` and their existing routes. Their Vuetify,
+Leaflet, OAuth script, and data initialization load only when a classic route opens.
+The following detailed architecture describes those retained classic modes.
+
 This is a geography learning game built with Vue 3, Vuetify 3, and Leaflet maps. Users can play various map-based geography games including identifying countries, administrative divisions, and city districts across different regions of the world. The application includes authentication via Google OAuth and an admin dashboard.
 
 ## Commands
@@ -32,15 +39,31 @@ bun run lint        # Run ESLint with auto-fix
 bun run update-total-rounds  # Update totalRounds in all game configs
 ```
 
-**Note:** The `totalRounds` field in game configs is automatically updated before each build via the `prebuild` script. The script extracts entity counts from test files and updates the JSON configs accordingly. This ensures `totalRounds` stays in sync with actual GeoJSON data without manual counting.
+The legacy `update-total-rounds` command edits game configs by reading test source.
+It is no longer a build hook. The globe derives round counts from its checked-in
+country data. Run `bun run data:globe` only for a deliberate data update.
+
+### Verify the globe
+
+```sh
+bun run test          # Local unit tests, no remote geography by default
+bun run type-check
+bun run lint:check
+bunx playwright install chromium
+bun run test:globe    # Production build, desktop, Android, and tablet
+```
+
+Remote legacy data tests require `RUN_REMOTE_TESTS=true`. The production build
+creates a content-versioned precache for the globe. Update `public/service-worker.js`
+and the Vite precache plugin together when changing offline behavior.
 
 ## Architecture
 
 ### Core Game System
 
-The application uses a **JSON-driven game registry architecture**. All 27 games are defined as JSON configuration files in `src/config/games/` organized by category:
+The classic application uses a **JSON-driven game registry architecture**. All 28 games are defined as JSON configuration files in `src/config/games/` organized by category:
 - `countries/` - World and continent-based country games (7 games)
-- `divisions/` - Administrative divisions (states, provinces, departments) (13 games)
+- `divisions/` - Administrative divisions (states, provinces, departments) (14 games)
 - `cities/` - City district games (7 games)
 
 Each game is defined by a `GameDefinition` object (see `src/types/game.d.ts`) that includes:
