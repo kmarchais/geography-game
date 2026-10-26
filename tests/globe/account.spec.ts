@@ -68,6 +68,40 @@ test('failed Google verification leaves guest play available', async ({ page }) 
   await page.getByRole('button', { name: 'Play', exact: true }).click()
   await expect(page.getByTestId('progress')).toHaveText('1 / 195')
 })
+
+test('guest results offer Google sign-in and retry saving the completed score without replaying', async ({ page }) => {
+  test.setTimeout(90000)
+  await googleAccount(page)
+  let attempts = 0
+  let run: { id: string; claimToken: string }
+  // Keep the real API for all 195 answers; only Google and the claim response are mocked.
+  await page.route('**/atlas-api/runs/*/claim', route => {
+    expect(route.request().url()).toContain(`/runs/${run.id}/claim`)
+    expect(route.request().postDataJSON()).toEqual({ claimToken: run.claimToken })
+    attempts++
+    return route.fulfill({ status: attempts <= 3 ? 503 : 200, json: attempts <= 3 ? { error: 'Unavailable' } : { saved: true } })
+  })
+  await page.goto('./')
+  await page.getByLabel('Name', { exact: true }).fill('Guest results')
+  const started = page.waitForResponse(response => response.url().endsWith('/atlas-api/runs') && response.request().method() === 'POST')
+  await page.getByRole('button', { name: 'Play', exact: true }).click()
+  run = await (await started).json()
+  for (let i = 0; i < 195; i++) {await page.getByRole('button', { name: 'Skip' }).click()}
+  await expect(page.getByRole('heading', { name: 'Your score' })).toBeVisible()
+  await expect(page.getByText('Saving score…')).toBeHidden({ timeout: 20000 })
+  await expect(page.getByText('Sign in to keep this score with your account.')).toBeVisible()
+  await page.getByRole('button', { name: 'Sign in with Google', exact: true }).click()
+  await expect(page.getByText('Could not save to your account. Try again.')).toBeVisible()
+  expect(attempts).toBe(3)
+  await page.getByRole('button', { name: 'Save score to account', exact: true }).click()
+  await expect(page.getByText('Score saved to your account.')).toBeVisible()
+  expect(attempts).toBe(4)
+  await expect(page.getByTestId('accuracy')).toHaveText('0.0%')
+  await expect(page.getByTestId('timer')).toHaveText('00:00.0')
+  await expect(page.getByRole('button', { name: 'Save score to account', exact: true })).toBeHidden()
+  await expect(page.getByRole('button', { name: 'Play again', exact: true })).toBeEnabled()
+  expect(await page.evaluate(() => Object.keys(localStorage).some(key => /token|credential/i.test(key)))).toBe(false)
+})
 test('legacy mode bookmarks open the same Atlas screen', async ({ page }) => {
   for (const path of ['classic', 'game/world-countries']) {
     await page.goto(path)

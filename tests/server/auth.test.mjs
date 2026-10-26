@@ -96,3 +96,34 @@ test('shares a Google identity and best across devices, prevents guest impersona
   clock.time += 2592000001
   assert.equal((await (await request('/auth/session', undefined, second.cookie)).json()).user, null)
 })
+
+test('claims a completed guest run with its private token, preserves its score and retries safely', async t => {
+  const { request, login, clock } = await setup(t)
+  const run = await (await request('/runs', { playerId: randomUUID(), name: 'Guest score' })).json()
+  const first = await login(), second = await login(), other = await login('google-two')
+  const path = `/runs/${run.id}/claim`
+  assert.ok(run.claimToken)
+  assert.equal((await request(path, { claimToken: run.claimToken })).status, 401)
+  assert.equal((await request(path, { claimToken: randomUUID() }, first.cookie)).status, 403)
+  assert.equal((await request(path, {}, first.cookie)).status, 403)
+  assert.equal((await request(path, { claimToken: run.claimToken }, first.cookie)).status, 409)
+  for (let index = 0; index < 3; index++) {
+    clock.time += 1000
+    await request(`/runs/${run.id}/answers`, { index, guess: index === 0 ? run.deck[0] : null, elapsedMs: (index + 1) * 1000 })
+  }
+  const before = await (await request('/leaderboard')).json()
+  assert.equal(JSON.stringify(before).includes(run.claimToken), false)
+  assert.equal((await request(path, { claimToken: run.claimToken, correct: 195 }, first.cookie)).status, 403)
+  assert.equal((await request(path, { claimToken: run.claimToken }, first.cookie)).status, 200)
+  // A committed claim whose response was lost must be safe to retry.
+  assert.equal((await request(path, { claimToken: run.claimToken }, second.cookie)).status, 200)
+  assert.deepEqual(await (await request('/leaderboard')).json(), before)
+  const session = await (await request('/auth/session', undefined, second.cookie)).json()
+  assert.equal(session.best.id, run.id)
+  assert.equal(session.best.correct, 1)
+  assert.equal(session.best.timeMs, 1000)
+  assert.equal((await request(path, { claimToken: run.claimToken }, other.cookie)).status, 409)
+  assert.equal((await (await request('/auth/session', undefined, other.cookie)).json()).best, null)
+  const signedInRun = await (await request('/runs', { playerId: randomUUID(), name: 'Account run' }, first.cookie)).json()
+  assert.equal(signedInRun.claimToken, undefined)
+})

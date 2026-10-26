@@ -7,6 +7,7 @@ import { join } from 'node:path'
 import { rmSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { createRankingServer } from '../../server/ranking.mjs'
+import { DatabaseSync } from 'node:sqlite'
 
 const countries = ['AAA', 'BBB', 'CCC'].map(id => ({ id, playable: true }))
 async function setup(t, options = {}) {
@@ -76,13 +77,17 @@ test('rejects invalid names, non-JSON, oversized bodies, unknown countries, and 
   assert.equal((await post(`/runs/${run.id}/answers`, { index: 0, guess: 'FAKE', elapsedMs: 0 })).status, 400)
 })
 
-test('persists an active run across server restarts', async t => {
+test('upgrades the previous database schema and persists an active run across server restarts', async t => {
   const file = join(tmpdir(), `atlas-${randomUUID()}.sqlite`)
   let first, second
   t.after(async () => {
     for (const instance of [first, second]) {if (instance?.server.listening) await new Promise(resolve => instance.server.close(resolve))}
     for (const suffix of ['', '-wal', '-shm']) rmSync(file + suffix, { force: true })
   })
+  const old = new DatabaseSync(file)
+  old.exec('CREATE TABLE runs(id TEXT PRIMARY KEY, player TEXT NOT NULL, name TEXT NOT NULL, started INTEGER NOT NULL, state TEXT NOT NULL, complete INTEGER NOT NULL DEFAULT 0, correct INTEGER NOT NULL DEFAULT 0, time_ms INTEGER NOT NULL DEFAULT 0)')
+  old.prepare('INSERT INTO runs VALUES(?,?,?,?,?,?,?,?)').run(randomUUID(), randomUUID(), 'Previous score', 100000, JSON.stringify({ version: 2 }), 1, 0, 0)
+  old.close()
   first = await setup(t, { databasePath: file })
   const run = await first.start('Persistent')
   await first.post(`/runs/${run.id}/answers`, { index: 0, guess: run.deck[0], elapsedMs: 0 })
@@ -93,6 +98,7 @@ test('persists an active run across server restarts', async t => {
   assert.equal((await response.json()).complete, true)
   const rows = await (await fetch(second.url + '/leaderboard')).json()
   assert.equal(rows[0].name, 'Persistent')
+  assert.ok(rows.some(row => row.name === 'Previous score'))
 })
 
 test('Android builds reject a missing ranking endpoint before compiling', () => {

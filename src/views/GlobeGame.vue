@@ -131,7 +131,7 @@
           <button
             v-else
             class="primary-button"
-            :disabled="starting || saving"
+            :disabled="starting || saving || authBusy"
             @click="start"
           >
             Play again
@@ -158,6 +158,27 @@
           @busy="authBusy = $event"
           @connected="connected"
         />
+        <p
+          v-if="!playing && pendingClaim && !account"
+          class="muted small"
+        >
+          Sign in to keep this score with your account.
+        </p>
+        <p
+          v-if="claimMessage"
+          class="small"
+          role="status"
+        >
+          {{ claimMessage }}
+        </p>
+        <button
+          v-if="!playing && pendingClaim && account && claimMessage && !saving"
+          class="secondary-button"
+          :disabled="authBusy"
+          @click="claimScore"
+        >
+          Save score to account
+        </button>
         <p
           v-if="!playing && best"
           class="personal-best small muted"
@@ -378,7 +399,28 @@ const starting = ref(false), saving = ref(false), unranked = ref(false), localBe
 const locallySaved = ref(false), uploadUnconfirmed = ref(false)
 const authBusy = ref(false)
 const best = computed(() => account.value ? accountBest.value : localBest.value)
-function connected(user: AtlasUser) {if (!playerName.value.trim()) {playerName.value = user.name}}
+function connected(user: AtlasUser) {
+  if (!playerName.value.trim()) {playerName.value = user.name}
+  if (session.value?.phase === 'complete' && !saving.value && !claimMessage.value) {claimScore()}
+}
+const pendingClaim = ref<{ id: string; claimToken: string }>()
+const claimMessage = ref('')
+async function claimScore() {
+  const claim = pendingClaim.value, current = generation
+  if (!claim || !account.value || saving.value) {return}
+  await upload
+  if (!mounted || current !== generation || unranked.value) {return}
+  saving.value = true; claimMessage.value = ''
+  try {
+    await rankingRequest(`/runs/${claim.id}/claim`, { claimToken: claim.claimToken }, 2)
+    if (!mounted || current !== generation) {return}
+    pendingClaim.value = undefined
+    claimMessage.value = 'Score saved to your account.'
+    await Promise.all([refreshAccount(), refreshRanking()])
+  } catch {
+    if (mounted && current === generation) {claimMessage.value = pendingClaim.value ? 'Could not save to your account. Try again.' : 'Score saved. Could not refresh your best.'}
+  } finally {if (mounted && current === generation) {saving.value = false}}
+}
 const elapsed = ref(0), verifiedTime = ref<number>(), feedback = ref(''), feedbackOutcome = ref('')
 const noAnswers: Answer[] = []
 const playing = computed(() => session.value?.phase === 'playing')
@@ -417,15 +459,17 @@ async function start() {
   if (!/^[\p{L}\p{N} ._'’-]{1,24}$/u.test(name)) {rankingError.value = 'Enter a name of 1–24 letters or numbers.'; return}
   starting.value = true
   const current = ++generation
+  pendingClaim.value = undefined; claimMessage.value = ''
   runId = undefined; verifiedTime.value = undefined; feedback.value = ''; unranked.value = false; saving.value = false; locallySaved.value = false; uploadUnconfirmed.value = false
   try {localStorage.setItem('atlas-name', name)} catch { /* Play remains available without storage. */ }
   let next: Session
   try {
     if (!navigator.onLine) {throw new Error('Offline')}
-    const result = await rankingRequest<{ id: string; deck: string[] }>('/runs', { playerId, name })
+    const result = await rankingRequest<{ id: string; deck: string[]; claimToken?: string }>('/runs', { playerId, name })
     if (!isGuestId(result.id) || !Array.isArray(result.deck)) {throw new Error('Invalid run')}
     next = createSession(countries.value, result.deck)
     runId = result.id; rankingError.value = ''
+    if (!account.value && isGuestId(result.claimToken)) {pendingClaim.value = { id: result.id, claimToken: result.claimToken }}
   } catch { next = createSession(countries.value); unranked.value = true }
   if (!mounted || current !== generation) {return}
   session.value = next; elapsed.value = 0; startedAt = Date.now(); starting.value = false
@@ -458,7 +502,7 @@ function sendAnswer(index: number, guess: string | null, elapsedMs: number) {
       await refreshRanking()
       if (account.value) {await refreshAccount()}
     }
-  }).catch(() => { if (mounted && current === generation) {unranked.value = true; uploadUnconfirmed.value = true; runId = undefined; saving.value = false} })
+  }).catch(() => { if (mounted && current === generation) {unranked.value = true; uploadUnconfirmed.value = true; runId = undefined; pendingClaim.value = undefined; saving.value = false} })
 }
 function answer(country: Country | null | undefined) {
   if (!session.value || !playing.value) {return}
@@ -480,7 +524,7 @@ function viewportChanged() {
   }
   if (session.value) {showMission()}
 }
-function reset() {generation++; runId = undefined; session.value = undefined; starting.value = false; saving.value = false; feedback.value = ''; restart.value?.close(); globe.value?.reset()}
+function reset() {generation++; runId = undefined; pendingClaim.value = undefined; claimMessage.value = ''; session.value = undefined; starting.value = false; saving.value = false; feedback.value = ''; restart.value?.close(); globe.value?.reset()}
 onMounted(() => {
   try {
     const saved = localStorage.getItem('atlas-player-id')

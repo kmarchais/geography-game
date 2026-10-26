@@ -1,6 +1,6 @@
 import { createServer } from 'node:http'
 import { DatabaseSync } from 'node:sqlite'
-import { randomInt, randomUUID } from 'node:crypto'
+import { createHash, randomInt, randomUUID } from 'node:crypto'
 import { readFileSync, mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -17,6 +17,9 @@ export function createRankingServer({ databasePath = '.local/atlas.sqlite', coun
       started INTEGER NOT NULL, state TEXT NOT NULL, complete INTEGER NOT NULL DEFAULT 0,
       correct INTEGER NOT NULL DEFAULT 0, time_ms INTEGER NOT NULL DEFAULT 0);
     CREATE INDEX IF NOT EXISTS ranking ON runs(complete, correct DESC, time_ms);`)
+  if (!db.prepare('PRAGMA table_info(runs)').all().some(column => column.name === 'claim_token_hash')) {
+    db.exec('ALTER TABLE runs ADD COLUMN claim_token_hash TEXT')
+  }
   const quiz = countries.filter(c => c.playable).map(c => c.id)
   const accounts = createAccounts(db, { clientId: googleClientId, verify: verifyGoogle, now, crossSiteOrigins })
   const ids = new Set(countries.map(c => c.id))
@@ -71,7 +74,20 @@ export function createRankingServer({ databasePath = '.local/atlas.sqlite', coun
         const id = randomUUID(), started = now()
         const account = accounts.user(req)
         db.prepare('INSERT INTO runs(id,player,name,started,state) VALUES(?,?,?,?,?)').run(id, account ? `google:${account.id}` : data.playerId, name, started, JSON.stringify({ version: 2, deck, answers: [] }))
-        reply(res, 201, { id, deck }); return
+        const claimToken = account ? undefined : randomUUID()
+        if (claimToken) {db.prepare('UPDATE runs SET claim_token_hash=? WHERE id=?').run(createHash('sha256').update(claimToken).digest('hex'), id)}
+        reply(res, 201, { id, deck, claimToken }); return
+      }
+      const claim = path.match(/^\/runs\/([0-9a-f-]{36})\/claim$/i)
+      if (claim) {
+        const account = accounts.user(req)
+        if (!account) {reply(res, 401, { error: 'Sign in to save this score.' }); return}
+        const run = db.prepare('SELECT * FROM runs WHERE id=?').get(claim[1])
+        if (!isGuestId(data.claimToken) || !run || run.claim_token_hash !== createHash('sha256').update(data.claimToken).digest('hex') || Object.keys(data).some(key => key !== 'claimToken')) {reply(res, 403, { error: 'This score cannot be claimed.' }); return}
+        const owner = `google:${account.id}`
+        if (!run.complete || (run.player.startsWith('google:') && run.player !== owner)) {reply(res, 409, { error: 'This score cannot be claimed.' }); return}
+        db.prepare('UPDATE runs SET player=? WHERE id=?').run(owner, run.id)
+        reply(res, 200, { saved: true }); return
       }
       const match = path.match(/^\/runs\/([0-9a-f-]{36})\/answers$/i)
       if (!match) {reply(res, 404, { error: 'Not found.' }); return}
