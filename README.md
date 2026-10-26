@@ -30,6 +30,8 @@ The ranking service stores `.local/atlas.sqlite`. Back it up with SQLite's backu
 
 For one public origin without a local-network permission prompt, use the [Railway deployment configuration](docs/railway.md). It serves the website and API together and keeps SQLite on a persistent volume. The configuration is prepared; live migration still requires an available Railway plan, database transfer, and verification. Keep the legacy PostgreSQL volume intact.
 
+The current budget is zero. The [free Cloudflare hosting plan](docs/free-hosting.md) describes a possible replacement for the computer-hosted API. It requires adapting the Node/SQLite backend and has not been deployed.
+
 Build with `bun run build`, then keep `bun run ranking` running independently of the build terminal. Serve `dist` over HTTPS and proxy `/atlas-api` to `http://127.0.0.1:4178`. Allow the exact HTTPS origin through `ATLAS_ALLOWED_ORIGINS`.
 
 For Tailscale Serve, configure a static route to `dist` at `/geography-game` and a proxy route at `/atlas-api`. Keep machine addresses in local configuration. Players need access to the tailnet and the host must stay awake. Public hosting requires a public HTTPS origin and the same API route.

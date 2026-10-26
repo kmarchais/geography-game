@@ -41,7 +41,7 @@ import { coordinateToVector, createCountryPicker, unwrapRing, vectorToCoordinate
 import type { Answer } from '@/globe/game'
 import { countryAngularSize, islandBlend, rotationSpeed } from '@/globe/detail'
 import { countryOutlines, countrySurface, outlineBatches, outlineHorizon, GlobeImagery } from '@/globe/terrain'
-import { zoomAtPointer } from '@/globe/navigation'
+import { wheelPointer, zoomAtPointer } from '@/globe/navigation'
 import { t, language, formatCoordinate, type MessageKey } from '@/globe/i18n'
 
 const props = defineProps<{ countries: Country[]; borders: boolean; paintFound: boolean; markers: boolean; answers: Answer[]; reveal?: string; disabled: boolean }>()
@@ -75,6 +75,7 @@ let frame = 0
 let disposed = false
 let observer: ResizeObserver | undefined
 let pointerStart: { x: number; y: number } | undefined
+let mousePosition: [number, number] | undefined
 let dragged = false
 const pointers = new Set<number>()
 const textures: THREE.Texture[] = []
@@ -289,6 +290,7 @@ function onPointerDown(event: PointerEvent) {
   else { dragged = false; pointerStart = { x: event.clientX, y: event.clientY } }
 }
 function onPointerMove(event: PointerEvent) {
+  if (event.pointerType === 'mouse') {mousePosition = [event.clientX, event.clientY]}
   if (pointerStart && Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) > 6) {dragged = true}
   if (pointers.size) {invalidate()}
 }
@@ -298,14 +300,15 @@ function onPointerUp(event: PointerEvent) {
   if (pointerStart && !dragged && pointers.size === 0) {selectAt(event.clientX, event.clientY)}
   if (!pointers.size) {pointerStart = undefined}
 }
-function cancelPointer() { pointers.clear(); pointerStart = undefined; dragged = true }
+function cancelPointer() { pointers.clear(); pointerStart = undefined; mousePosition = undefined; dragged = true }
 
 function onWheel(event: WheelEvent) {
   if (!controls || !canvas.value) {return}
   event.preventDefault()
   event.stopImmediatePropagation()
   const bounds = canvas.value.getBoundingClientRect()
-  mouse.set((event.clientX - bounds.left) / bounds.width * 2 - 1, -(event.clientY - bounds.top) / bounds.height * 2 + 1)
+  const [x, y] = wheelPointer([event.clientX, event.clientY], mousePosition)
+  mouse.set((x - bounds.left) / bounds.width * 2 - 1, -(y - bounds.top) / bounds.height * 2 + 1)
   const pixels = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? bounds.height : 1)
   const distance = THREE.MathUtils.clamp(1 + (camera.position.length() - 1) * Math.exp(THREE.MathUtils.clamp(pixels, -500, 500) * .002), controls.minDistance, controls.maxDistance)
   controls.enableDamping = false

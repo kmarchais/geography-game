@@ -1,7 +1,14 @@
 import { expect, it } from 'vitest'
 import { PerspectiveCamera, Raycaster, Sphere, Vector2, Vector3 } from 'three'
 import { coordinateToVector } from './geography'
-import { zoomAtPointer } from './navigation'
+import { wheelPointer, zoomAtPointer } from './navigation'
+
+it('keeps fractional pointer precision for rounded wheel events without reusing a stale pointer', () => {
+  expect(wheelPointer([803, 360], [803.1268, 360.7336])).toEqual([803.1268, 360.7336])
+  expect(wheelPointer([804, 360], [803.1268, 360.7336])).toEqual([804, 360])
+  expect(wheelPointer([803.4, 360.7], [803.1268, 360.7336])).toEqual([803.4, 360.7])
+  expect(wheelPointer([803, 360])).toEqual([803, 360])
+})
 
 it.each([1.0025, 1.1, 2])('anchors wheel zoom to the cursor at distance %s', distance => {
   for (const factor of [.7, 1.3]) {

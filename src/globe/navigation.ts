@@ -1,5 +1,10 @@
 import { PerspectiveCamera, Vector2, Vector3, Raycaster, Sphere, Quaternion } from 'three'
 
+/** Chrome rounds wheel coordinates, while pointer events retain subpixel precision. */
+export function wheelPointer(event: [number, number], pointer?: [number, number]): [number, number] {
+  return pointer && event.every((value, index) => Number.isInteger(value) && value === Math.floor(pointer[index]!)) ? pointer : event
+}
+
 /** Keep the globe point under the cursor fixed while zooming around Earth's centre. */
 export function zoomAtPointer(camera: PerspectiveCamera, pointer: Vector2, distance: number): void {
   const ray = new Raycaster(), sphere = new Sphere(new Vector3(), 1.0003)

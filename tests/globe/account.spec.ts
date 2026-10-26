@@ -32,13 +32,17 @@ test('Google entry stays in the top-right header at desktop and narrow widths', 
   await expect(button).toBeVisible()
   for (const width of [1440, 600, 320]) {
     await page.setViewportSize({ width, height: 900 })
-    const entry = (await button.boundingBox())!, menu = (await page.getByRole('button', { name: 'Menu', exact: true }).boundingBox())!
-    const header = (await page.locator('.orbit-header').boundingBox())!
-    expect(entry.x + entry.width / 2).toBeGreaterThan(width / 2)
-    expect(entry.y).toBeGreaterThanOrEqual(header.y)
-    expect(entry.y + entry.height).toBeLessThanOrEqual(header.y + header.height)
-    expect(entry.x + entry.width).toBeLessThanOrEqual(menu.x)
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await expect(async () => {
+      const entry = await button.boundingBox(), menu = await page.getByRole('button', { name: 'Menu', exact: true }).boundingBox()
+      const header = await page.locator('.orbit-header').boundingBox(), host = await page.locator('.google-web-button').boundingBox()
+      if (!entry || !menu || !header || !host) {throw new Error('Google is still rendering after resize')}
+      expect(entry.width).toBeCloseTo(host.width, 0)
+      expect(entry.x + entry.width / 2).toBeGreaterThan(width / 2)
+      expect(entry.y).toBeGreaterThanOrEqual(header.y)
+      expect(entry.y + entry.height).toBeLessThanOrEqual(header.y + header.height)
+      expect(entry.x + entry.width).toBeLessThanOrEqual(menu.x)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    }).toPass({ timeout: 5000 })
   }
   expect(await page.evaluate(() => (window as unknown as { atlasGoogleButtonOptions: { theme: string; shape: string; text: string } }).atlasGoogleButtonOptions)).toMatchObject({ theme: 'filled_black', shape: 'pill', text: 'signin' })
 })
