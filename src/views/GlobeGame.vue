@@ -14,6 +14,7 @@
           :disabled="playing || starting || saving"
           @busy="authBusy = $event"
           @connected="connected"
+          @status="authMessage = $event"
         />
         <button
           :class="account ? 'account-avatar' : 'icon-button'"
@@ -87,6 +88,13 @@
         </div>
       </div>
     </header>
+    <p
+      v-if="authMessage"
+      class="account-feedback small"
+      role="status"
+    >
+      {{ t(authMessage) }}
+    </p>
     <main class="orbit-workspace">
       <aside class="mission-panel">
         <section
@@ -471,7 +479,7 @@ const ready = ref(false), error = ref<MessageKey | ''>(''), warning = ref<Messag
 const playerName = ref(''), rankings = ref<RankedScore[]>([]), rankingError = ref<MessageKey | ''>('')
 const starting = ref(false), saving = ref(false), unranked = ref(false), localBest = ref<RankedScore>()
 const locallySaved = ref(false), uploadUnconfirmed = ref(false)
-const authBusy = ref(false)
+const authBusy = ref(false), authMessage = ref<MessageKey | ''>('')
 const best = computed(() => account.value ? accountBest.value : localBest.value)
 function connected(user: AtlasUser) {
   playerName.value = user.name

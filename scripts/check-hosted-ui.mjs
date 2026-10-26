@@ -9,6 +9,7 @@ try {
     const context = await browser.newContext({ locale: 'en-US', viewport: mobile ? { width: 393, height: 727 } : { width: 1440, height: 1000 }, isMobile: mobile, hasTouch: mobile })
     const page = await context.newPage()
     await page.goto('http://127.0.0.1:4180', { waitUntil: 'domcontentloaded' })
+    await page.getByText('Google connection unavailable. You can still play as a guest.', { exact: true }).waitFor()
     const info = page.getByRole('button', { name: 'Why 195 countries?', exact: true })
     await info.waitFor()
     try {

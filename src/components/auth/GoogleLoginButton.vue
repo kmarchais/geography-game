@@ -58,20 +58,6 @@
       ref="profile"
       @updated="emit('connected', $event)"
     />
-    <p
-      v-if="notice"
-      class="account-notice small"
-      role="status"
-    >
-      {{ t(notice) }}
-    </p>
-    <p
-      v-if="error"
-      class="account-error small"
-      role="status"
-    >
-      {{ t(error) }}
-    </p>
   </div>
 </template>
 <script setup lang="ts">
@@ -82,7 +68,7 @@ import { rankingRequest } from '@/globe/ranking'
 import ProfileDialog from './ProfileDialog.vue'
 import { t, language, type MessageKey } from '@/globe/i18n'
 const props = defineProps<{ disabled?: boolean }>()
-const emit = defineEmits<{ busy: [value: boolean]; connected: [user: AtlasUser] }>()
+const emit = defineEmits<{ busy: [value: boolean]; connected: [user: AtlasUser]; status: [message: MessageKey | ''] }>()
 const buttonHost = ref<HTMLDivElement>(), buttonReady = ref(false), busy = ref(false), error = ref<MessageKey | ''>('')
 const notice = ref<MessageKey | ''>('')
 const profile = ref<InstanceType<typeof ProfileDialog>>()
@@ -169,6 +155,7 @@ async function disconnect() {
 }
 watch(() => props.disabled, (disabled, previous) => {if (previous && !disabled) {prepare()}})
 watch(language, () => {renderedWidth = 0; renderButton()})
+watch(() => error.value || notice.value, message => emit('status', message), { immediate: true })
 defineExpose({ openProfile: () => profile.value?.open(), disconnect })
 onMounted(prepare)
 onBeforeUnmount(() => {alive = false; clearTimeout(refresh); resize?.disconnect(); emit('busy', false)})

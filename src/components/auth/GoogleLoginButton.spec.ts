@@ -30,15 +30,15 @@ test('native cancellation explicitly confirms that the player is still a guest',
   mocks.signIn.mockRejectedValue({ code: 'CANCELLED' })
   wrapper = mount(GoogleLoginButton); await flushPromises()
   await wrapper.get('button').trigger('click'); await flushPromises()
-  expect(wrapper.get('[role="status"]').text()).toContain('not connected')
-  expect(wrapper.find('.account-row').exists()).toBe(false)
+  expect(wrapper.emitted('status')?.at(-1)).toEqual(['googleIncomplete'])
+  expect(wrapper.find('.account-status').exists()).toBe(false)
   expect(wrapper.get('button').attributes('disabled')).toBeUndefined()
 })
 
 test('a login response without a retained session reports failure instead of staying silent', async () => {
   wrapper = mount(GoogleLoginButton); await flushPromises()
   await wrapper.get('button').trigger('click'); await flushPromises()
-  expect(wrapper.get('[role="status"]').text()).toContain('not connected')
+  expect(wrapper.emitted('status')?.at(-1)).toEqual(['googleUnconfirmed'])
   expect(account.value).toBeNull()
   expect(wrapper.emitted('connected')).toBeUndefined()
 })
