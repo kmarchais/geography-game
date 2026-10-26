@@ -67,4 +67,12 @@ The later Google account build supersedes the preceding retained APK. Web and An
 
 Queued job 915 passes 609 units, ten HTTP tests, 42 browser cases, type-checking, lint, and Android compilation. The updated APK is installed and its pulled hash matches the retained `.local/artifacts/Atlas-debug.apk`. See [Google sign-in](google-sign-in.md) for the current package and source digests, the physical chooser/cancellation/cookie checks, and the exact distinction between simulated account testing and real provider testing.
 
-Real Google sign-in is pending Google Cloud configuration. The real web SDK rejects the new website origin; native account registration and authenticated-session restoration have not been proven. The current shared-ranking database is reused; the original Railway database was not accessed or migrated. Guest play remains available.
+The temporary website origin was rejected by Google. The original GitHub Pages origin is accepted, as verified below. Native account registration and authenticated-session restoration have not been proven. The current shared-ranking database is reused; the original Railway database was not accessed or migrated. Guest play remains available.
+
+## Original website deployment
+
+Commit `f781b2549c75b0377d6658ddfa3b83d91a67ee09` was deployed to [the original website](https://kmarchais.github.io/geography-game/) by [Actions run 40334751571](https://github.com/kmarchais/geography-game/actions/runs/40334751571). Both build and deploy passed. The workflow checks the country count, types, units, HTTP API, and browser suite before producing the Pages artifact. The API endpoint comes from a repository variable and is not committed in generated assets.
+
+A fresh live Chromium session loads Atlas, starts a server-generated 195-country run, and advances after Skip. The real Google button returns HTTP 200 without origin errors. With third-party cookies blocked, the API challenge cookie is Secure, HttpOnly, SameSite=None, and partitioned under the Pages origin. An old `/europe` bookmark redirects to Atlas through the deployed 404 fallback. These checks do not claim successful Google account login. Evidence is retained in `.local/pages-live-proof.json` and `.local/pages-origin-proof.json`.
+
+The temporary feature-branch permission was removed after deployment. The Pages environment again allows only `main` and `gh-pages`. Pages serves the game independently of the API host; accounts and shared ranking require that host to remain available. A GPT-5.6-sol review checked the deployment and cookie changes. Its branch restriction and documentation findings were addressed.

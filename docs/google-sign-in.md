@@ -15,14 +15,14 @@ Signed-in run ownership comes from the server session, not the client-supplied g
 ## Configure the existing Google project
 
 1. In Google Cloud Console, select the project that owns the existing web OAuth client.
-2. Add the deployed website's exact HTTPS origin, including a non-default port, to that client's Authorized JavaScript origins. Do not include the game path. The GIS popup flow does not need a redirect URI or client secret.
+2. Keep `https://kmarchais.github.io` in that client's Authorized JavaScript origins. The existing client accepts this origin. The website is `https://kmarchais.github.io/geography-game/`. The GIS popup flow does not need a redirect URI or client secret.
 3. In the same project, create or verify an Android OAuth client for `com.kmarchais.orbit` with the signing certificate SHA-1 of the installed APK. Play App Signing will require its own certificate registration later.
 4. If the consent audience is in Testing, check access for the intended testers.
 5. Retry Google sign-in after the settings propagate.
 
 Deployment-specific values are in the ignored `.local/google-setup.md`. The runtime account service uses `GOOGLE_CLIENT_ID`; the current local service reads its public client ID from `.local/atlas-google-config.json`. There is no need to rebuild the app after registering the same client and certificate.
 
-The website and API should share an HTTPS origin. Configure allowed origins with `ATLAS_ALLOWED_ORIGINS`. `ATLAS_CROSS_SITE_ORIGINS` chooses origins requiring SameSite=None, defaulting to the native origin `https://localhost`. A custom native origin must appear in both lists.
+GitHub Pages serves the website while the existing ranking host serves the API. Configure allowed origins with `ATLAS_ALLOWED_ORIGINS`. `ATLAS_CROSS_SITE_ORIGINS` chooses origins requiring SameSite=None and Partitioned cookies. Both the Pages origin and native origin `https://localhost` must appear in both lists. A deployment with the website and API on one origin can use the default SameSite=Lax policy for web sessions.
 
 See [Google web setup](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid), [server verification](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token), and [Android implementation](https://developer.android.com/identity/sign-in/credential-manager-siwg-implementation).
 
@@ -34,7 +34,7 @@ The new APK is installed on the Pixel. It is 14,255,200 bytes, SHA-256 `8d2f0dca
 
 Physical verification proves the native account chooser opens and cancellation restores guest controls. A Secure, HttpOnly, SameSite=None challenge cookie persists across app-process restart using the native cookie persistence method. No Google session is claimed from these checks. A successful native account login and authenticated-session restoration still require real verification after project configuration.
 
-The real Google web SDK reports `The given origin is not allowed for the given client ID.` The managed Cloud Console browser requires a Google login, and no other connected browser session was available. Google project settings have not been changed. Real account sign-in remains blocked on the configuration above.
+The temporary laptop website was rejected by Google's origin check. The user chose the original GitHub Pages address instead. Its real Google sign-in button returns HTTP 200 without an origin error. A fresh Chromium session with third-party cookies blocked stores and reuses the API's Secure, HttpOnly partitioned challenge cookie under the Pages origin. This proves the button and challenge exchange, not a completed Google account login. Google project settings have not been changed; Android client registration and successful account login remain unverified.
 
 Evidence is retained in `.local/atlas-auth-final-verification.json`, `.local/atlas-auth-check-status.json`, `.local/atlas-google-live-check.json`, `.local/phone/atlas-google-cancel.json`, `.local/phone/atlas-google-cookie-persistence.json`, `.local/phone/atlas-google-package-proof.json`, and `.local/atlas-google-apk-certificate.txt`.
 
