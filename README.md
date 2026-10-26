@@ -2,7 +2,7 @@
 
 <img src="public/atlas.svg" width="96" height="96" alt="Atlas globe and location pin">
 
-[Play Atlas](https://kmarchais.github.io/geography-game/) in your browser, or install the Android app. Both use the same interface and shared ranking.
+[Play Atlas](https://atlas-geography.kmarchais-atlas.workers.dev/) in your browser, or install the Android app. Both use the same interface and shared ranking. The [original address](https://kmarchais.github.io/geography-game/) also works.
 
 Find all 195 countries on a 3D Earth. You have one guess per country, and every answer advances immediately. Skip islands you cannot find. The clock runs continuously; rankings sort by percentage correct, then by the time of the last correct answer.
 
@@ -28,9 +28,9 @@ The ranking service stores `.local/atlas.sqlite`. Back it up with SQLite's backu
 
 ## Host the game
 
-For one public origin without a local-network permission prompt, use the [Railway deployment configuration](docs/railway.md). It serves the website and API together and keeps SQLite on a persistent volume. The configuration is prepared; live migration still requires an available Railway plan, database transfer, and verification. Keep the legacy PostgreSQL volume intact.
+The public site, API, and SQLite database run on Cloudflare Free. Web and Android call the cloud API directly, so a personal computer does not need to stay awake. See [Cloudflare deployment and quotas](docs/free-hosting.md). No paid subscription was activated. The original GitHub Pages site uses the same API.
 
-The current budget is zero. The [free Cloudflare hosting plan](docs/free-hosting.md) describes a possible replacement for the computer-hosted API. It requires adapting the Node/SQLite backend and has not been deployed.
+The [Railway configuration](docs/railway.md) remains an alternative deployment recipe. It was tested but not deployed because the budget is zero. Keep the legacy PostgreSQL volume intact.
 
 Build with `bun run build`, then keep `bun run ranking` running independently of the build terminal. Serve `dist` over HTTPS and proxy `/atlas-api` to `http://127.0.0.1:4178`. Allow the exact HTTPS origin through `ATLAS_ALLOWED_ORIGINS`.
 
@@ -38,7 +38,7 @@ For Tailscale Serve, configure a static route to `dist` at `/geography-game` and
 
 The original GitHub Pages website uses the `Build and Deploy` workflow. Set the `ATLAS_API_URL` repository variable to the reachable HTTPS API endpoint, select GitHub Actions as the Pages publishing source, and run the workflow on the branch to publish. It uploads a build artifact instead of committing generated assets or machine addresses to `gh-pages`. Pull requests run checks without publishing or contacting the live ranking API. A `404.html` app shell handles old route bookmarks.
 
-For a separately hosted API, add the website origin to both `ATLAS_ALLOWED_ORIGINS` and `ATLAS_CROSS_SITE_ORIGINS`. Cross-site account cookies are Secure, HttpOnly, SameSite=None, and Partitioned, so modern browsers can preserve account state while blocking ordinary third-party cookies. Keep the API host running for accounts and shared rankings; the static game stays on GitHub Pages.
+For a separately hosted Node API, add the website origin to both `ATLAS_ALLOWED_ORIGINS` and `ATLAS_CROSS_SITE_ORIGINS`. The Cloudflare adapter accepts these lists as JSON arrays. Cross-site account cookies are Secure, HttpOnly, SameSite=None, and Partitioned, so modern browsers can preserve account state while blocking ordinary third-party cookies.
 
 Each guest identity contributes its best completed run to the top 20. Names do not reserve accounts. Clearing local storage creates another identity. The server checks the deck, answer order, country membership, and time bounds, and calculates correctness. Client timing remains trusted within those bounds, so this is a practice leaderboard, not a fraud-resistant competition.
 

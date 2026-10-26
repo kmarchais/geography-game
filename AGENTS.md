@@ -33,7 +33,7 @@
 - Guest score claims require the private token issued at run creation and an authenticated account. Keep claims idempotent, reject incomplete runs, and prevent transfer to another account.
 - Bug reports are saved before GitHub publication. Keep retry IDs, public-posting notice, rate limits, and duplicate recovery. Never include account credentials, photos, email addresses, or private host addresses in report context. Browser/API tests must inject or mock the publisher and must not create live GitHub issues.
 - Preserve `.local/atlas.sqlite` across builds and deployments. Use SQLite's backup API before a schema change on a running installation.
-- Railway hosting is prepared in `Dockerfile` and `docs/railway.md`, but the budget is zero. Do not activate a paid plan or replace the legacy PostgreSQL volume. The Cloudflare adapter is being validated with the Free SQLite backend; keep the existing database and API running until import and cutover are verified. Track its actual deployment status in `docs/free-hosting.md`.
+- The site, API, and shared SQLite database run on Cloudflare Free. Do not activate a paid plan or replace the legacy Railway PostgreSQL volume. Keep the original local SQLite migration checkpoint. The old API route is a compatibility proxy to Cloudflare, not another writable database. Track deployment and rollback constraints in `docs/free-hosting.md`.
 - Never claim that a mocked Google callback proves real account login. Record browser, native, and provider verification separately.
 
 ## Changes and verification
@@ -52,6 +52,7 @@
 - Use only the `kmarchais` GitHub account. Before GitHub-backed operations, run `gh auth switch --hostname github.com --user kmarchais` and `gh auth status --hostname github.com`.
 - Work on the feature branch unless instructed otherwise. Do not overwrite `main` or commit generated website bundles.
 - GitHub Actions publishes the original Pages website from a verified build artifact. The ranking API runs separately. Keep its database and service alive during static deployments.
+- Cloudflare deployments use the verified root web artifact and `wrangler.jsonc`. Preserve configured Google/CORS variables with `--keep-vars` when deploying from the root configuration. GitHub issue credentials belong only in Worker secrets. Never expose a database import/export route in the normal Worker.
 - Keep machine addresses, SSH identities, device addresses, pairing codes, secrets, and host-specific API endpoints out of committed files. Use ignored local configuration and deployment variables.
 - Remove temporary deployment permissions after publishing. Keep private Tailscale services private; only expose the routes explicitly authorized for Atlas.
 

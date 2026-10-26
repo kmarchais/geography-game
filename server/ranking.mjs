@@ -19,9 +19,14 @@ export function createRankingServer({ databasePath = '.local/atlas.sqlite', coun
   }
   const api = createAtlasApi({ ...options, db, transaction, countries })
   const server = createServer(async (req, res) => {
-    const path = new URL(req.url, 'http://localhost').pathname
-    if (staticDirectory && path !== '/health' && !/^\/atlas-api(?:\/|$)/.test(path)) {await serveStatic(req, res, staticDirectory); return}
-    await api.handle(req, res)
+    try {
+      const path = new URL(req.url, 'http://localhost').pathname
+      if (staticDirectory && path !== '/health' && !/^\/atlas-api(?:\/|$)/.test(path)) {await serveStatic(req, res, staticDirectory); return}
+      await api.handle(req, res)
+    } catch {
+      if (!res.headersSent) {res.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(JSON.stringify({ error: 'Ranking unavailable.' }))}
+      else {res.end()}
+    }
   })
   server.on('close', () => {api.close(); db.close()})
   return server

@@ -4,6 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { once } from 'node:events'
+import { request as httpRequest } from 'node:http'
 import { spawnSync } from 'node:child_process'
 import { createRankingServer } from '../../server/ranking.mjs'
 import { publishGithubReport } from '../../server/reports.mjs'
@@ -19,6 +20,12 @@ test('one service serves the web app and API, bounds file access, and preserves 
   const stop = () => new Promise(resolve => {server.close(resolve); server.closeAllConnections()})
   try {
     let origin = await start()
+    const malformedStatus = await new Promise((resolve, reject) => {
+      const request = httpRequest(origin, { path: 'http://[' }, response => {response.resume(); resolve(response.statusCode)})
+      request.on('error', reject)
+      request.end()
+    })
+    assert.equal(malformedStatus, 500)
     assert.match(await (await fetch(origin)).text(), /<title>Atlas/)
     assert.match(await (await fetch(`${origin}/classic`)).text(), /<title>Atlas/)
     const asset = await fetch(`${origin}/assets/app.js`)

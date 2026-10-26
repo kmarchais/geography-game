@@ -72,7 +72,7 @@ The production build separates the globe from legacy chunks. The earlier zoom bu
 
 These are measured build sizes, not a claim of a phone frame rate. Device emulation tests layout, browser behavior, and touch events; it does not reproduce a physical phone's GPU, thermal limits, memory pressure, or battery use. The Android build was also exercised on a physical Pixel 10 Pro XL, including selection, microstate zoom, gestures, orientation and offline reload. The validation report distinguishes that short observation from sustained performance measurements. Safari on an iPhone remains a release check. A WebGL 2 failure shows recovery guidance instead of an empty game.
 
-The classic game suite still contains skips and tests that fetch external data. The new mode's unit tests and browser tests are kept separate so a passing new mode does not imply those old paths are all repaired. The production Flask service, OAuth setup, and database migrations have not been exercised here.
+The classic game suite still contains skips and tests that fetch external data. The new mode's unit tests and browser tests are kept separate so a passing new mode does not imply those old paths are all repaired. The legacy Flask service remains outside this verification. The new shared API, real Google login on web and Android, and SQLite migration to Cloudflare are verified in [the Atlas validation record](atlas-validation.md).
 
 ## Android path
 
@@ -84,8 +84,8 @@ A native renderer or Rust/WASM should follow a measured need. A CPU-heavy geogra
 
 ## Next work after this mode
 
-1. Play on physical Android and iOS hardware and record input latency, frame times, texture memory, and offline upgrade behavior.
+1. Measure sustained Android input latency, frame times, texture memory and battery use, and test Safari on physical iOS hardware. Short Pixel interaction checks already pass.
 2. Choose a product policy for territories and disputed regions before adding a broader country list.
-3. Extend the tested game rules to regional challenges, timed sessions, or spaced repetition after the basic mode feels right.
+3. Keep the single 195-country challenge concise and improve it from player feedback before considering more modes.
 4. Repair or retire legacy timer, feedback, popup, account, and remote-data paths as their modes migrate.
-5. Add account sync or leaderboards only with server-validated results and an explicit account/session design.
+5. Monitor the implemented shared leaderboard for abuse. Correctness and ownership are server-validated; bounded client timing remains a practice-game trust decision.
