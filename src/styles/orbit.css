@@ -28,7 +28,12 @@ body { margin: 0; background: #090f13; }
 .icon-button { width: 44px; border: 1px solid var(--line); border-radius: 50%; font-size: 18px !important; }
 .orbit-workspace { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: clamp(28px, 4vw, 72px); min-height: calc(100svh - 76px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); align-items: center; }
 .mission-panel { padding: 32px 0; min-width: 0; }
-.start-card > p { margin: 0 0 32px; }
+.challenge-heading { display: flex; align-items: center; gap: 4px; margin-bottom: 24px; }
+.challenge-heading h1 { margin: 0; }
+.count-info-button { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; border: 0; background: none; color: var(--muted); }
+.count-info-button:hover { color: var(--mint); }
+.count-info-button span { display: grid; place-items: center; width: 18px; height: 18px; border: 1px solid currentcolor; border-radius: 50%; font-size: 12px; font-weight: 600; }
+.country-count-tooltip { position: fixed; inset: auto; margin: 0; width: 280px; max-width: calc(100vw - 40px); padding: 12px 14px; border: 1px solid #36505c; border-radius: 9px; background: #14212a; color: #edf3f0; font: 12px/1.6 'DM Sans', sans-serif; box-shadow: 0 8px 24px #0006; }
 .name-label { display: block; color: var(--muted); margin-bottom: 8px; font-size: 12px; }
 .orbit-app input { display: block; width: 100%; padding: 12px 14px; min-height: 48px; background: #101b21; color: #edf3f0; border: 1px solid #30434d; border-radius: 9px; margin-bottom: 12px; }
 .primary-button, .secondary-button { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; min-height: 48px; border-radius: 9px; padding: 12px 18px; font-weight: 600 !important; }
@@ -101,7 +106,6 @@ body { margin: 0; background: #090f13; }
   .mission-panel { display: contents; }
   .start-card, .mission-card { order: 0; width: 100%; padding: 26px 0 12px; }
   .start-card h1 { font-size: 32px; }
-  .start-card > p { margin-bottom: 20px; }
   .start-card form { display: grid; grid-template-columns: 1fr 120px; gap: 10px; align-items: center; }
   .name-label { grid-column: 1 / -1; margin: 0; }
   .start-card input { margin: 0; }

@@ -31,10 +31,28 @@
           v-if="!session"
           class="start-card"
         >
-          <h1>195 countries.</h1>
-          <p class="muted">
-            193 UN members + 2 observer states.
-          </p>
+          <div class="challenge-heading">
+            <h1>195 countries.</h1>
+            <button
+              class="count-info-button"
+              aria-label="Why 195 countries?"
+              aria-describedby="country-count-info"
+              :title="countryCountExplanation"
+              popovertarget="country-count-info"
+              @click="positionCountryCount"
+            >
+              <span aria-hidden="true">i</span>
+            </button>
+            <div
+              id="country-count-info"
+              ref="countryCount"
+              popover
+              role="tooltip"
+              class="country-count-tooltip"
+            >
+              {{ countryCountExplanation }}
+            </div>
+          </div>
           <GoogleLoginButton
             :disabled="starting || saving"
             @busy="authBusy = $event"
@@ -347,6 +365,13 @@ import { rankingRequest, validRanking } from '@/globe/ranking'
 const base = import.meta.env.BASE_URL
 const countries = shallowRef<Country[]>([]), session = shallowRef<Session>()
 const globe = ref<InstanceType<typeof EarthGlobe>>(), help = ref<HTMLDialogElement>(), restart = ref<HTMLDialogElement>()
+const countryCount = ref<HTMLElement>()
+const countryCountExplanation = '193 UN members + 2 observer states.'
+function positionCountryCount(event: MouseEvent) {
+  const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  countryCount.value!.style.left = `${Math.max(20, Math.min(bounds.left, innerWidth - 300))}px`
+  countryCount.value!.style.top = `${Math.max(20, Math.min(bounds.bottom + 8, innerHeight - 100))}px`
+}
 const ready = ref(false), error = ref(''), warning = ref(''), globeKey = ref(0)
 const playerName = ref(''), rankings = ref<RankedScore[]>([]), rankingError = ref('')
 const starting = ref(false), saving = ref(false), unranked = ref(false), localBest = ref<RankedScore>()
@@ -448,7 +473,13 @@ function answer(country: Country | null | undefined) {
   if (session.value.phase === 'complete') {saveLocal(); showMission()}
 }
 function showMission() { if (innerWidth <= 720 || import.meta.env.VITE_NATIVE === 'true') {nextTick(() => document.querySelector('.mission-card')?.scrollIntoView({ block: 'start' }))} }
-function viewportChanged() {if (session.value) {showMission()}}
+function viewportChanged() {
+  if (countryCount.value?.matches(':popover-open')) {
+    const bounds = countryCount.value.getBoundingClientRect()
+    if (bounds.right > innerWidth || bounds.bottom > innerHeight) {countryCount.value.hidePopover()}
+  }
+  if (session.value) {showMission()}
+}
 function reset() {generation++; runId = undefined; session.value = undefined; starting.value = false; saving.value = false; feedback.value = ''; restart.value?.close(); globe.value?.reset()}
 onMounted(() => {
   try {
