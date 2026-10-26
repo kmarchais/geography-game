@@ -162,3 +162,15 @@ jobs:
       - name: Container logs
         if: always()
         run: docker logs atlas-hosting || true
+      - name: Verify the Cloudflare runtime with an isolated local database
+        run: |
+          docker cp atlas-hosting:/app/dist ./dist
+          npx --yes wrangler@4.153.0 dev --port 8787 --ip 127.0.0.1 > "$RUNNER_TEMP/atlas-worker.log" 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" || true' EXIT
+          for attempt in $(seq 1 40); do
+            if curl --fail --silent http://127.0.0.1:8787/atlas-api/health; then break; fi
+            sleep 1
+          done
+          ATLAS_WORKER_TEST_URL=http://127.0.0.1:8787 node --test tests/server/cloudflare-runtime.test.mjs
+          cat "$RUNNER_TEMP/atlas-worker.log"

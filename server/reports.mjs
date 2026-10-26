@@ -38,7 +38,7 @@ export async function publishGithubReport(report, request = gh, { token = proces
   return JSON.parse(result).html_url
 }
 
-export function createBugReports(db, { now = Date.now, publish = publishGithubReport } = {}) {
+export function createBugReports(db, { now = Date.now, publish = publishGithubReport, wake } = {}) {
   db.exec(`CREATE TABLE IF NOT EXISTS bug_reports(id TEXT PRIMARY KEY,title TEXT NOT NULL,description TEXT NOT NULL,context TEXT NOT NULL,
     reporter TEXT NOT NULL,created INTEGER NOT NULL,attempts INTEGER NOT NULL DEFAULT 0,next_attempt INTEGER NOT NULL DEFAULT 0,issue_url TEXT,published_at INTEGER);`)
   let timer, busy = false, closed = false
@@ -47,6 +47,7 @@ export function createBugReports(db, { now = Date.now, publish = publishGithubRe
     return row ? { id: row.id, state: row.issue_url ? 'published' : 'pending', issueUrl: row.issue_url } : undefined
   }
   function schedule(delay = 0) {
+    if (wake) {if (!closed) {wake(now() + delay)}; return}
     clearTimeout(timer)
     if (!closed) {timer = setTimeout(() => {publishPending().catch(() => schedule(60000))}, delay); timer.unref()}
   }
