@@ -12,12 +12,14 @@ Sessions expire after 30 days and use Secure, HttpOnly, host-only cookies. Only 
 
 Signed-in run ownership comes from the server session, not the client-supplied guest ID. Its best is shared across devices. Guest play remains available. Existing guest runs are not silently transferred to a Google account.
 
+Every successful first Google sign-in creates an Atlas account automatically. Completed online runs are stored in the shared SQLite database for every account; the public ranking displays each player's best. Offline practice is stored on the device.
+
 ## Configure the existing Google project
 
 1. In Google Cloud Console, select the project that owns the existing web OAuth client.
 2. Keep `https://kmarchais.github.io` in that client's Authorized JavaScript origins. The existing client accepts this origin. The website is `https://kmarchais.github.io/geography-game/`. The GIS popup flow does not need a redirect URI or client secret.
 3. In the same project, create or verify an Android OAuth client for `com.kmarchais.orbit` with the signing certificate SHA-1 of the installed APK. Play App Signing will require its own certificate registration later.
-4. If the consent audience is in Testing, check access for the intended testers.
+4. Confirm that the audience is External if friends outside your Google Workspace organization should sign in. Basic Sign in with Google is exempt from the test-user-list restriction; requesting additional OAuth scopes can change that. See [Google's audience rules](https://support.google.com/cloud/answer/15549945?hl=en).
 5. Retry Google sign-in after the settings propagate.
 
 Deployment-specific values are in the ignored `.local/google-setup.md`. The runtime account service uses `GOOGLE_CLIENT_ID`; the current local service reads its public client ID from `.local/atlas-google-config.json`. There is no need to rebuild the app after registering the same client and certificate.
