@@ -13,7 +13,7 @@ The budget is zero. No Workers Paid subscription, Railway subscription, or paid 
 | Durable Object | 100,000 requests and 13,000 GB-seconds per day |
 | SQLite storage | 5 GB total; 5 million rows read and 100,000 rows written per day |
 
-A full run uploads 195 answers. Index updates, deletes, and alarm writes also consume the storage allowance. Exceeding Free quotas fails requests; it does not activate paid usage. The existing unranked practice and local personal best behavior remains available when shared services cannot be reached.
+A full three-attempt run uploads between 195 and 585 guesses. Each resolved country also updates global counters and, when signed in, private account counters. Index updates, deletes, and alarm writes also consume the storage allowance. Exceeding Free quotas fails requests; it does not activate paid usage. The existing unranked practice and local personal best behavior remains available when shared services cannot be reached.
 
 Sources: [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/), [static asset billing](https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/), and [Durable Objects pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/).
 
@@ -50,3 +50,11 @@ After the new web origin was authorized in Google Cloud, real Google login succe
 The GitHub secret belongs to `kmarchais`. A read-only publisher check recovered the existing report's issue without posting anything. The token expires on **24 January 2027** and must be renewed before then. Reports remain durable and pending if publication fails.
 
 Evidence: `.local/cloudflare-remote-import-proof.json`, `.local/cloudflare-cutover-proof.json`, `.local/cloudflare-public-api-proof.json`, `.local/cloudflare-github-proof.json`, `.local/cloudflare-deployment-proof.json`, `.local/phone/atlas-cloudflare-connected.json`, and `.local/phone/atlas-cloudflare-package-proof.json`.
+
+## Three-attempt update, 27 October 2026
+
+Source `28bebbd158a824bd0baaf7941a0cc36f311bb5f7` is published after [workflow 40538700085](https://github.com/kmarchais/geography-game/actions/runs/40538700085). The migration adds the `published` column and `country_stats` table, preserving existing rows. New three-attempt runs use version 3; legacy runs remain stored and can be queried with `rules=2`. Unnamed runs are private until explicit publication. Global statistics contain only country counters, and private account counters require a session.
+
+A consistent read-only SQL snapshot and verified SQLite archive were retained immediately before deployment. SQLite backup APIs are not exposed by the Durable Object SQL adapter, so this snapshot used the authenticated Cloudflare SQL query API, without a production export endpoint. The post-deployment comparison confirms the existing users, sessions, reports, and three old runs. Two expired Google challenges were replaced by normal challenge renewal. Backups are local, ignored, and contain private data.
+
+Cloudflare version `6681d2ed-05a1-442f-bb45-7728a1ddacb3` and the original Pages website use the verified artifact. Configured Google and CORS variables and the GitHub secret were preserved. The temporary Pages branch policy was removed after publication. Rolling back code does not roll back SQLite; retain current cloud data and leave the original local migration checkpoint frozen.

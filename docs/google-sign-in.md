@@ -71,3 +71,7 @@ Profiles now support a separate public username, the verified Google photo, six 
 The verified interface release is source `8ed9fa8`, published by [workflow 40406810967](https://github.com/kmarchais/geography-game/actions/runs/40406810967). Sign-in is in the header. A confirmed session replaces it with the profile picture; tapping the picture opens the shared profile, sign-out, Help, and report menu. Google failure or cancellation feedback appears below the header so it cannot cover game controls.
 
 The final Pixel APK retains the real Google session and photo after updating and restarting. The deployed website's real Google button renders correctly in the header in Pixel Chrome. This confirms provider-button availability and layout, not a completed web login. Desktop/phone/tablet account and profile flows also pass with isolated Google callbacks. See `docs/atlas-validation.md` for versioned artifact hashes and physical evidence.
+
+## Minimal challenge update
+
+Guests start with Play and see the Google option only after completing a run. Existing sessions restore the profile picture at startup. Nickname publication and Google claims are optional; leaving the result screen without publishing keeps the score out of the public ranking. Signed-in country counters belong to the account and are not copied into the guest statistics on the device. See [current challenge validation](atlas-validation.md).

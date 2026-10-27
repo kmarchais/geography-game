@@ -2,7 +2,41 @@
 
 The Atlas challenge replaces Orbit's expedition settings. Historical Orbit results in `validation.md` do not verify the new mode or ranking service.
 
-## Current verification
+## Three-attempt challenge, 27 October 2026
+
+Source `28bebbd158a824bd0baaf7941a0cc36f311bb5f7` adds the minimal Play screen, optional result publication, global and private country counters, and three attempts. The third wrong guess rotates and zooms to a red territory, pauses briefly, and advances. The chronometer excludes this forced reveal. These rules use ranking version 3; existing version 2 scores remain stored separately.
+
+[Focused workflow 40535203683](https://github.com/kmarchais/geography-game/actions/runs/40535203683) passed the browser regression for three attempts, paused time, actual red canvas pixels, and progression. It also passed the minimal-layout and completed-run publication cases. The full desktop, phone, tablet, Android, and Worker verification is [workflow 40538700085](https://github.com/kmarchais/geography-game/actions/runs/40538700085). The corrected build passed and was published on Cloudflare and at the original Pages address. The Pages deployment was deliberately held until the API update completed, then retried successfully. Physical validation remains pending because the Pixel is locked.
+
+The APK source manifest matches all 302 build inputs to the committed source, including the generated Capacitor configuration. The signed APK is 10,976,274 bytes, SHA-256 `ec11df5a039b137d36a6ce47f1f46db2b9fa018a304c1c5b18e196b4f4ac2fe0`. Source proof is retained in `.local/atlas-minimal-source-proof.json`.
+
+Before migration, a read-only Cloudflare SQL query captured all five application tables in one consistent SELECT. The archive was reconstructed as SQLite and its row counts verified. `.local/atlas-cloud-before-stats-proof.json` records the digest and zero source writes. No database export endpoint was added. The original local SQLite migration checkpoint remains unchanged.
+
+Guest runs use a different anonymous owner per run until the player explicitly publishes a nickname or claims the run through Google. Only aggregate country counters are public. Private account counters require the server session. Integration tests verify retries do not duplicate counters and one account cannot read another account's private results. Local guest statistics are separate from shared account statistics.
+
+### Final checks for source 28bebbd
+
+| Check | Result |
+| --- | --- |
+| Frozen install, scoped lint, type-check | Exit 0 |
+| Unit suite | 631 passed, 26 legacy skips |
+| Shared API suite | 24 passed, one opt-in Worker test skipped |
+| Actual isolated Cloudflare runtime | Passed separately in the hosting job |
+| Desktop, phone, tablet browser suite | 91 passed, two mouse-wheel cases skipped on touch profiles |
+| Production container and minimal UI | Passed |
+| Android compile and source manifest | Passed; all 302 inputs match committed source |
+| Published Cloudflare assets and API | Nine artifact files match; Google configured; native CORS accepted; private statistics require a session |
+| Original Pages website | Published build and source assets match 28bebbd |
+| Existing database | Accounts, sessions, reports, and all three legacy runs preserved; two expired nonce challenges renewed normally |
+| Installed Pixel app | Pending unlock; this APK has not been installed or physically exercised |
+
+Evidence: `.local/atlas-minimal-ci-status.json`, `.local/atlas-minimal-final-ci.log`, `.local/atlas-minimal-source-proof.json`, `.local/atlas-minimal-apk-proof.json`, `.local/atlas-minimal-apk-signature.txt`, `.local/atlas-minimal-deployment-proof.json`, `.local/atlas-minimal-migration-proof.json`, and `.local/atlas-published-28bebbd.json`. The complete immutable browser report is retained in `.local/minimal-browser-report-final/`. Final screenshots include `.local/visual/atlas-final-desktop-start-2560.png` and `.local/visual/atlas-final-phone-red-reveal-1082.png`; both were visually inspected.
+
+The separate gpt-6-astra review found a stale wide-native grid rule and account outcomes copied into guest counters. Both were corrected before release. Browser regressions now verify a full-width native layout at desktop-window width and guest-statistic isolation after sign-out. The first broad run passed 85 cases but failed three drag cases because the new Play button intercepted the old start-screen test. Starting the game before the drag fixes the test without weakening its redraw assertion.
+
+No synthetic run, score, report, or country statistic was created in production during these checks. The database comparison uses read-only snapshots. Google provider login was verified in the preceding release; this update does not claim a fresh real-provider or physical-phone test. Native installation and interaction remain pending, along with the previously disclosed Safari, iOS, release-signing, sustained thermal, context-restoration, and long memory-cycle checks.
+
+## Initial Atlas verification
 
 Verified on 26 October 2026 on Lenovo and a Pixel 10 Pro XL running Android 17. Final queued verification job 888 passed, including the result-screen rotation regression.
 
