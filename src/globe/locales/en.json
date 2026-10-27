@@ -47,7 +47,7 @@
   "membership": "The 193 UN member states plus its two non-member observer states: Palestine and the Holy See, represented here by Vatican City. This is a membership-based quiz list, not a list of states recognized by every country.",
   "unMembers": "UN members",
   "unObservers": "UN observer states",
-  "instructions": "Drag to rotate. Scroll or pinch to zoom. You have three attempts per country. After three wrong guesses, Atlas reveals its territory. You can also skip.",
+  "instructions": "Drag to rotate. Scroll or pinch to zoom. You have three attempts per country. Green means first attempt, yellow second, orange third, and red missed or skipped. After three errors, Atlas shows the territory and pulls back before the next country.",
   "rankingInstructions": "Accuracy is out of 195. Ties use the time of your last correct answer. The clock pauses during automatic reveals. Scores appear in the ranking only when you publish them.",
   "keyboardInstructions": "Keyboard: arrows rotate, +/− zoom, Enter selects the center.",
   "credits": "Natural Earth boundaries · NASA imagery. Generalized coastlines and disputed boundaries. Guest rankings are for practice.",

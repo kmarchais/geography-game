@@ -40,7 +40,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { coordinateToVector, createCountryPicker, unwrapRing, vectorToCoordinate, type Country, type Coordinate } from '@/globe/geography'
 import type { Answer } from '@/globe/game'
-import { countryAngularSize, islandBlend, rotationSpeed, revealDistance } from '@/globe/detail'
+import { answerColor, countryAngularSize, islandBlend, rotationSpeed, revealDistance } from '@/globe/detail'
 import { countryOutlines, countrySurface, outlineBatches, outlineHorizon, GlobeImagery } from '@/globe/terrain'
 import { wheelPointer, zoomAtPointer } from '@/globe/navigation'
 import { t, language, formatCoordinate, type MessageKey } from '@/globe/i18n'
@@ -97,22 +97,24 @@ let flight: { start: THREE.Vector3; turn: THREE.Quaternion; startDistance: numbe
 function cancelFlight() {
   const current = flight
   flight = undefined
-  if (controls) {controls.enabled = true; controls.enableDamping = true}
+  if (controls) {controls.enabled = !props.reveal; controls.enableDamping = true}
   current?.resolve()
 }
-function revealCountry(country: Country): Promise<void> {
+function flyTo(coordinate: Coordinate, distance: number, duration: number): Promise<void> {
   cancelFlight()
   if (!controls) {return Promise.resolve()}
   controls.enableDamping = false; controls.update(); controls.enabled = false
-  const start = camera.position.clone().normalize(), end = new THREE.Vector3(...coordinateToVector(country.center))
-  const distance = revealDistance(country, camera.aspect), startDistance = camera.position.length()
+  const start = camera.position.clone().normalize(), end = new THREE.Vector3(...coordinateToVector(coordinate))
+  const startDistance = camera.position.length()
   return new Promise(resolve => {
     flight = { start, turn: new THREE.Quaternion().setFromUnitVectors(start, end), startDistance, endDistance: distance,
       lift: start.angleTo(end) > Math.PI / 12 ? Math.max(2.4, startDistance, distance) : 0,
-      started: performance.now(), duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 1250, resolve }
+      started: performance.now(), duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : duration, resolve }
     invalidate()
   })
 }
+function revealCountry(country: Country) {return flyTo(country.center, revealDistance(country, camera.aspect), 900)}
+function pullBack() {return flyTo(vectorToCoordinate(camera.position), 3.1, 600)}
 
 function invalidate() {
   if (!frame && !disposed && !document.hidden) {frame = requestAnimationFrame(render)}
@@ -251,9 +253,9 @@ function updateHighlights() {
   for (const country of props.countries) {
     if (country.small) {continue} // Small countries use their exact vector surface.
     const answer = answers.get(country.id)
-    if (country.id === props.reveal) {context.fillStyle = 'rgba(255, 76, 88, .75)'}
-    else if (props.paintFound && answer?.outcome === 'correct') {context.fillStyle = 'rgba(72, 231, 176, .65)'}
-    else {continue}
+    const color = country.id === props.reveal ? '#ff4c58' : props.paintFound ? answerColor(answer) : undefined
+    if (!color) {continue}
+    context.fillStyle = color + (country.id === props.reveal ? 'bf' : 'a6')
     drawCountry(context, country)
     hasFill = true
   }
@@ -261,11 +263,12 @@ function updateHighlights() {
   fillTexture.needsUpdate = true
   markerPositions.forEach(marker => {
     const answer = answers.get(marker.country.id)
-    const color = marker.country.id === props.reveal ? '#ff4c58' : props.paintFound && answer?.outcome === 'correct' ? '#63edb8' : undefined
+    const color = marker.country.id === props.reveal ? '#ff4c58' : props.paintFound ? answerColor(answer) : undefined
     marker.sprite.material.color.set(color ?? '#ccddd9')
     marker.highlighted = Boolean(color)
     if (color) {marker.surface.material.color.set(color)}
   })
+  if (controls && !flight) {controls.enabled = !props.reveal}
   invalidate()
 }
 
@@ -290,7 +293,7 @@ function zoom(direction: number) {
 }
 
 function reset() { focus([18, 16], 3.1) }
-defineExpose({ focus, zoom, reset, showFeedback, revealCountry })
+defineExpose({ focus, zoom, reset, showFeedback, revealCountry, pullBack })
 
 function selectAt(x: number, y: number) {
   if (!canvas.value || !controls || props.disabled) {return}
@@ -334,7 +337,7 @@ function onPointerUp(event: PointerEvent) {
 function cancelPointer() { pointers.clear(); pointerStart = undefined; mousePosition = undefined; dragged = true }
 
 function onWheel(event: WheelEvent) {
-  if (flight) {event.preventDefault(); return}
+  if (flight || props.reveal) {event.preventDefault(); return}
   if (!controls || !canvas.value) {return}
   event.preventDefault()
   event.stopImmediatePropagation()
@@ -353,7 +356,7 @@ function onWheel(event: WheelEvent) {
 }
 
 function onKey(event: KeyboardEvent) {
-  if (flight) {event.preventDefault(); return}
+  if (flight || props.reveal) {event.preventDefault(); return}
   if (!controls) {return}
   if (event.key === 'Enter' && event.repeat) {return}
   const [lon, lat] = vectorToCoordinate(camera.position)

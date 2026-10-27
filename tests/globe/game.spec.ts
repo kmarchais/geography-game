@@ -12,12 +12,12 @@ async function open(page: Page) {
   await page.goto('./')
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled()
 }
-async function mockRun(page: Page) {
+async function mockRun(page: Page, deck = order) {
   let correct = 0
-  await page.route('**/atlas-api/runs', route => route.fulfill({ json: { id: '11111111-1111-4111-8111-111111111111', deck: order } }))
+  await page.route('**/atlas-api/runs', route => route.fulfill({ json: { id: '11111111-1111-4111-8111-111111111111', deck } }))
   await page.route('**/atlas-api/runs/*/answers', route => {
     const data = route.request().postDataJSON()
-    correct += Number(data.guess === order[data.index])
+    correct += Number(data.guess === deck[data.index])
     return route.fulfill({ json: { complete: false, correct, total: 195, timeMs: 1000 } })
   })
 }
@@ -192,26 +192,76 @@ test('a real country tap scores and advances instantly without Next', async ({ p
   await expect(page.getByRole('button', { name: 'Skip' })).toBeDisabled()
   await page.clock.runFor(400)
   await expect(page.getByTestId('timer')).toHaveText(paused!)
-  await page.clock.fastForward(1400)
+  await page.clock.runFor(700)
   const screenshot = test.info().outputPath('atlas-country-reveal.png')
   await page.screenshot({ path: screenshot })
   await test.info().attach('Correct territory revealed in red', { path: screenshot, contentType: 'image/png' })
   const painted = await earth(page).screenshot()
-  const pixel = await page.evaluate(async source => {
+  const redPixels = async (painted: Buffer) => page.evaluate(async source => {
     const image = new Image(); image.src = source; await image.decode()
     const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height
     const context = canvas.getContext('2d')!; context.drawImage(image, 0, 0)
-    return [...context.getImageData(Math.floor(image.width / 2) + 12, Math.floor(image.height / 2), 1, 1).data]
+    const pixels = context.getImageData(0, 0, image.width, image.height).data
+    let red = 0
+    for (let i = 0; i < pixels.length; i += 4) {if (pixels[i]! > 170 && pixels[i]! > pixels[i + 1]! * 1.5 && pixels[i]! > pixels[i + 2]! * 1.5) {red++}}
+    return red
   }, `data:image/png;base64,${painted.toString('base64')}`)
-  expect(pixel[0]!).toBeGreaterThan(170)
-  expect(pixel[0]!).toBeGreaterThan(pixel[1]! * 1.5)
-  expect(pixel[0]!).toBeGreaterThan(pixel[2]! * 1.5)
-  await page.clock.fastForward(700)
+  const revealedRed = await redPixels(painted)
+  expect(revealedRed).toBeGreaterThan(50)
+  await page.clock.runFor(750)
+  await expect(page.getByTestId('timer')).toHaveText(paused!)
+  await expect(page.getByRole('button', { name: 'Skip' })).toBeDisabled()
+  await page.clock.runFor(450)
   await expect(page.getByTestId('progress')).toHaveText('3 / 195')
   await expect(page.getByTestId('accuracy')).toHaveText('0.5%')
   await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled()
+  const returnedRed = await redPixels(await earth(page).screenshot())
+  expect(returnedRed).toBeGreaterThan(5)
+  expect(returnedRed).toBeLessThan(revealedRed * .75)
   await page.getByRole('button', { name: 'Skip' }).click()
   await expect(page.getByTestId('progress')).toHaveText('4 / 195')
+})
+
+test('completed countries stay green, yellow, orange, and red according to the result', async ({ page }) => {
+  const first = ['TCD', 'SDN', 'EGY', 'LBY']
+  await mockRun(page, [...first, ...order.filter(id => !first.includes(id))])
+  await open(page); await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await earth(page).press('Enter') // Chad, first attempt.
+  await expect(page.getByTestId('progress')).toHaveText('2 / 195')
+  await earth(page).press('Enter') // Chad is wrong for Sudan.
+  for (let i = 0; i < 3; i++) {await earth(page).press('ArrowRight')}
+  await earth(page).press('Enter') // Sudan, second attempt.
+  await expect(page.getByTestId('progress')).toHaveText('3 / 195')
+  await earth(page).press('Enter'); await earth(page).press('Enter')
+  for (let i = 0; i < 3; i++) {await earth(page).press('ArrowUp')}
+  await earth(page).press('Enter') // Egypt, third attempt.
+  await expect(page.getByTestId('progress')).toHaveText('4 / 195')
+  await page.getByRole('button', { name: 'Skip' }).click() // Libya is red.
+  const bounds = (await earth(page).boundingBox())!, camera = new PerspectiveCamera(42, bounds.width / bounds.height, .01, 100)
+  camera.position.fromArray(coordinateToVector([30.6, 28.6])).multiplyScalar(3.1)
+  camera.lookAt(0, 0, 0); camera.updateMatrixWorld()
+  const points = first.map(id => {
+    const country = countries.find((country: { id: string }) => country.id === id)
+    const position = new Vector3(...coordinateToVector(country.center)).multiplyScalar(1.0003).project(camera)
+    return [(position.x + 1) / 2, (1 - position.y) / 2]
+  })
+  const screenshot = await earth(page).screenshot({ path: test.info().outputPath('attempt-colours.png') })
+  await test.info().attach('Completed-country colours', { body: screenshot, contentType: 'image/png' })
+  const pixels = await page.evaluate(async ({ source, points }) => {
+    const image = new Image(); image.src = source; await image.decode()
+    const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height
+    const context = canvas.getContext('2d')!; context.drawImage(image, 0, 0)
+    return points.map(([x, y]) => [...context.getImageData(Math.round(x! * image.width), Math.round(y! * image.height), 1, 1).data])
+  }, { source: `data:image/png;base64,${screenshot.toString('base64')}`, points })
+  const [green, yellow, orange, red] = pixels as number[][]
+  expect(green![1]!).toBeGreaterThan(green![0]! + 20)
+  expect(yellow![0]!).toBeGreaterThan(yellow![2]! * 1.5)
+  expect(yellow![1]!).toBeGreaterThan(yellow![2]! * 1.5)
+  expect(yellow![0]!).toBeLessThan(yellow![1]! * 1.2)
+  expect(orange![0]!).toBeGreaterThan(orange![1]! * 1.2)
+  expect(orange![1]!).toBeGreaterThan(orange![2]! * 1.3)
+  expect(red![0]!).toBeGreaterThan(red![1]! * 1.5)
+  expect(red![0]!).toBeGreaterThan(red![2]! * 1.5)
 })
 
 test('real touch dragging and pinch zoom do not answer countries', async ({ page }) => {

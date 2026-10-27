@@ -1,7 +1,7 @@
 import type { Country } from './geography'
 
 export type Outcome = 'correct' | 'missed' | 'skipped'
-export interface Answer { id: string; name: string; outcome: Outcome }
+export interface Answer { id: string; name: string; outcome: Outcome; attempt: number }
 export interface Session {
   deck: Country[]
   answers: Answer[]
@@ -40,7 +40,7 @@ export function answerCountry(session: Session, country: Country | null | undefi
   const target = session.deck[session.answers.length]!
   if (country !== null && country.id !== target.id && session.attempts < 2) {return { ...session, attempts: session.attempts + 1 }}
   const outcome: Outcome = country === null ? 'skipped' : country.id === target.id ? 'correct' : 'missed'
-  const answers = [...session.answers, { id: target.id, name: target.name, outcome }]
+  const answers = [...session.answers, { id: target.id, name: target.name, outcome, attempt: session.attempts + 1 }]
   return { ...session, answers, attempts: 0, phase: answers.length === session.deck.length ? 'complete' : 'playing', lastCorrectMs: outcome === 'correct' ? Math.max(session.lastCorrectMs, elapsedMs) : session.lastCorrectMs }
 }
 

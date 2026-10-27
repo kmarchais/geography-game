@@ -1,4 +1,11 @@
 import type { Coordinate, Country } from './geography'
+import type { Answer } from './game'
+
+export function answerColor(answer: Answer | undefined): string | undefined {
+  if (!answer) {return undefined}
+  if (answer.outcome !== 'correct') {return '#ff4c58'}
+  return answer.attempt === 3 ? '#f49b42' : answer.attempt === 2 ? '#f4d35e' : '#48e7b0'
+}
 
 export function rotationSpeed(distance: number): number {
   return .65 * Math.max(.0001, Math.min(1, (distance - 1) / 2.1))
@@ -19,7 +26,7 @@ export function countryAngularSize(country: Country): number {
 }
 
 export function revealDistance(country: Country, aspect: number): number {
-  return Math.max(1.006, Math.min(3.2, 1 + countryAngularSize(country) * .75 / (Math.tan(21 * Math.PI / 180) * Math.min(1, Math.max(.2, aspect)))))
+  return Math.max(1.2, Math.min(3.1, 1 + countryAngularSize(country) * 1.25 / (Math.tan(21 * Math.PI / 180) * Math.min(1, Math.max(.2, aspect)))))
 }
 
 export interface ImageryTile { key: string; level: number; column: number; row: number; west: number; north: number; span: number; latitudeSpan: number }

@@ -47,7 +47,7 @@
   "membership": "Les 193 États membres de l'ONU et ses deux États observateurs non membres : la Palestine et le Saint-Siège, représenté ici par le Vatican. Cette sélection repose sur leur statut à l'ONU, et non sur une reconnaissance par tous les pays.",
   "unMembers": "Membres de l'ONU",
   "unObservers": "États observateurs de l'ONU",
-  "instructions": "Faites glisser pour tourner. Faites défiler ou pincez pour zoomer. Vous avez trois essais par pays. Après trois erreurs, Atlas révèle son territoire. Vous pouvez aussi passer.",
+  "instructions": "Faites glisser pour tourner. Faites défiler ou pincez pour zoomer. Vous avez trois essais par pays. Vert : premier essai, jaune : deuxième, orange : troisième, rouge : manqué ou passé. Après trois erreurs, Atlas montre le territoire et dézoome avant le pays suivant.",
   "rankingInstructions": "La réussite est calculée sur 195 pays. Les égalités sont départagées par le temps du dernier pays trouvé. Le chronomètre s’arrête pendant les révélations automatiques. Un score apparaît au classement uniquement si vous le publiez.",
   "keyboardInstructions": "Clavier : flèches pour tourner, +/− pour zoomer, Entrée pour choisir le pays au centre.",
   "credits": "Frontières Natural Earth · Imagerie NASA. Côtes simplifiées et frontières contestées. Le classement invité sert à s'entraîner.",

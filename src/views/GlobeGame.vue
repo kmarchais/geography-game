@@ -211,9 +211,9 @@
             ref="globe"
             :countries="countries"
             :borders="true"
-            :paint-found="false"
+            :paint-found="true"
             :markers="true"
-            :answers="noAnswers"
+            :answers="session?.answers ?? noAnswers"
             :reveal="revealCountryId"
             :disabled="!playing || revealing"
             @select="answer"
@@ -702,7 +702,9 @@ async function answer(country: Country | null | undefined) {
     revealing.value = true; revealCountryId.value = previous.id
     await nextTick()
     await globe.value?.revealCountry(previous)
-    await new Promise(resolve => setTimeout(resolve, matchMedia('(prefers-reduced-motion: reduce)').matches ? 100 : 650))
+    await new Promise(resolve => setTimeout(resolve, matchMedia('(prefers-reduced-motion: reduce)').matches ? 100 : 550))
+    if (!mounted || current !== generation) {return}
+    await globe.value?.pullBack()
     if (!mounted || current !== generation) {return}
     startedAt += Date.now() - pausedAt
     revealing.value = false; revealCountryId.value = undefined

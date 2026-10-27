@@ -1,7 +1,29 @@
 import { describe, expect, it } from 'vitest'
-import { imageryTiles, imageryUrl, islandBlend, rotationSpeed } from './detail'
+import { answerColor, imageryTiles, imageryUrl, islandBlend, rotationSpeed, revealDistance } from './detail'
+import { readFileSync } from 'node:fs'
+import type { Country } from './geography'
 
 describe('globe detail', () => {
+  it('colours first, second, and third attempts green, yellow, and orange, and failures red', () => {
+    const answer = { id: 'TCD', name: 'Chad', outcome: 'correct' as const, attempt: 1 }
+    expect(answerColor(undefined)).toBeUndefined()
+    expect(answerColor(answer)).toBe('#48e7b0')
+    expect(answerColor({ ...answer, attempt: 2 })).toBe('#f4d35e')
+    expect(answerColor({ ...answer, attempt: 3 })).toBe('#f49b42')
+    expect(answerColor({ ...answer, outcome: 'missed', attempt: 3 })).toBe('#ff4c58')
+    expect(answerColor({ ...answer, outcome: 'skipped' })).toBe('#ff4c58')
+  })
+  it('reveals small countries with geographic context instead of a surface-level zoom', () => {
+    const countries: Country[] = JSON.parse(readFileSync('public/data/globe/countries.json', 'utf8'))
+    for (const id of ['AND', 'VAT', 'AFG', 'RUS']) {
+      for (const aspect of [.5, 1, 2]) {
+        const distance = revealDistance(countries.find(country => country.id === id)!, aspect)
+        expect(distance).toBeGreaterThanOrEqual(1.2)
+        expect(distance).toBeLessThanOrEqual(3.1)
+      }
+    }
+    expect(revealDistance(countries.find(country => country.id === 'AND')!, 1)).toBe(1.2)
+  })
   it('slows rotation as the camera approaches the surface without stopping it', () => {
     expect(rotationSpeed(3.1)).toBeCloseTo(.65)
     expect(rotationSpeed(1.1)).toBeLessThan(rotationSpeed(2))

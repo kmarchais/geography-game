@@ -16,6 +16,10 @@ test.describe('French system language', () => {
     await page.getByRole('button', { name: 'Jouer', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Tchad', exact: true })).toBeVisible()
     await expect(page.getByTestId('accuracy')).toHaveText('0,0 %')
+    const skip = page.getByRole('button', { name: 'Passer', exact: true })
+    expect(await skip.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+    const skipBox = (await skip.boundingBox())!, card = (await page.locator('.mission-card').boundingBox())!
+    expect(skipBox.x + skipBox.width).toBeLessThanOrEqual(card.x + card.width - 12)
     await page.getByRole('button', { name: 'Passer', exact: true }).click()
     await expect(page.getByText('Passé : Tchad')).toBeVisible()
     await page.getByRole('button', { name: 'Menu', exact: true }).click()
