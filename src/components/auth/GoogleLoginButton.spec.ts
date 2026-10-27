@@ -28,7 +28,7 @@ afterEach(() => wrapper?.unmount())
 
 test('native cancellation explicitly confirms that the player is still a guest', async () => {
   mocks.signIn.mockRejectedValue({ code: 'CANCELLED' })
-  wrapper = mount(GoogleLoginButton); await flushPromises()
+  wrapper = mount(GoogleLoginButton, { props: { showSignIn: true } }); await flushPromises()
   await wrapper.get('button').trigger('click'); await flushPromises()
   expect(wrapper.emitted('status')?.at(-1)).toEqual(['googleIncomplete'])
   expect(wrapper.find('.account-status').exists()).toBe(false)
@@ -36,7 +36,7 @@ test('native cancellation explicitly confirms that the player is still a guest',
 })
 
 test('a login response without a retained session reports failure instead of staying silent', async () => {
-  wrapper = mount(GoogleLoginButton); await flushPromises()
+  wrapper = mount(GoogleLoginButton, { props: { showSignIn: true } }); await flushPromises()
   await wrapper.get('button').trigger('click'); await flushPromises()
   expect(wrapper.emitted('status')?.at(-1)).toEqual(['googleUnconfirmed'])
   expect(account.value).toBeNull()
@@ -45,10 +45,16 @@ test('a login response without a retained session reports failure instead of sta
 
 test('a confirmed native session replaces Google sign-in with the connected account', async () => {
   keepSession = true
-  wrapper = mount(GoogleLoginButton); await flushPromises()
+  wrapper = mount(GoogleLoginButton, { props: { showSignIn: true } }); await flushPromises()
   await wrapper.get('button').trigger('click'); await flushPromises()
   expect(wrapper.get('.account-status').text()).toContain('Connected as Alex')
   expect(wrapper.find('.google-connect').exists()).toBe(false)
   expect(wrapper.emitted('connected')).toHaveLength(1)
   expect(mocks.persistCookies).toHaveBeenCalledOnce()
+})
+
+test('keeps sign-in hidden before the end-of-run choice', async () => {
+  wrapper = mount(GoogleLoginButton, { props: { showSignIn: false } }); await flushPromises()
+  expect(wrapper.find('button').exists()).toBe(false)
+  expect(mocks.signIn).not.toHaveBeenCalled()
 })
