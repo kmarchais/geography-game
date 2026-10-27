@@ -5,7 +5,7 @@ async function googleAccount(page: import('@playwright/test').Page, reject = fal
   let connected = false
   let user = { id: '11111111-1111-4111-8111-111111111111', name: 'Alex', picture: 'https://lh3.googleusercontent.com/atlas-test', avatar: 'google' }
   await page.route(user.picture, route => route.fulfill({ contentType: 'image/png', body: readFileSync('public/atlas-192.png') }))
-  await page.route('https://accounts.google.com/gsi/client', route => route.fulfill({ contentType: 'application/javascript', body: `window.google={accounts:{id:{initialize(config){window.atlasGoogleConfig=config},renderButton(host,options){window.atlasGoogleButtonOptions=options;const b=document.createElement('button');b.textContent='Sign in with Google';b.style.width=options.width+'px';b.style.height='40px';b.onclick=()=>window.atlasGoogleConfig.callback({credential:'signed-test-credential'});host.append(b)},disableAutoSelect(){}}}}` }))
+  await page.route('https://accounts.google.com/gsi/client', route => route.fulfill({ contentType: 'application/javascript', body: `window.google={accounts:{id:{initialize(config){window.atlasGoogleConfig=config},renderButton(host,options){window.atlasGoogleButtonOptions=options;const b=document.createElement('div');b.setAttribute('role','button');b.tabIndex=0;b.textContent='Sign in with Google';b.style.width=options.width+'px';b.style.height='40px';b.onclick=()=>window.atlasGoogleConfig.callback({credential:'signed-test-credential'});b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();b.click()}};host.append(b)},disableAutoSelect(){}}}}` }))
   await page.route('**/atlas-api/auth/session', route => route.fulfill({ json: { user: connected ? user : null, best: connected ? { id: 'best', name: user.name, correct: 100, total: 195, timeMs: 5000 } : null, googleClientId: 'test.apps.googleusercontent.com' } }))
   await page.route('**/atlas-api/auth/challenge', route => route.fulfill({ json: { nonce: 'a'.repeat(43) } }))
   await page.route('**/atlas-api/auth/google', route => {
@@ -44,8 +44,8 @@ test('Google entry stays on the result card, outside the header, at every width'
   await expect(page.locator('.orbit-header .google-web-button')).toHaveCount(0)
   for (const width of [1440, 600, 320]) {
     await page.setViewportSize({ width, height: 900 })
-    await button.scrollIntoViewIfNeeded()
     await expect(async () => {
+      await button.scrollIntoViewIfNeeded()
       const entry = await button.boundingBox(), card = await page.locator('.mission-card').boundingBox()
       const host = await page.locator('.result-google-entry .google-web-button').boundingBox()
       if (!entry || !card || !host) {throw new Error('Google is still rendering after resize')}
@@ -68,7 +68,13 @@ test('the guest avatar opens Google sign-in in the menu before playing', async (
   await page.getByRole('button', { name: 'Menu', exact: true }).click()
   const entry = page.locator('#menu-google-entry').getByRole('button', { name: 'Sign in with Google', exact: true })
   await expect(entry).toBeVisible()
-  await entry.click()
+  await page.keyboard.press('Escape')
+  await expect(entry).toBeHidden()
+  await page.getByRole('button', { name: 'Menu', exact: true }).click()
+  await expect(entry).toBeVisible()
+  await page.keyboard.press('Home')
+  await expect(entry).toBeFocused()
+  await page.keyboard.press('Enter')
   await expect(page.locator('.account-avatar:not(.guest-avatar)')).toHaveAttribute('title', 'Connected as Alex')
   await expect(page.locator('#atlas-menu')).toContainText('Connected as Alex')
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled()

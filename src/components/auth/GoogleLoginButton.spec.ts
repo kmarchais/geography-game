@@ -58,3 +58,21 @@ test('keeps sign-in hidden before the end-of-run choice', async () => {
   expect(wrapper.find('button').exists()).toBe(false)
   expect(mocks.signIn).not.toHaveBeenCalled()
 })
+
+test('places the same native sign-in control in the menu and then the result target', async () => {
+  const menu = document.createElement('div'), results = document.createElement('div')
+  menu.id = 'google-menu-test'; results.id = 'google-results-test'
+  document.body.append(menu, results)
+  try {
+    wrapper = mount(GoogleLoginButton, { props: { showSignIn: true, buttonTarget: '#google-menu-test' } })
+    await flushPromises()
+    expect(wrapper.find('button').exists()).toBe(false)
+    expect(menu.querySelector('button')?.textContent).toContain('Sign in')
+    await wrapper.setProps({ buttonTarget: '#google-results-test' })
+    await flushPromises()
+    expect(menu.querySelector('button')).toBeNull()
+    expect(results.querySelector('button')?.textContent).toContain('Sign in')
+    results.querySelector('button')!.click(); await flushPromises()
+    expect(mocks.signIn).toHaveBeenCalledOnce()
+  } finally {menu.remove(); results.remove()}
+})

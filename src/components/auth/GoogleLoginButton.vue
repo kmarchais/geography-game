@@ -117,8 +117,9 @@ async function prepare() {
     if (!googleClientId.value) {throw new Error('Google is unavailable')}
     if (nativeAccount) {return}
     await loadGoogle()
+    if (!alive || props.showSignIn === false) {return}
     const challenge = await rankingRequest<{ nonce: string }>('/auth/challenge')
-    if (!alive) {return}
+    if (!alive || props.showSignIn === false) {return}
     await nextTick()
     window.google.accounts.id.initialize({ client_id: googleClientId.value, nonce: challenge.nonce, callback: response => {finish(response.credential)} })
     if (buttonHost.value) {
@@ -161,7 +162,7 @@ async function disconnect() {
   finally {setBusy(false)}
 }
 watch(() => props.disabled, (disabled, previous) => {if (previous && !disabled) {prepare()}})
-watch(() => props.showSignIn, () => {buttonReady.value = false; renderedWidth = 0; nextTick(prepare)})
+watch(() => props.showSignIn, visible => {buttonReady.value = false; renderedWidth = 0; clearTimeout(refresh); if (visible) {nextTick(prepare)}})
 watch(language, () => {renderedWidth = 0; renderButton()})
 watch(() => error.value || notice.value, message => emit('status', message), { immediate: true })
 defineExpose({ openProfile: () => profile.value?.open(), disconnect })

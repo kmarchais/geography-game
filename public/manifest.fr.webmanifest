@@ -3,7 +3,7 @@
   "lang": "fr",
   "name": "Atlas · Défi géographique",
   "short_name": "Atlas",
-  "description": "195 pays. Une seule tentative par pays.",
+  "description": "195 pays. Trois essais par pays.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

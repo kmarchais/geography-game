@@ -3,7 +3,7 @@
   "lang": "en",
   "name": "Atlas · Geography challenge",
   "short_name": "Atlas",
-  "description": "195 countries. One guess each.",
+  "description": "195 countries. Three attempts per country.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
