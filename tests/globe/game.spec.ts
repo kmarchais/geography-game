@@ -53,6 +53,12 @@ test('minimal start, desktop ranking, and globe edges fill the viewport below th
   const screenshot = test.info().outputPath('atlas-minimal-start.png')
   await page.screenshot({ path: screenshot })
   await test.info().attach('Minimal start', { path: screenshot, contentType: 'image/png' })
+  if (width >= 1800) {
+    // Exercise native layout rules at tablet / desktop-window widths.
+    await page.locator('.orbit-app').evaluate(element => {element.classList.add('native-app'); element.querySelector('.ranking-sidebar')?.remove()})
+    await expect.poll(async () => (await earth(page).boundingBox())!.width).toBeCloseTo(width, 0)
+    expect((await earth(page).boundingBox())!.x).toBe(0)
+  }
 })
 
 test('close-zoom dragging redraws even below the controls change threshold', async ({ page }) => {
