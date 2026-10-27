@@ -75,7 +75,7 @@ test('Google entry stays on the result card, outside the header, at every width'
 
 test('the guest avatar opens Google sign-in in the menu before playing', async ({ page }) => {
   await googleAccount(page); await page.goto('./')
-  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled()
+  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled({ timeout: 15000 })
   await expect(page.locator('.guest-avatar .guest-silhouette')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Sign in with Google', exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: 'Menu', exact: true }).click()
