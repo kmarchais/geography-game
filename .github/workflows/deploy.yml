@@ -10,7 +10,7 @@ on:
       target:
         description: Verification scope
         type: choice
-        options: [all, hosting, focused]
+        options: [all, hosting, focused, interface]
         default: all
 
 permissions:
@@ -46,13 +46,18 @@ jobs:
       - run: google-chrome --version
       # Tests use their own in-memory API, never the live ranking database.
       - run: bun run test:globe
-        if: github.event.inputs.target != 'focused'
+        if: github.event.inputs.target != 'focused' && github.event.inputs.target != 'interface'
         timeout-minutes: 15
       - name: Focused interface regressions
         if: github.event.inputs.target == 'focused'
         run: |
           bun run build-only
           bunx playwright test --config playwright.globe.config.ts --project desktop --grep 'minimal start|a real country tap|Google entry|all 195 answers|guest results' --max-failures 3
+      - name: Interface checks across browser profiles
+        if: github.event.inputs.target == 'interface'
+        run: |
+          bun run build-only
+          bunx playwright test --config playwright.globe.config.ts --grep 'minimal start|Google entry|guest avatar|profile picture|guest results|connected play prefills|empty nickname|leaving the result|both shared and local|menu reports|failed report|data errors retry|French system language'
       - name: Upload browser report
         if: always()
         uses: actions/upload-artifact@v4

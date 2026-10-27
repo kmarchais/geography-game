@@ -58,7 +58,7 @@
           role="menu"
           :aria-label="t('atlasMenu')"
           @keydown="menuKey"
-          @toggle="authMenuOpen = menu?.matches(':popover-open') || false"
+          @toggle="menuToggled"
         >
           <div
             id="menu-google-entry"
@@ -116,7 +116,6 @@
           </button>
           <button
             role="menuitem"
-            autofocus
             @click="menu?.hidePopover(); help?.showModal()"
           >
             {{ t('howToPlay') }}
@@ -519,6 +518,12 @@ function menuKey(event: KeyboardEvent) {
   const index = buttons.indexOf(document.activeElement as HTMLButtonElement)
   const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length
   buttons[next]?.focus()
+}
+async function menuToggled() {
+  authMenuOpen.value = menu.value?.matches(':popover-open') || false
+  if (!authMenuOpen.value) {return}
+  await nextTick()
+  if (menu.value?.matches(':popover-open')) {menu.value.querySelector<HTMLButtonElement>('button[role="menuitem"]:not(:disabled)')?.focus()}
 }
 const countryCountExplanation = computed(() => t('countryCountInfo'))
 function positionCountryCount(event: MouseEvent) {

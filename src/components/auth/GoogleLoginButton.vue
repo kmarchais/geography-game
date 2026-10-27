@@ -87,8 +87,10 @@ function renderButton() {
   const width = Math.min(400, Math.floor(buttonHost.value.clientWidth))
   if (width < 120 || width === renderedWidth) {return}
   renderedWidth = width
+  const host = buttonHost.value, focused = host.contains(document.activeElement)
   buttonHost.value.replaceChildren()
   window.google.accounts.id.renderButton(buttonHost.value, { type: 'standard', theme: 'filled_black', shape: 'pill', size: 'large', text: 'signin', locale: language.value, width })
+  if (focused) {nextTick(() => {if (host.isConnected) {host.querySelector<HTMLElement>('[tabindex="0"], iframe, button')?.focus()}})}
 }
 function setBusy(value: boolean) {busy.value = value; emit('busy', value)}
 async function finish(credential?: string) {

@@ -85,6 +85,7 @@ test('the guest avatar opens Google sign-in in the menu before playing', async (
   await expect(entry).toBeHidden()
   await page.getByRole('button', { name: 'Menu', exact: true }).click()
   await expect(entry).toBeVisible()
+  await expect.poll(() => page.evaluate(() => document.querySelector('#atlas-menu')!.contains(document.activeElement))).toBe(true)
   await page.keyboard.press('Home')
   await expect(entry).toBeFocused()
   await page.keyboard.press('Enter')
