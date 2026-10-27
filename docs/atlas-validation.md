@@ -2,11 +2,55 @@
 
 The Atlas challenge replaces Orbit's expedition settings. Historical Orbit results in `validation.md` do not verify the new mode or ranking service.
 
+## Minimal results and Atlas address, 27 October 2026
+
+The current runtime source is `28e903308db70dfa3bb4888295a06d2b0c49563a`. [Play Atlas](https://kmarchais.github.io/atlas/) uses the same Cloudflare API and database as Android. The original `/geography-game/` address and Cloudflare website also serve this source. Later documentation-only commits do not change these verified runtime inputs.
+
+The guest menu uses a person silhouette. Google sign-in appears inside that menu before a run and on the results card afterward. Results show Score, the count out of 195, percentage, whole-second time, Google, "or", nickname, and Save. The confirmed account nickname prefills the field but stays editable. Save updates a changed profile name without replacing its avatar, publishes or claims the score, and returns to the labelled, opaque Play control. Shared ranking and personal scores are available from the avatar menu. `/scores/me` takes its identity from the authenticated server session. New account-local history is separate from guest history.
+
+### Verification scopes
+
+| Check | Observed result |
+| --- | --- |
+| Final source frozen install, scoped lint, type-check | Passed in [workflow 40556534965](https://github.com/kmarchais/geography-game/actions/runs/40556534965) |
+| Final source unit suite | 634 passed, 26 legacy skips |
+| Final source API suite | 25 passed, one opt-in Worker test skipped |
+| Actual isolated Worker | Passed separately in the hosting job |
+| Final source interface regressions | 45 passed across desktop, phone, and tablet |
+| Full core browser suite on `0fe4da2` | Local queued job 1051 passed 103 cases; two wheel cases skipped on touch profiles |
+| `/atlas/` prefix and offline-shell tests | 10 passed against an isolated API in [publication 40557915148](https://github.com/kmarchais/atlas/actions/runs/40557915148) |
+| Final Android compilation and source proof | Passed; 303 build inputs match the commit, including generated configuration |
+| Final installed APK | Pull-back hash equals signed artifact, 10,976,274 bytes |
+| Cloudflare publication | Nine files match the artifact; health and native CORS pass; foreign origin rejected |
+| Both Pages publications | Baked commit, icon, country polygons, French names, bilingual menu, and French manifest verified over HTTP |
+
+The complete local browser pass used `0fe4da2`. Its CI counterpart passed 102 cases but failed one desktop menu-focus assertion, with two wheel skips. Final source `28e9033` fixes menu focus after reopening and restores focus when Google redraws its control. Its 45-case interface run covers those changes; the entire gameplay suite was not rerun on that final focus-only change. Do not combine these scopes into a claimed final full-suite CI pass.
+
+The separate gpt-6-astra review found a result-close race: closing while answer acknowledgements were pending could clear the run ID before the queue finished. Closing is now disabled while those uploads settle. A delayed-final-acknowledgement regression verifies all 195 answers complete before leaving. Storage-failure coverage also keeps an unsaved result visible instead of claiming success.
+
+The installed APK is `.local/artifacts/Atlas-28e9033-debug.apk`, SHA-256 `7249fe8bae308aaa351c8b10bbcc3ba5aca6de94ec189846bea4f5b392e799a0`. The input-manifest digest is `b1837d667d21e54bf9f1b189305eabc1764c0911fb0e6a1dcee0aea42a9d927f`. `.local/atlas-simple-final-source-proof.json` binds the downloaded Android artifact to the commit; `.local/phone/atlas-installed-28e9033-proof.json` binds the installed package to the locally signed APK. The existing development certificate and package ID were preserved.
+
+### Physical Pixel checks
+
+On final source `28e9033`, the physical Pixel displayed the silhouette, labelled Play control, and minimal result card without retention text. Guest Save opened the native keyboard, accepted a nickname, sent one mocked publication, and returned home. A simulated confirmed account prefilled its nickname; editing and saving sent one mocked profile update and one claim, preserving the avatar. Both shared and personal score tabs opened. These tests mocked profile and score writes and did not publish synthetic scores.
+
+On core source `0fe4da2`, physical touch dragging and pinch did not answer. A correct answer advanced immediately. Three wrong attempts revealed Afghanistan and Andorra in red with rotation and appropriate zoom; the recorded timer stayed unchanged during each forced flight. Native portrait and landscape safe-area checks on the earlier account-entry build passed without overflow, and landscape results could scroll. The final focus fix does not change those layouts.
+
+The real native Google chooser and cancellation were checked separately on `ba10415`. Final account-edit tests used simulated sessions and do not prove a fresh provider exchange or a production score claim. After the final APK update, the original real Google profile and device data were restored, test overrides and simulated account history were removed, and the real session read the deployed `/scores/me` endpoint with HTTP 200. Auto-rotate was restored to its user-confirmed original enabled state.
+
+One initial physical-test setup created an empty production run before the mock was active. No answers or country counters were submitted. Cleanup removed exactly that empty run. Normal run-start maintenance had also expired three original incomplete runs older than 24 hours. No completed score was deleted; migration archives retain those historical rows. This is recorded in `.local/phone/atlas-minimal-empty-run-cleanup.json` rather than described as zero production run creation.
+
+Evidence: `.local/atlas-final-interface-ci.log`, `.local/atlas-final-ci-complete.json`, `.local/minimal-browser-full.log`, `.local/minimal-job-results.jsonl`, `.local/atlas-final-pages-ci.log`, `.local/atlas-final-deployment-proof.json`, `.local/atlas-published-pages-28e9033.json`, `.local/atlas-published-28e9033.json`, `.local/phone/atlas-final-guest-save.json`, `.local/phone/atlas-final-account-save.json`, `.local/phone/atlas-simple-physical-gameplay.json`, `.local/phone/atlas-avatar-landscape.json`, `.local/phone/atlas-avatar-google-cancel.json`, `.local/phone/atlas-simple-restored.json`, `.local/phone/atlas-final-real-session.json`, and `.local/phone/atlas-avatar-settings-restored.json`. The start and result screenshots `.local/phone/atlas-simple-native-start.png` and `.local/phone/atlas-simple-native-results.png` were visually inspected. They show core source `0fe4da2`; final-source state records confirm the same layout.
+
+Both publication workflows succeeded. The temporary original-repository Pages policy was removed; `.local/atlas-final-pages-policies-clean.json` records only `main` and `gh-pages`. No paid plan was activated. Safari, iOS, release signing, Play Store packaging, sustained thermal and battery behavior, WebGL context restoration, and long route-cycle memory checks remain open.
+
+The final gpt-6-astra audit found no material discrepancy in the source, test counts, APK proof, or cleanup records. Its request for an explicit Worker-version evidence pointer was addressed with `.local/atlas-final-cloudflare-deploy.log`. There is no workspace transcript directory, so this audit used the supplied task context, source, and retained evidence rather than an independent transcript of every physical action.
+
 ## Three-attempt challenge, 27 October 2026
 
 Source `28bebbd158a824bd0baaf7941a0cc36f311bb5f7` adds the minimal Play screen, optional result publication, global and private country counters, and three attempts. The third wrong guess rotates and zooms to a red territory, pauses briefly, and advances. The chronometer excludes this forced reveal. These rules use ranking version 3; existing version 2 scores remain stored separately.
 
-[Focused workflow 40535203683](https://github.com/kmarchais/geography-game/actions/runs/40535203683) passed the browser regression for three attempts, paused time, actual red canvas pixels, and progression. It also passed the minimal-layout and completed-run publication cases. The full desktop, phone, tablet, Android, and Worker verification is [workflow 40538700085](https://github.com/kmarchais/geography-game/actions/runs/40538700085). The corrected build passed and was published on Cloudflare and at the original Pages address. The Pages deployment was deliberately held until the API update completed, then retried successfully. Physical validation remains pending because the Pixel is locked.
+[Focused workflow 40535203683](https://github.com/kmarchais/geography-game/actions/runs/40535203683) passed the browser regression for three attempts, paused time, actual red canvas pixels, and progression. It also passed the minimal-layout and completed-run publication cases. The full desktop, phone, tablet, Android, and Worker verification is [workflow 40538700085](https://github.com/kmarchais/geography-game/actions/runs/40538700085). The corrected build passed and was published on Cloudflare and at the original Pages address. The Pages deployment was deliberately held until the API update completed, then retried successfully. Physical validation was pending at that publication because the Pixel was locked; the later checks are recorded above.
 
 The APK source manifest matches all 302 build inputs to the committed source, including the generated Capacitor configuration. The signed APK is 10,976,274 bytes, SHA-256 `ec11df5a039b137d36a6ce47f1f46db2b9fa018a304c1c5b18e196b4f4ac2fe0`. Source proof is retained in `.local/atlas-minimal-source-proof.json`.
 
@@ -28,13 +72,13 @@ Guest runs use a different anonymous owner per run until the player explicitly p
 | Published Cloudflare assets and API | Nine artifact files match; Google configured; native CORS accepted; private statistics require a session |
 | Original Pages website | Published build and source assets match 28bebbd |
 | Existing database | Accounts, sessions, reports, and all three legacy runs preserved; two expired nonce challenges renewed normally |
-| Installed Pixel app | Pending unlock; this APK has not been installed or physically exercised |
+| Installed Pixel app | Installed and exercised on the Pixel after unlock; profile and local data preserved |
 
 Evidence: `.local/atlas-minimal-ci-status.json`, `.local/atlas-minimal-final-ci.log`, `.local/atlas-minimal-source-proof.json`, `.local/atlas-minimal-apk-proof.json`, `.local/atlas-minimal-apk-signature.txt`, `.local/atlas-minimal-deployment-proof.json`, `.local/atlas-minimal-migration-proof.json`, and `.local/atlas-published-28bebbd.json`. The complete immutable browser report is retained in `.local/minimal-browser-report-final/`. Final screenshots include `.local/visual/atlas-final-desktop-start-2560.png` and `.local/visual/atlas-final-phone-red-reveal-1082.png`; both were visually inspected.
 
 The separate gpt-6-astra review found a stale wide-native grid rule and account outcomes copied into guest counters. Both were corrected before release. Browser regressions now verify a full-width native layout at desktop-window width and guest-statistic isolation after sign-out. The first broad run passed 85 cases but failed three drag cases because the new Play button intercepted the old start-screen test. Starting the game before the drag fixes the test without weakening its redraw assertion.
 
-No synthetic run, score, report, or country statistic was created in production during these checks. The database comparison uses read-only snapshots. Google provider login was verified in the preceding release; this update does not claim a fresh real-provider or physical-phone test. Native installation and interaction remain pending, along with the previously disclosed Safari, iOS, release-signing, sustained thermal, context-restoration, and long memory-cycle checks.
+No synthetic run, score, report, or country statistic was created in production during that release's checks. The database comparison uses read-only snapshots. Google provider login was verified in the preceding release. Native interaction was pending at publication; later physical checks and their empty-run cleanup are recorded above. Safari, iOS, release-signing, sustained thermal, context-restoration, and long memory-cycle checks remain open.
 
 ## Initial Atlas verification
 
@@ -75,7 +119,7 @@ The independent Atlas review identified latency-sensitive ranking times, missing
 
 ## Release limits
 
-The private host is shared between authorized tailnet players. Guest identities are device-local and the server accepts bounded client event times. This is a practice ranking, not an authenticated competition. A public release needs hosting and an abuse policy appropriate to its audience.
+The public Pages and Cloudflare websites share the cloud API. Anonymous version 3 runs receive a new identity per run until publication; the server accepts bounded client event times. This remains a practice ranking, not a fraud-resistant competition. Free hosting quotas and reporting limits are described in [free-hosting.md](free-hosting.md).
 
 Safari and iOS, release signing, Play Store packaging, WebGL context restoration, long route-cycle memory, sustained thermal behavior, GPU completion time, and battery use remain unverified. The 500 m source imagery and generalized Natural Earth coastlines do not provide survey-level close-zoom boundaries.
 
@@ -179,3 +223,11 @@ Only `main` and `gh-pages` remain allowed in the Pages deployment environment af
 A final Node-host regression check found that extracting the shared handler had moved malformed URL parsing outside the old error guard. A raw malformed request reproduced the failure before correction. The Node wrapper now preserves the guard; all 20 API cases pass again, including the malformed-request assertion, and scoped lint passes. This changes only the optional Node host, not the deployed Worker or Android runtime. Evidence: `.local/cloudflare-node-transport-before.log` and `.local/cloudflare-node-transport-after.log`.
 
 The optional Node-host correction also passes production Docker integration and isolated Cloudflare runtime verification in [workflow 40416483887](https://github.com/kmarchais/geography-game/actions/runs/40416483887), source `f0a3004`. No frontend or Worker runtime code changed after the deployed `2524225` release. Temporary local Worker servers, the Mobile MCP bridge and the owned native CDP forward were stopped; the legacy compatibility proxy remains available. Migration credentials were removed locally, and only the GitHub reporting secret remains on the production Worker. Cloudflare `.dev.vars` variants are excluded from Git and Docker contexts.
+
+## Pixel follow-up, 27 October 2026
+
+Source `28bebbd` is installed on the Pixel. Mobile MCP installed and launched the signed APK. CDP sent touch events to the physical WebView, checked three attempts, captured red territories for Afghanistan and Andorra, and verified the paused timer. Close-zoom dragging and two-finger pinch redrew without answering. A complete simulated game reached the optional nickname and Google results controls. The new avatar-menu layout is a subsequent change and is not verified by this evidence.
+
+The mock initially did not execute after a reload. The first Play tap therefore created one empty online test run. No answers were submitted and no country counters changed. That exact empty run was removed with a guarded SQL delete. Normal run-start maintenance also expired three incomplete legacy runs older than 24 hours. The pre-deployment archives preserve those old rows; no completed score was deleted.
+
+The final physical game used 199 intercepted answer requests and zero production answer writes. Original local keys and the verified Google profile digest matched after restoration. The fetch override was removed and Atlas was left on the real connected start screen. Evidence: `.local/phone/atlas-minimal-physical-gameplay.json`, `.local/phone/atlas-minimal-layout.json`, `.local/phone/atlas-minimal-restored.json`, and `.local/phone/atlas-minimal-empty-run-cleanup.json`.

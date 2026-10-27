@@ -2,11 +2,11 @@
 
 <img src="public/atlas.svg" width="96" height="96" alt="Atlas globe and location pin">
 
-[Play Atlas](https://atlas-geography.kmarchais-atlas.workers.dev/) in your browser, or install the Android app. Both use the same interface and shared ranking. The [original address](https://kmarchais.github.io/geography-game/) also works.
+[Play Atlas](https://kmarchais.github.io/atlas/) in your browser, or install the Android app. Both use the same interface and Cloudflare API and database. The [original address](https://kmarchais.github.io/geography-game/) also works.
 
 Find all 195 countries on a 3D Earth. Press Play without entering a name. You have three attempts per country. After three wrong guesses, Atlas rotates and zooms to the correct territory in red, then advances. Correct guesses and skips advance immediately. The clock pauses during the automatic reveal; rankings sort by percentage correct, then by the time of the last correct answer.
 
-At the end, optionally publish a nickname or connect with Google. Unnamed runs contribute to global country statistics without appearing in the ranking. Guest statistics stay on the device; signed-in players can see private country statistics across devices. The new three-attempt ranking is separate from older one-guess scores.
+At the end, the result card shows the count, percentage, and time, followed by Google sign-in, a nickname field, and Save. Google fills your Atlas nickname; you can edit it before saving. Save publishes a named online score and returns home. Saving without a nickname leaves the guest score unpublished. Unnamed runs still contribute to global country statistics. The person silhouette opens the guest menu; a confirmed account uses its chosen avatar. Shared ranking, personal scores, and country statistics are available in that menu. Guest history stays on the device; signed-in players can read their private online scores and country statistics across devices. The three-attempt ranking is separate from older one-guess scores.
 
 The [exact quiz list](docs/country-list.md) is the 193 UN member states plus Palestine and the Holy See, represented geographically by Vatican City. This is a membership-based selection, not a claim about universal diplomatic recognition.
 
@@ -30,7 +30,7 @@ The ranking service stores `.local/atlas.sqlite`. Back it up with SQLite's backu
 
 ## Host the game
 
-The public site, API, and SQLite database run on Cloudflare Free. Web and Android call the cloud API directly, so a personal computer does not need to stay awake. See [Cloudflare deployment and quotas](docs/free-hosting.md). No paid subscription was activated. The original GitHub Pages site uses the same API.
+GitHub Pages serves the primary website at `/atlas/`. The API, SQLite database, and an additional website run on Cloudflare Free. Web and Android call the cloud API directly, so a personal computer does not need to stay awake. See [Cloudflare deployment and quotas](docs/free-hosting.md). No paid subscription was activated. The original GitHub Pages site uses the same API.
 
 The [Railway configuration](docs/railway.md) remains an alternative deployment recipe. It was tested but not deployed because the budget is zero. Keep the legacy PostgreSQL volume intact.
 
@@ -39,6 +39,8 @@ Build with `bun run build`, then keep `bun run ranking` running independently of
 For Tailscale Serve, configure a static route to `dist` at `/geography-game` and a proxy route at `/atlas-api`. Keep machine addresses in local configuration. Players need access to the tailnet and the host must stay awake. Public hosting requires a public HTTPS origin and the same API route.
 
 The original GitHub Pages website uses the `Build and Deploy` workflow. Set the `ATLAS_API_URL` repository variable to the reachable HTTPS API endpoint, select GitHub Actions as the Pages publishing source, and run the workflow on the branch to publish. It uploads a build artifact instead of committing generated assets or machine addresses to `gh-pages`. Pull requests run checks without publishing or contacting the live ranking API. A `404.html` app shell handles old route bookmarks.
+
+The hosting-only [kmarchais/atlas repository](https://github.com/kmarchais/atlas) publishes `/atlas/`. Its workflow checks a successful source verification run, builds that exact commit for the `/atlas/` prefix, tests the prefixed interface and offline shell against an isolated API, then publishes with the Cloudflare API URL. Generated bundles are workflow artifacts, never committed source.
 
 For a separately hosted Node API, add the website origin to both `ATLAS_ALLOWED_ORIGINS` and `ATLAS_CROSS_SITE_ORIGINS`. The Cloudflare adapter accepts these lists as JSON arrays. Cross-site account cookies are Secure, HttpOnly, SameSite=None, and Partitioned, so modern browsers can preserve account state while blocking ordinary third-party cookies.
 
@@ -65,11 +67,11 @@ Web and Android use the same Atlas screen. Other modes and settings are hidden; 
 
 Set `GOOGLE_CLIENT_ID` on the ranking service to your Google OAuth web client ID. Register each website origin in that client's authorized JavaScript origins. For Android, register an Android OAuth client in the same Google project using the package ID and the installed app's signing-certificate SHA-1. The native account chooser uses the web client ID supplied by the server. No Google client secret is needed.
 
-Google sign-in is optional and appears in the top-right header after a run. An existing confirmed session restores your profile picture at startup. Tap Play to begin without entering a name. A guest can publish a nickname or connect with Google from the result screen, or leave the score unpublished. Tap the picture to open the menu with your username, **Edit profile**, sign-out, Help, and bug reporting. Profile editing offers your Google photo, a preset avatar, or an uploaded photo. Your username is independent of your Google name and updates the names shown for your account's scores. An interrupted or unconfirmed connection keeps the guest interface and displays its status; choosing a Google account alone does not prove that Atlas is connected. Account changes are disabled during a run to keep its identity consistent.
+Google sign-in is optional. Open the top-right silhouette menu to connect before playing, or use the button directly on the results card. An existing confirmed session restores your profile picture at startup. Tap Play to begin without entering a name. Tap the avatar for **Edit profile**, scores, statistics, sign-out, Help, and bug reporting. Profile editing offers your Google photo, a preset avatar, or an uploaded photo. Your username is independent of your Google name and updates the names shown for your account's scores. An interrupted or unconfirmed connection keeps the guest interface and displays its status; choosing a Google account alone does not prove that Atlas is connected. Account changes are disabled during a run to keep its identity consistent.
 
 The server verifies the ID token and a browser-bound, expiring nonce before issuing an opaque session cookie. Session cookies are Secure and HttpOnly. The SQLite database stores account identifiers, chosen usernames, profile pictures or avatars, hashed session tokens, and scores; it does not store Google passwords, ID tokens, or email addresses. Google photos use the URL from the verified token. Uploads become cropped 256-pixel JPEG thumbnails; the original photo and its metadata are not uploaded. A connected player's profile and best score are shared across web and Android.
 
-After completing an online guest run, you can sign in from the results screen to attach that run to your account. A private claim token proves ownership; failed transfers can be retried without replaying. Older guest runs and offline scores are not automatically imported. See [Google setup and validation](docs/google-sign-in.md).
+After completing an online guest run, sign in from the results screen, edit the prefilled nickname if needed, then press Save to attach the run to your account. Signing in alone does not claim it. Save updates a changed profile nickname while preserving the avatar. A private claim token proves ownership; failed transfers can be retried without replaying. Older guest runs and offline scores are not automatically imported. See [Google setup and validation](docs/google-sign-in.md).
 
 If Android returns to Atlas after account selection without completing sign-in, check the Android OAuth client's package and signing fingerprint in the same Google project as the web client. Google documents that a cancellation exception can also indicate an authorization or configuration problem. Atlas reports that the connection did not complete instead of showing a connected account. See [Credential Manager troubleshooting](https://developer.android.com/identity/sign-in/credential-manager-troubleshooting-guide).
 

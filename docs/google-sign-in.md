@@ -10,7 +10,7 @@ The original project already had a Google web OAuth client and a Google login co
 
 Sessions expire after 30 days and use Secure, HttpOnly, host-only cookies. Only hashes of session and challenge-cookie secrets are stored. Google ID tokens and passwords are not persisted. Android uses Credential Manager through `AtlasGooglePlugin`, accepts the explicitly configured cross-site cookies, and flushes them for persistence. It does not embed Google's web sign-in page in the WebView.
 
-Signed-in run ownership comes from the server session, not the client-supplied guest ID. Its best is shared across devices. Guest play remains available. After a guest completes an online run, signing in from the results screen attaches that run to the account without changing its score or time. Its public name follows the account's chosen username. Sign-in is optional. Failed transfers can be retried from the results screen.
+Signed-in run ownership comes from the server session, not the client-supplied guest ID. Its best is shared across devices. Guest play remains available. After a guest completes an online run, signing in fills the results nickname field. Save applies a changed profile nickname and attaches the run without changing its score or time. Signing in alone does not claim the run. Failed transfers can be retried from the results screen.
 
 Each new online guest run receives a private claim token held in memory while the run is open. The database stores its SHA-256 hash. Claiming requires both that token and an authenticated account; public leaderboard IDs are insufficient. The server rejects incomplete runs and transfer to a second account, while accepting repeat requests from the original account if a response was lost. Offline runs and older guest runs without a claim token remain on the device or in the guest ranking.
 
@@ -44,7 +44,7 @@ Evidence is retained in `.local/atlas-auth-final-verification.json`, `.local/atl
 
 An independent GPT-5.6-sol review requested explicit cross-site cookie policy and offline handling of retired routes. Both were fixed and covered in the final passing run. A malformed TSV record was repaired without changing its six recorded fields. Real Google consent, web/native account switching, and authenticated native session restoration remain open checks.
 
-## Current button layout and browser permission
+## Earlier button layout and browser permission
 
 The account entry is now inside the start card above guest play. Web uses Google's dark pill; Android uses the matching dark native button. The iframe opts into its own light document colour scheme so its backing stays transparent on the dark page. Loading and failure states collapse the unused iframe host. The real provider button was visually checked on desktop and phone layouts, and the physical Pixel passed native layout and chooser cancellation checks. See [the latest validation](atlas-validation.md#territory-rendering-navigation-and-account-layout).
 
@@ -66,7 +66,7 @@ The earlier configuration blockers above are historical. After the user register
 
 Profiles now support a separate public username, the verified Google photo, six preset avatars, or a resized JPEG upload. The server preserves a chosen username and avatar during later Google logins. Browser profile flows and Google callbacks are tested separately with isolated mocks. Successful real web Google login, Safari, and iOS remain unverified.
 
-## Final header and session verification
+## Earlier header and session verification
 
 The verified interface release is source `8ed9fa8`, published by [workflow 40406810967](https://github.com/kmarchais/geography-game/actions/runs/40406810967). Sign-in is in the header. A confirmed session replaces it with the profile picture; tapping the picture opens the shared profile, sign-out, Help, and report menu. Google failure or cancellation feedback appears below the header so it cannot cover game controls.
 
@@ -74,4 +74,8 @@ The final Pixel APK retains the real Google session and photo after updating and
 
 ## Minimal challenge update
 
-Guests start with Play and see the Google option only after completing a run. Existing sessions restore the profile picture at startup. Nickname publication and Google claims are optional; leaving the result screen without publishing keeps the score out of the public ranking. Signed-in country counters belong to the account and are not copied into the guest statistics on the device. See [current challenge validation](atlas-validation.md).
+Guests start with Play. The top-right person silhouette opens a menu containing Google sign-in before a run. At the end, Google sign-in moves directly onto the results card, followed by "or", the nickname field, and Save. Existing sessions restore the profile picture at startup. The confirmed Atlas nickname prefills the field and remains editable. Save applies a changed nickname without replacing the avatar, publishes or claims the run, and returns home. Sign-in alone never saves the result. Saving a guest result with no nickname leaves it unpublished.
+
+Shared ranking and personal scores are in the avatar menu. `/scores/me` requires the server session and returns only that account's completed version 3 runs. New account-local history uses a separate account bucket; guest history remains device-local. Signed-in country counters are not copied into guest statistics. See [current challenge validation](atlas-validation.md).
+
+Source `28e9033` passed final interface checks across desktop, phone, and tablet. Physical tests exercised guest Save and a simulated confirmed account's nickname edit and Save, with profile and score writes mocked. Separately, the real existing Pixel session survived the APK update and read `/scores/me` successfully from Cloudflare. The earlier real native chooser and cancellation check remains recorded in `.local/phone/atlas-avatar-google-cancel.json`. These checks do not claim a new real Google credential exchange or a production score claim.

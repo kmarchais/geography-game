@@ -1,6 +1,6 @@
 # Free cloud hosting for Atlas
 
-Atlas is deployed at https://atlas-geography.kmarchais-atlas.workers.dev/. Workers serves the static website and `/atlas-api`; a SQLite-backed Durable Object stores accounts, sessions, scores, profiles, and bug reports. The original GitHub Pages site and the updated Android app call the same cloud API directly. Neither requires a personal computer to stay awake.
+Play Atlas at https://kmarchais.github.io/atlas/. GitHub Pages serves this website. Cloudflare Workers serves `/atlas-api` and an additional website at https://atlas-geography.kmarchais-atlas.workers.dev/. A SQLite-backed Durable Object stores accounts, sessions, scores, profiles, and bug reports. The original GitHub Pages site and Android app call the same cloud API directly. No personal computer needs to stay awake.
 
 The budget is zero. No Workers Paid subscription, Railway subscription, or paid domain was activated. Keep the account on Free.
 
@@ -23,7 +23,7 @@ Sources: [Workers pricing](https://developers.cloudflare.com/workers/platform/pr
 
 Wrangler 4.153.0 is authenticated. Official Cloudflare skills and its MCP server are installed in the developer's Codex configuration, and MCP OAuth authentication is verified. Restart the agent to load newly installed MCP tools. The optional `cf` CLI was not installed.
 
-The production website was built and tested in [workflow 40414124825](https://github.com/kmarchais/geography-game/actions/runs/40414124825), from source `252422576409cb1e37078bf75364a26f89a0afc8`. The root web artifact is retained as `atlas-cloudflare-web`. Production variables are `GOOGLE_CLIENT_ID`, JSON `ATLAS_ALLOWED_ORIGINS`, and JSON `ATLAS_CROSS_SITE_ORIGINS`. Preserve them when updating from the generic root configuration. The GitHub token is a Worker secret, never a frontend variable.
+The current production source is `28e903308db70dfa3bb4888295a06d2b0c49563a`, verified in [workflow 40556534965](https://github.com/kmarchais/geography-game/actions/runs/40556534965). The root web artifact is retained as `atlas-cloudflare-web`. Production variables are `GOOGLE_CLIENT_ID`, JSON `ATLAS_ALLOWED_ORIGINS`, and JSON `ATLAS_CROSS_SITE_ORIGINS`. Preserve them when updating from the generic root configuration. The GitHub token is a Worker secret, never a frontend variable.
 
 For a local PowerShell build and update after the required checks:
 
@@ -58,3 +58,13 @@ Source `28bebbd158a824bd0baaf7941a0cc36f311bb5f7` is published after [workflow 4
 A consistent read-only SQL snapshot and verified SQLite archive were retained immediately before deployment. SQLite backup APIs are not exposed by the Durable Object SQL adapter, so this snapshot used the authenticated Cloudflare SQL query API, without a production export endpoint. The post-deployment comparison confirms the existing users, sessions, reports, and three old runs. Two expired Google challenges were replaced by normal challenge renewal. Backups are local, ignored, and contain private data.
 
 Cloudflare version `6681d2ed-05a1-442f-bb45-7728a1ddacb3` and the original Pages website use the verified artifact. Configured Google and CORS variables and the GitHub secret were preserved. The temporary Pages branch policy was removed after publication. Rolling back code does not roll back SQLite; retain current cloud data and leave the original local migration checkpoint frozen.
+
+## Atlas address and minimal results update
+
+The hosting-only [kmarchais/atlas repository](https://github.com/kmarchais/atlas) contains a README and Pages workflow. It checks the source commit against successful build, Android, and hosting jobs in the original repository. It then builds that commit with `/atlas/` as the base, tests the prefixed interface and offline navigation with an isolated API, and publishes from `main`. Generated bundles remain artifacts. [Publication 40557915148](https://github.com/kmarchais/atlas/actions/runs/40557915148) passed for source `28e9033`. Both Pages addresses were checked against the source assets after publication. OAuth origins use the scheme and hostname, so changing the path from `/geography-game/` to `/atlas/` needs no new Google origin.
+
+The matching Cloudflare deployment is version `812b03f2-aad2-46c2-9136-9a34c155b16f`, recorded in `.local/atlas-final-cloudflare-deploy.log`. Its nine checked files match the verified artifact, and `--keep-vars` preserved configuration. `/scores/me` uses the authenticated server account and rejects guests. No database schema changed in this update. A consistent read-only snapshot was still retained before deployment in `.local/atlas-final-predeploy-backup.json`.
+
+An initial physical-test setup created one empty run before network mocking was active. No answers or country counters were submitted. That run was removed by its exact ID and empty state. Starting it also performed the existing 24-hour expiry of three older incomplete runs; no completed score was deleted. The migration checkpoints still retain those historical rows. See `.local/phone/atlas-minimal-empty-run-cleanup.json`.
+
+The temporary feature-branch permission in the original repository's Pages environment was removed after deployment. Only its `main` and `gh-pages` policies remain; the new hosting repository keeps its `main` policy. Rollback still requires preserving current cloud data, and must not restart a writable service from the frozen local migration checkpoint.
