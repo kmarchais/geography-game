@@ -186,6 +186,7 @@ test('shows the preview before the full image and country data arrive', async ({
 })
 
 test('a real country tap scores and advances instantly without Next', async ({ page }) => {
+  test.setTimeout(90000) // Fake-clock WebGL frames are expensive on software-rendered tablet runners.
   await page.clock.install()
   await mockRun(page); await open(page)
   await page.getByRole('button', { name: 'Play', exact: true }).click()
@@ -323,7 +324,7 @@ test('the chronometer includes background time and help never pauses it', async 
 })
 
 test('all 195 answers publish an accurate time despite a lost final response', async ({ page }) => {
-  test.setTimeout(90000)
+  test.setTimeout(180000) // Includes complete-map screenshots, retries, accessibility, and return home.
   let dropped = false, correctTime = -1
   const finalBodies: string[] = []
   await page.route('**/atlas-api/runs/*/answers', async route => {

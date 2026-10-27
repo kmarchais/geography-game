@@ -24,8 +24,42 @@ env:
   VITE_ATLAS_BUILD: ${{ github.sha }}
 
 jobs:
+  browser:
+    name: browser (${{ matrix.profile }})
+    if: github.event.inputs.target != 'hosting' && github.event.inputs.target != 'focused' && github.event.inputs.target != 'interface' && github.event.inputs.target != 'gameplay'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [desktop, android, tablet]
+    env:
+      PLAYWRIGHT_CHANNEL: chrome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.20
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: bun install --frozen-lockfile
+      # Each profile has its own runner and in-memory API.
+      - run: bun run build-only
+      - run: bunx playwright test --config playwright.globe.config.ts --project ${{ matrix.profile }}
+      - name: Retain browser report and individual failure traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: globe-browser-${{ matrix.profile }}
+          path: |
+            playwright-report/globe/
+            test-results/
+          retention-days: 14
+
   build:
-    if: github.event.inputs.target != 'hosting'
+    needs: browser
+    if: always() && github.event.inputs.target != 'hosting' && (needs.browser.result == 'success' || needs.browser.result == 'skipped')
     runs-on: ubuntu-latest
     env:
       PLAYWRIGHT_CHANNEL: chrome
@@ -45,9 +79,6 @@ jobs:
       - run: bun run test:ranking
       - run: google-chrome --version
       # Tests use their own in-memory API, never the live ranking database.
-      - run: bun run test:globe
-        if: github.event.inputs.target != 'focused' && github.event.inputs.target != 'interface' && github.event.inputs.target != 'gameplay'
-        timeout-minutes: 25
       - name: Focused interface regressions
         if: github.event.inputs.target == 'focused'
         run: |
@@ -63,13 +94,15 @@ jobs:
         timeout-minutes: 10
         run: |
           bun run build-only
-          bunx playwright test --config playwright.globe.config.ts --grep 'completed countries|a real country tap|all 195 answers|Andorra is unpainted|translates the game'
+          bunx playwright test --config playwright.globe.config.ts --grep 'completed countries|a real country tap|all 195 answers|Andorra is unpainted|translates the game|UN-associated|mouse hover'
       - name: Upload browser report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: globe-browser-report
-          path: playwright-report/globe/
+          path: |
+            playwright-report/globe/
+            test-results/
           retention-days: 14
       - name: Build the original website
         if: github.event.inputs.target != 'focused' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/3d-globe')
