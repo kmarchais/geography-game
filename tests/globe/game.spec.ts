@@ -320,7 +320,7 @@ test('all 195 answers publish an accurate time despite a lost final response', a
   await open(page)
   await expect(page.getByTestId('earth-host')).toHaveAttribute('data-base-detail', 'full')
   const centrePixel = async () => {
-    const screenshot = await earth(page).screenshot()
+    const screenshot = await earth(page).screenshot({ style: '.mission-panel, .answer-cue { visibility: hidden !important; }' })
     return page.evaluate(async source => {
       const image = new Image(); image.src = source; await image.decode()
       const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height
