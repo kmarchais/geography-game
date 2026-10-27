@@ -15,24 +15,24 @@
         <GoogleLoginButton
           ref="login"
           :disabled="playing || starting || saving"
-          :show-sign-in="session?.phase === 'complete'"
+          :show-sign-in="session?.phase === 'complete' || (authMenuOpen && !playing && !starting)"
+          :button-target="session?.phase === 'complete' ? '#result-google-entry' : '#menu-google-entry'"
           @busy="authBusy = $event"
           @connected="connected"
           @profile-updated="refreshRanking"
           @status="authMessage = $event"
         />
         <button
-          :class="account ? 'account-avatar' : 'icon-button'"
+          class="account-avatar"
+          :class="{ 'guest-avatar': !account }"
           :aria-label="t('menu')"
           :title="account ? t('connectedAs', { name: account.name }) : t('menu')"
           popovertarget="atlas-menu"
           @click="positionMenu"
         >
           <ProfileAvatar
-            v-if="account"
-            :user="account"
+            :user="account || guestProfile"
           />
-          <span v-else>⋯</span>
           <span
             v-if="account"
             class="account-check"
@@ -47,7 +47,19 @@
           role="menu"
           :aria-label="t('atlasMenu')"
           @keydown="menuKey"
+          @toggle="authMenuOpen = menu?.matches(':popover-open') || false"
         >
+          <div
+            id="menu-google-entry"
+            class="menu-google-entry"
+          />
+          <p
+            v-if="authMessage && session?.phase !== 'complete'"
+            class="account-feedback small"
+            role="status"
+          >
+            {{ t(authMessage) }}
+          </p>
           <div
             v-if="account"
             class="account-identity"
@@ -229,7 +241,20 @@
             :disabled="!canPlay || starting || authBusy"
             @click="start"
           >
-            {{ starting ? t('starting') : canPlay ? t('play') : t('loadingEarth') }}
+            <svg
+              v-if="canPlay && !starting"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            ><path
+              fill="currentColor"
+              d="M9 5v14l11-7z"
+            /></svg>
+            <span
+              v-else
+              class="play-spinner"
+              aria-hidden="true"
+            />
+            <span class="sr-only">{{ starting ? t('starting') : canPlay ? t('play') : t('loadingEarth') }}</span>
           </button>
         </section>
         <section
@@ -284,6 +309,10 @@
             {{ revealing ? t('revealingCountry') : feedback }}
           </p>
           <template v-else>
+            <div
+              id="result-google-entry"
+              class="result-google-entry"
+            />
             <p
               v-if="saving"
               class="muted small"
@@ -320,12 +349,6 @@
               >
                 {{ t('publishScore') }}
               </button>
-              <p
-                v-if="!account"
-                class="small muted"
-              >
-                {{ t('publishOrGoogle') }}
-              </p>
             </form>
             <p
               v-if="published"
@@ -456,6 +479,7 @@ import ProfileAvatar from '@/components/auth/ProfileAvatar.vue'
 import BugReportDialog from '@/components/BugReportDialog.vue'
 import StatisticsDialog from '@/components/StatisticsDialog.vue'
 import { account, accountBest, refreshAccount, type AtlasUser } from '@/globe/auth'
+import { avatarPresets } from '@/globe/avatars'
 import { fetchCountries, type Country } from '@/globe/geography'
 import { answerCountry, compareScores, correctCount, createSession, isGuestId, percentage, readPersonalScores, readCountryStats, recordCountryStat, type Answer, type RankedScore, type Session } from '@/globe/game'
 import { rankingRequest, validRanking } from '@/globe/ranking'
@@ -463,6 +487,8 @@ import { t, language, countryName, formatPercent, formatTime, type MessageKey } 
 
 const base = import.meta.env.BASE_URL
 const native = import.meta.env.VITE_NATIVE === 'true'
+const authMenuOpen = ref(false)
+const guestProfile: AtlasUser = { id: 'guest', name: '', avatar: `preset:${avatarPresets[Math.floor(Math.random() * avatarPresets.length)]!.id}` }
 const statisticsDialog = ref<InstanceType<typeof StatisticsDialog>>()
 const countries = shallowRef<Country[]>([]), session = shallowRef<Session>()
 const quizCountries = computed(() => countries.value.filter(country => country.playable).sort((a, b) => countryName(a).localeCompare(countryName(b), language.value)))
