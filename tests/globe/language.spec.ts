@@ -10,10 +10,9 @@ test.describe('French system language', () => {
     await page.goto('./')
     await expect(page.locator('html')).toHaveAttribute('lang', 'fr')
     await expect(page).toHaveTitle('Atlas · Défi géographique')
-    await expect(page.getByRole('heading', { name: '195 pays.' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Pourquoi 195 pays ?' })).toHaveAttribute('title', "193 États membres de l'ONU + 2 États observateurs.")
-    await expect(page.getByRole('button', { name: 'Zoom avant', exact: true })).toBeVisible()
-    await page.getByLabel('Pseudo', { exact: true }).fill('Test français')
+    await expect(page.getByRole('button', { name: 'Jouer', exact: true })).toBeVisible()
+    if (page.viewportSize()!.width >= 1000) {await expect(page.getByRole('button', { name: 'Pourquoi 195 pays ?' })).toHaveAttribute('title', "193 États membres de l'ONU + 2 États observateurs.")}
+    await expect(page.getByRole('button', { name: 'Zoom avant', exact: true })).toHaveCount(0)
     await page.getByRole('button', { name: 'Jouer', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Tchad', exact: true })).toBeVisible()
     await expect(page.getByTestId('accuracy')).toHaveText('0,0 %')
@@ -62,7 +61,7 @@ test.describe('Other system languages', () => {
   test('falls back to English instead of selecting another language', async ({ page }) => {
     await page.goto('./')
     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
-    await expect(page.getByRole('heading', { name: '195 countries.' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible()
   })
 })

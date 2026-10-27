@@ -18,6 +18,10 @@ export function countryAngularSize(country: Country): number {
   }))
 }
 
+export function revealDistance(country: Country, aspect: number): number {
+  return Math.max(1.006, Math.min(3.2, 1 + countryAngularSize(country) * .75 / (Math.tan(21 * Math.PI / 180) * Math.min(1, Math.max(.2, aspect)))))
+}
+
 export interface ImageryTile { key: string; level: number; column: number; row: number; west: number; north: number; span: number; latitudeSpan: number }
 
 // NASA GIBS uses 512px geographic tiles and a 288-degree span at level zero.

@@ -3,6 +3,7 @@
     ref="host"
     class="earth-host"
     :data-base-detail="baseDetail"
+    :data-reveal="reveal"
     data-testid="earth-host"
   >
     <canvas
@@ -39,7 +40,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { coordinateToVector, createCountryPicker, unwrapRing, vectorToCoordinate, type Country, type Coordinate } from '@/globe/geography'
 import type { Answer } from '@/globe/game'
-import { countryAngularSize, islandBlend, rotationSpeed } from '@/globe/detail'
+import { countryAngularSize, islandBlend, rotationSpeed, revealDistance } from '@/globe/detail'
 import { countryOutlines, countrySurface, outlineBatches, outlineHorizon, GlobeImagery } from '@/globe/terrain'
 import { wheelPointer, zoomAtPointer } from '@/globe/navigation'
 import { t, language, formatCoordinate, type MessageKey } from '@/globe/i18n'
@@ -92,6 +93,26 @@ const markerPositions: { country: Country; position: THREE.Vector3; sprite: THRE
 let markerTexture: THREE.CanvasTexture
 let fillCanvas: HTMLCanvasElement
 let fillTexture: THREE.CanvasTexture
+let flight: { start: THREE.Vector3; turn: THREE.Quaternion; startDistance: number; endDistance: number; lift: number; started: number; duration: number; resolve: () => void } | undefined
+function cancelFlight() {
+  const current = flight
+  flight = undefined
+  if (controls) {controls.enabled = true; controls.enableDamping = true}
+  current?.resolve()
+}
+function revealCountry(country: Country): Promise<void> {
+  cancelFlight()
+  if (!controls) {return Promise.resolve()}
+  controls.enableDamping = false; controls.update(); controls.enabled = false
+  const start = camera.position.clone().normalize(), end = new THREE.Vector3(...coordinateToVector(country.center))
+  const distance = revealDistance(country, camera.aspect), startDistance = camera.position.length()
+  return new Promise(resolve => {
+    flight = { start, turn: new THREE.Quaternion().setFromUnitVectors(start, end), startDistance, endDistance: distance,
+      lift: start.angleTo(end) > Math.PI / 12 ? Math.max(2.4, startDistance, distance) : 0,
+      started: performance.now(), duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 1250, resolve }
+    invalidate()
+  })
+}
 
 function invalidate() {
   if (!frame && !disposed && !document.hidden) {frame = requestAnimationFrame(render)}
@@ -100,6 +121,15 @@ function invalidate() {
 function render() {
   frame = 0
   if (disposed || !renderer) {return}
+  if (flight) {
+    const current = flight, progress = Math.min(1, (performance.now() - current.started) / current.duration)
+    const ease = (n: number) => {const t = THREE.MathUtils.clamp(n, 0, 1); return t * t * (3 - 2 * t)}
+    const turn = ease(current.lift ? (progress - .18) / .55 : progress)
+    const distance = current.lift ? progress < .18 ? THREE.MathUtils.lerp(current.startDistance, current.lift, ease(progress / .18)) : THREE.MathUtils.lerp(current.lift, current.endDistance, ease((progress - .73) / .27)) : THREE.MathUtils.lerp(current.startDistance, current.endDistance, ease(progress))
+    camera.position.copy(current.start).applyQuaternion(new THREE.Quaternion().slerp(current.turn, turn)).multiplyScalar(distance)
+    camera.lookAt(0, 0, 0)
+    if (progress === 1) {cancelFlight()} else {invalidate()}
+  }
   if (controls) {
     const distance = camera.position.length()
     controls.rotateSpeed = rotationSpeed(distance)
@@ -221,7 +251,7 @@ function updateHighlights() {
   for (const country of props.countries) {
     if (country.small) {continue} // Small countries use their exact vector surface.
     const answer = answers.get(country.id)
-    if (country.id === props.reveal) {context.fillStyle = 'rgba(255, 194, 100, .75)'}
+    if (country.id === props.reveal) {context.fillStyle = 'rgba(255, 76, 88, .75)'}
     else if (props.paintFound && answer?.outcome === 'correct') {context.fillStyle = 'rgba(72, 231, 176, .65)'}
     else {continue}
     drawCountry(context, country)
@@ -231,7 +261,7 @@ function updateHighlights() {
   fillTexture.needsUpdate = true
   markerPositions.forEach(marker => {
     const answer = answers.get(marker.country.id)
-    const color = marker.country.id === props.reveal ? '#ffc264' : props.paintFound && answer?.outcome === 'correct' ? '#63edb8' : undefined
+    const color = marker.country.id === props.reveal ? '#ff4c58' : props.paintFound && answer?.outcome === 'correct' ? '#63edb8' : undefined
     marker.sprite.material.color.set(color ?? '#ccddd9')
     marker.highlighted = Boolean(color)
     if (color) {marker.surface.material.color.set(color)}
@@ -240,6 +270,7 @@ function updateHighlights() {
 }
 
 function focus(coordinate: Coordinate, distance = 2.8) {
+  cancelFlight()
   if (!controls) {return}
   // Flush residual drag damping before a hint or reset changes the camera.
   controls.enableDamping = false
@@ -252,14 +283,14 @@ function focus(coordinate: Coordinate, distance = 2.8) {
 }
 
 function zoom(direction: number) {
-  if (!controls) {return}
+  if (!controls || flight) {return}
   camera.position.setLength(THREE.MathUtils.clamp(1 + (camera.position.length() - 1) * (direction > 0 ? .7 : 1 / .7), controls.minDistance, controls.maxDistance))
   controls.update()
   invalidate()
 }
 
 function reset() { focus([18, 16], 3.1) }
-defineExpose({ focus, zoom, reset, showFeedback })
+defineExpose({ focus, zoom, reset, showFeedback, revealCountry })
 
 function selectAt(x: number, y: number) {
   if (!canvas.value || !controls || props.disabled) {return}
@@ -303,6 +334,7 @@ function onPointerUp(event: PointerEvent) {
 function cancelPointer() { pointers.clear(); pointerStart = undefined; mousePosition = undefined; dragged = true }
 
 function onWheel(event: WheelEvent) {
+  if (flight) {event.preventDefault(); return}
   if (!controls || !canvas.value) {return}
   event.preventDefault()
   event.stopImmediatePropagation()
@@ -321,6 +353,7 @@ function onWheel(event: WheelEvent) {
 }
 
 function onKey(event: KeyboardEvent) {
+  if (flight) {event.preventDefault(); return}
   if (!controls) {return}
   if (event.key === 'Enter' && event.repeat) {return}
   const [lon, lat] = vectorToCoordinate(camera.position)
@@ -461,6 +494,7 @@ watch(() => props.countries, configureCountries)
 watch(() => [props.answers, props.paintFound, props.markers, props.reveal], updateHighlights)
 onBeforeUnmount(() => {
   disposed = true
+  cancelFlight()
   cancelAnimationFrame(frame)
   clearTimeout(feedbackTimer)
   clearTimeout(detailTimer)

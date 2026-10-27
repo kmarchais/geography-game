@@ -10,7 +10,7 @@ on:
       target:
         description: Verification scope
         type: choice
-        options: [all, hosting]
+        options: [all, hosting, focused]
         default: all
 
 permissions:
@@ -46,7 +46,13 @@ jobs:
       - run: google-chrome --version
       # Tests use their own in-memory API, never the live ranking database.
       - run: bun run test:globe
+        if: github.event.inputs.target != 'focused'
         timeout-minutes: 15
+      - name: Focused interface regressions
+        if: github.event.inputs.target == 'focused'
+        run: |
+          bun run build-only
+          bunx playwright test --config playwright.globe.config.ts --project desktop --grep 'minimal start|a real country tap|Google entry|all 195 answers|guest results' --max-failures 3
       - name: Upload browser report
         if: always()
         uses: actions/upload-artifact@v4
@@ -55,7 +61,7 @@ jobs:
           path: playwright-report/globe/
           retention-days: 14
       - name: Build the original website
-        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/3d-globe')
+        if: github.event.inputs.target != 'focused' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/3d-globe')
         env:
           BASE_URL: /geography-game/
           VITE_ATLAS_API_URL: ${{ vars.ATLAS_API_URL }}
@@ -64,13 +70,13 @@ jobs:
           bun run build
           cp dist/index.html dist/404.html
       - name: Upload website artifact
-        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/3d-globe')
+        if: github.event.inputs.target != 'focused' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/3d-globe')
         uses: actions/upload-pages-artifact@v4
         with:
           path: dist
 
   deploy:
-    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/3d-globe')
+    if: github.event.inputs.target != 'focused' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/3d-globe')
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -85,7 +91,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   android:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.target != 'hosting'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.target != 'hosting' && github.event.inputs.target != 'focused'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -127,7 +133,7 @@ jobs:
           retention-days: 14
 
   hosting:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.target != 'focused'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

@@ -4,7 +4,9 @@
 
 [Play Atlas](https://atlas-geography.kmarchais-atlas.workers.dev/) in your browser, or install the Android app. Both use the same interface and shared ranking. The [original address](https://kmarchais.github.io/geography-game/) also works.
 
-Find all 195 countries on a 3D Earth. You have one guess per country, and every answer advances immediately. Skip islands you cannot find. The clock runs continuously; rankings sort by percentage correct, then by the time of the last correct answer.
+Find all 195 countries on a 3D Earth. Press Play without entering a name. You have three attempts per country. After three wrong guesses, Atlas rotates and zooms to the correct territory in red, then advances. Correct guesses and skips advance immediately. The clock pauses during the automatic reveal; rankings sort by percentage correct, then by the time of the last correct answer.
+
+At the end, optionally publish a nickname or connect with Google. Unnamed runs contribute to global country statistics without appearing in the ranking. Guest statistics stay on the device; signed-in players can see private country statistics across devices. The new three-attempt ranking is separate from older one-guess scores.
 
 The [exact quiz list](docs/country-list.md) is the 193 UN member states plus Palestine and the Holy See, represented geographically by Vatican City. This is a membership-based selection, not a claim about universal diplomatic recognition.
 

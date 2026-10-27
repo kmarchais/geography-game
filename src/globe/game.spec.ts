@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { answerCountry, compareScores, correctCount, createSession, formatTime, isGuestId, percentage, readPersonalScores, type RankedScore } from './game'
+import { answerCountry, compareScores, correctCount, createSession, formatTime, isGuestId, percentage, readPersonalScores, recordCountryStat, readCountryStats, type RankedScore } from './game'
 import type { Country } from './geography'
 
 const country = (id: string, playable = true): Country => ({ id, name: id, playable, continent: 'Europe', center: [0, 0], small: false, polygons: [] })
@@ -16,16 +16,37 @@ it('always includes every quiz country once and excludes territories', () => {
   expect(() => createSession([])).toThrow()
   expect(() => createSession([a, b], ['AAA', 'AAA'])).toThrow()
 })
-it('advances immediately after one correct or wrong answer and after skipping', () => {
+it('advances after a correct guess, three wrong guesses, or a skip', () => {
   let session = answerCountry(game(), a, 1200)
   expect(session.deck[session.answers.length]!.id).toBe('BBB')
   session = answerCountry(session, a, 2000)
+  expect(session.answers).toHaveLength(1)
+  expect(session.attempts).toBe(1)
+  session = answerCountry(session, a, 3000)
+  expect(session.answers).toHaveLength(1)
+  session = answerCountry(session, a, 4000)
   session = answerCountry(session, null, 6000)
   expect(session.phase).toBe('complete')
   expect(session.answers.map(a => a.outcome)).toEqual(['correct', 'missed', 'skipped'])
   expect(correctCount(session)).toBe(1)
   expect(session.lastCorrectMs).toBe(1200)
   expect(answerCountry(session, c, 9000)).toBe(session)
+})
+it('can solve on the third attempt and resets attempts for the next country', () => {
+  let session = answerCountry(game(), b, 100)
+  session = answerCountry(session, c, 200)
+  session = answerCountry(session, a, 300)
+  expect(session.answers[0]?.outcome).toBe('correct')
+  expect(session.attempts).toBe(0)
+  expect(session.lastCorrectMs).toBe(300)
+})
+it('stores anonymous device statistics once per resolved country and rejects corrupt data', () => {
+  let rows = recordCountryStat([], { id: 'AAA', name: 'A', outcome: 'correct' })
+  rows = recordCountryStat(rows, { id: 'AAA', name: 'A', outcome: 'missed' })
+  rows = recordCountryStat(rows, { id: 'AAA', name: 'A', outcome: 'skipped' })
+  expect(rows).toEqual([{ id: 'AAA', played: 3, found: 1, skipped: 1 }])
+  expect(readCountryStats({ getItem: () => JSON.stringify([...rows, { id: 'BBB', played: 1, found: 2, skipped: 0 }]) })).toEqual(rows)
+  expect(readCountryStats({ getItem: () => '{' })).toEqual([])
 })
 it('counts accuracy against the whole challenge and ignores ocean clicks', () => {
   const initial = game()

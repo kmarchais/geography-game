@@ -3,7 +3,6 @@ import { test, expect } from '@playwright/test'
 test.use({ serviceWorkers: 'allow' })
 test('installs Atlas offline without deleting another deployment cache', async ({ page, context, baseURL }) => {
   await page.goto('./')
-  await page.getByLabel('Name', { exact: true }).fill('Offline')
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled()
   await page.evaluate(async () => {
     const cache = await caches.open('orbit-/geography-game/another-preview/-sentinel')
@@ -26,7 +25,7 @@ test('installs Atlas offline without deleting another deployment cache', async (
     await cache.put(scope, new Response('<h1>Old Orbit interface</h1>', { headers: { 'content-type': 'text/html' } }))
   }, scope)
   await page.reload()
-  await expect(page.getByRole('heading', { name: '195 countries.' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible()
   await page.evaluate(async scope => {
     const key = (await caches.keys()).find(key => key.startsWith(`orbit-${new URL(scope).pathname}-`) && !key.includes('sentinel'))!
     const cache = await caches.open(key), original = await cache.match(`${scope}original-for-test`)
@@ -34,12 +33,11 @@ test('installs Atlas offline without deleting another deployment cache', async (
   }, scope)
   await context.setOffline(true)
   await page.goto(`${scope}?source=installed`)
-  await page.getByLabel('Name', { exact: true }).fill('Offline')
   await page.getByRole('button', { name: 'Play', exact: true }).click()
   await expect(page.getByText('Offline · unranked run')).toBeVisible()
   await page.getByRole('button', { name: 'Skip' }).click()
   await expect(page.getByTestId('progress')).toHaveText('2 / 195')
   await page.goto(new URL('classic', scope).href)
-  await expect(page.getByRole('heading', { name: '195 countries.' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible()
   await expect(page).toHaveURL(scope)
 })

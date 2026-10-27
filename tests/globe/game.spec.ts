@@ -10,7 +10,6 @@ const order = ['TCD', ...countries.map((c: { id: string }) => c.id).filter((id: 
 const earth = (page: Page) => page.getByRole('application', { name: /^Interactive Earth/ })
 async function open(page: Page) {
   await page.goto('./')
-  await page.getByLabel('Name', { exact: true }).fill('Atlas test')
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled()
 }
 async function mockRun(page: Page) {
@@ -30,30 +29,28 @@ async function tapCenter(page: Page) {
   else {await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)}
 }
 
-test('Atlas has one minimal mode and fills a wide screen', async ({ page }) => {
+test('minimal start, desktop ranking, and globe edges fill the viewport below the header', async ({ page }) => {
   if (!test.info().project.use.isMobile) {await page.setViewportSize({ width: 2560, height: 1440 })}
   await open(page)
   await expect(page).toHaveTitle(/Atlas/)
-  await expect(page.getByRole('heading', { name: '195 countries.' })).toBeVisible()
-  const countInfo = page.getByRole('button', { name: 'Why 195 countries?', exact: true })
-  await expect(countInfo).toHaveAttribute('title', '193 UN members + 2 observer states.')
-  await expect(page.getByRole('tooltip')).toBeHidden()
-  await countInfo.click()
-  await expect(page.getByRole('tooltip')).toHaveText('193 UN members + 2 observer states.')
-  const tooltip = (await page.getByRole('tooltip').boundingBox())!
-  expect(tooltip.x).toBeGreaterThanOrEqual(0)
-  expect(tooltip.x + tooltip.width).toBeLessThanOrEqual((await page.viewportSize())!.width)
-  await page.keyboard.press('Escape')
-  await expect(page.getByRole('tooltip')).toBeHidden()
-  await countInfo.click()
-  await page.getByRole('heading', { name: '195 countries.' }).click()
-  await expect(page.getByRole('tooltip')).toBeHidden()
-  await expect(page.getByRole('combobox')).toHaveCount(0)
-  await expect(page.getByRole('switch')).toHaveCount(0)
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-  if (!test.info().project.use.isMobile) {expect((await page.locator('.orbit-app').boundingBox())!.width).toBe(2560)}
-  expect((await earth(page).screenshot()).length).toBeGreaterThan(30000)
-  await page.screenshot({ path: test.info().outputPath('atlas-layout.png'), fullPage: true })
+  await expect(page.locator('#player-name')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Sign in with Google', exact: true })).toHaveCount(0)
+  await expect(page.locator('.globe-tools')).toHaveCount(0)
+  const width = page.viewportSize()!.width
+  if (width >= 1000) {
+    await expect(page.locator('.ranking-sidebar')).toBeVisible()
+    const info = page.getByRole('button', { name: 'Why 195 countries?', exact: true })
+    await info.click(); await expect(page.getByRole('tooltip')).toHaveText('193 UN members + 2 observer states.')
+    await page.keyboard.press('Escape')
+  } else {await expect(page.locator('.ranking-sidebar')).toBeHidden()}
+  const header = (await page.locator('.orbit-header').boundingBox())!, canvas = (await earth(page).boundingBox())!
+  const button = (await page.getByRole('button', { name: 'Play', exact: true }).boundingBox())!
+  expect(canvas.y).toBeCloseTo(header.y + header.height, 0)
+  expect(canvas.y + canvas.height).toBeCloseTo(page.viewportSize()!.height, 0)
+  expect(button.x + button.width / 2).toBeCloseTo(canvas.x + canvas.width / 2, 0)
+  expect(button.y + button.height / 2).toBeCloseTo(canvas.y + canvas.height / 2, 0)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true)
+  await page.screenshot({ path: test.info().outputPath('atlas-minimal-start.png') })
 })
 
 test('close-zoom dragging redraws even below the controls change threshold', async ({ page }) => {
@@ -166,6 +163,16 @@ test('a real country tap scores and advances instantly without Next', async ({ p
   await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled()
   await earth(page).focus(); await page.keyboard.press('Enter')
   await expect(page.getByTestId('answer-cue')).toHaveAttribute('data-outcome', 'wrong')
+  await expect(page.getByTestId('progress')).toHaveText('2 / 195')
+  await earth(page).press('Enter')
+  await expect(page.locator('.attempts-left')).toContainText('1')
+  await earth(page).press('Enter')
+  await expect(page.getByTestId('earth-host')).toHaveAttribute('data-reveal', 'AFG')
+  const paused = await page.getByTestId('timer').textContent()
+  await page.waitForTimeout(300)
+  await expect(page.getByTestId('timer')).toHaveText(paused!)
+  await expect(page.getByRole('button', { name: 'Skip' })).toBeDisabled()
+  await page.screenshot({ path: test.info().outputPath('atlas-country-reveal.png') })
   await expect(page.getByTestId('progress')).toHaveText('3 / 195')
   await expect(page.getByTestId('accuracy')).toHaveText('0.5%')
   await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled()
@@ -189,12 +196,11 @@ test('real touch dragging and pinch zoom do not answer countries', async ({ page
     await input.detach()
   } else {
     await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x + 90, y + 20, { steps: 12 }); await page.mouse.up()
-    await page.getByRole('button', { name: 'Zoom in', exact: true }).click()
+    await earth(page).press('+')
   }
   expect(before.equals(await earth(page).screenshot())).toBe(false)
   await expect(page.getByTestId('progress')).toHaveText('1 / 195')
-  const control = (await page.getByRole('button', { name: 'Zoom in', exact: true }).boundingBox())!
-  expect(control.width).toBeGreaterThanOrEqual(44); expect(control.height).toBeGreaterThanOrEqual(44)
+  await expect(page.locator('.globe-tools')).toHaveCount(0)
 })
 
 test('the chronometer includes background time and help never pauses it', async ({ page }) => {
@@ -239,7 +245,11 @@ test('all 195 answers publish an accurate time despite a lost final response', a
   await expect(page.getByTestId('timer')).toHaveText(formatTime(correctTime))
   expect(finalBodies).toHaveLength(2)
   expect(finalBodies[0]).toBe(finalBodies[1])
-  await expect(page.locator('.ranking-panel table')).toContainText('Atlas test')
+  await expect(page.getByText('Saved without a name. This run contributes to global statistics.')).toBeVisible()
+  await page.getByLabel('Nickname (optional)', { exact: true }).fill('Atlas test')
+  await page.getByRole('button', { name: 'Publish score', exact: true }).click()
+  await expect(page.getByText('Score published.', { exact: true })).toBeVisible()
+  if (page.viewportSize()!.width >= 1000) {await expect(page.locator('.ranking-panel table')).toContainText('Atlas test')}
   await expect(page.getByText('Saved on this device. Shared ranking unavailable.')).not.toBeVisible()
   if (test.info().project.use.isMobile) {
     const viewport = page.viewportSize()!
@@ -249,7 +259,10 @@ test('all 195 answers publish an accurate time despite a lost final response', a
     await expect.poll(async () => (await page.getByRole('heading', { name: 'Your score' }).boundingBox())!.y).toBeGreaterThanOrEqual(0)
   }
   await page.reload()
-  await expect(page.locator('.personal-best')).toContainText('0.5%')
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('atlas-runs-v3') || '[]')[0].correct)).toBe(1)
+  await page.getByRole('button', { name: 'Menu', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Statistics', exact: true }).click()
+  await expect(page.getByRole('dialog', { name: 'Statistics', exact: true })).toContainText('Chad')
 })
 
 test('supports rapid skips and repairs a corrupt stored guest identity', async ({ page }) => {
@@ -276,7 +289,6 @@ test('data errors retry, keyboard works, and accessibility checks pass', async (
   await page.goto('./'); await expect(page.getByRole('alert')).toContainText('503')
   await page.unroute('**/data/globe/countries.json*')
   await page.getByRole('button', { name: 'Retry', exact: true }).click()
-  await page.getByLabel('Name', { exact: true }).fill('Keyboard')
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled()
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await mockRun(page); await page.getByRole('button', { name: 'Play', exact: true }).click()

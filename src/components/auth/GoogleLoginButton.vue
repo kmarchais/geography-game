@@ -1,7 +1,7 @@
 <template>
   <div
     class="account-panel"
-    :class="{ 'has-account': account }"
+    :class="{ 'has-account': account || showSignIn === false }"
   >
     <div
       v-if="account"
@@ -10,7 +10,7 @@
     >
       {{ t('connectedAs', { name: account.name }) }}
     </div>
-    <template v-else>
+    <template v-else-if="showSignIn !== false">
       <button
         v-if="nativeAccount"
         class="google-connect"
@@ -56,7 +56,7 @@
     <ProfileDialog
       v-if="account"
       ref="profile"
-      @updated="emit('connected', $event)"
+      @updated="emit('profileUpdated')"
     />
   </div>
 </template>
@@ -67,8 +67,8 @@ import { loadGoogle, nativeAccount, nativeGoogle } from '@/globe/google'
 import { rankingRequest } from '@/globe/ranking'
 import ProfileDialog from './ProfileDialog.vue'
 import { t, language, type MessageKey } from '@/globe/i18n'
-const props = defineProps<{ disabled?: boolean }>()
-const emit = defineEmits<{ busy: [value: boolean]; connected: [user: AtlasUser]; status: [message: MessageKey | ''] }>()
+const props = defineProps<{ disabled?: boolean; showSignIn?: boolean }>()
+const emit = defineEmits<{ busy: [value: boolean]; connected: [user: AtlasUser]; profileUpdated: []; status: [message: MessageKey | ''] }>()
 const buttonHost = ref<HTMLDivElement>(), buttonReady = ref(false), busy = ref(false), error = ref<MessageKey | ''>('')
 const notice = ref<MessageKey | ''>('')
 const profile = ref<InstanceType<typeof ProfileDialog>>()
@@ -106,7 +106,8 @@ async function prepare() {
   try {
     await refreshAccount()
     if (!alive) {return}
-    if (account.value) {error.value = ''; notice.value = ''; emit('connected', account.value); return}
+    if (account.value) {error.value = ''; notice.value = ''; return}
+    if (props.showSignIn === false) {error.value = ''; notice.value = ''; return}
     if (!googleClientId.value) {throw new Error('Google is unavailable')}
     if (nativeAccount) {return}
     await loadGoogle()
@@ -154,6 +155,7 @@ async function disconnect() {
   finally {setBusy(false)}
 }
 watch(() => props.disabled, (disabled, previous) => {if (previous && !disabled) {prepare()}})
+watch(() => props.showSignIn, () => {buttonReady.value = false; renderedWidth = 0; nextTick(prepare)})
 watch(language, () => {renderedWidth = 0; renderButton()})
 watch(() => error.value || notice.value, message => emit('status', message), { immediate: true })
 defineExpose({ openProfile: () => profile.value?.open(), disconnect })

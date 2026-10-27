@@ -4,7 +4,7 @@
 body { margin: 0; background: #090f13; }
 * { box-sizing: border-box; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-.orbit-app { --mint: #99edc5; --muted: #97a7ae; --line: #25343d; width: 100%; min-height: 100svh; padding: env(safe-area-inset-top, 0px) max(clamp(20px, 3vw, 64px), env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(clamp(20px, 3vw, 64px), env(safe-area-inset-left, 0px)); color: #edf3f0; font: 14px 'DM Sans', system-ui, sans-serif; background: radial-gradient(ellipse at 70% 45%, #10222d66, transparent 65%); }
+.orbit-app { --mint: #99edc5; --muted: #97a7ae; --line: #25343d; --sidebar: 0px; width: 100%; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); color: #edf3f0; font: 14px 'DM Sans', system-ui, sans-serif; background: #090f13; }
 .orbit-app::before, .orbit-app::after { content: ''; position: fixed; left: 0; right: 0; z-index: 20; background: #090f13; pointer-events: none; }
 .orbit-app::before { top: 0; height: env(safe-area-inset-top, 0px); }
 .orbit-app::after { bottom: 0; height: env(safe-area-inset-bottom, 0px); }
@@ -19,15 +19,15 @@ body { margin: 0; background: #090f13; }
 .orbit-app h2 { font-size: 20px; margin: 0; }
 .muted { color: var(--muted); }
 .small { font-size: 12px; line-height: 1.6; }
-.orbit-header { height: 76px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
+.orbit-header { position: relative; z-index: 5; flex: 0 0 72px; display: flex; align-items: center; justify-content: space-between; padding: 0 clamp(20px, 3vw, 48px); border-bottom: 1px solid var(--line); background: #090f13; }
 .wordmark { display: inline-flex; align-items: center; gap: 12px; font-size: 29px; font-weight: 650; letter-spacing: -.06em; }
 .wordmark img { width: 42px; height: 42px; border-radius: 10px; }
 .header-actions { position: relative; display: flex; gap: 18px; align-items: center; }
 .quiet-button, .icon-button { color: #b6c5cb; background: none; border: 0; min-height: 44px; padding: 10px; }
 .quiet-button:hover, .icon-button:hover { color: var(--mint); }
 .icon-button { width: 44px; border: 1px solid var(--line); border-radius: 50%; font-size: 18px !important; }
-.orbit-workspace { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: clamp(28px, 4vw, 72px); min-height: calc(100svh - 76px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); align-items: center; }
-.mission-panel { padding: 32px 0; min-width: 0; }
+.orbit-workspace { position: relative; display: grid; grid-template-columns: 1fr; flex: 1 1 0; min-height: 0; }
+.mission-panel { position: absolute; z-index: 2; left: calc(50% + var(--sidebar) / 2); top: 50%; transform: translate(-50%, -50%); padding: 0; width: min(340px, calc(100% - 32px)); max-height: calc(100% - 32px); overflow: auto; pointer-events: none; }
 .challenge-heading { display: flex; align-items: center; gap: 4px; margin-bottom: 24px; }
 .challenge-heading h1 { margin: 0; }
 .count-info-button { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; border: 0; background: none; color: var(--muted); }
@@ -41,7 +41,7 @@ body { margin: 0; background: #090f13; }
 .primary-button:hover { background: #b4f5d5; }
 .secondary-button { border: 1px solid #344a56; background: #14212a; color: #d9e7e5; }
 .secondary-button:hover { border-color: #729e94; background: #1a3037; }
-.mission-card { scroll-margin-top: max(16px, env(safe-area-inset-top, 0px)); }
+.mission-card { pointer-events: auto; padding: 22px; border: 1px solid #30434dcc; border-radius: 14px; background: #0c181ff2; box-shadow: 0 12px 36px #0003; }
 .orbit-dialog summary { cursor: pointer; color: var(--mint); }
 .orbit-dialog details a { text-decoration: underline; }
 .country-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 6px 20px; max-height: 240px; overflow: auto; padding: 8px 0 8px 20px; }
@@ -65,7 +65,7 @@ body { margin: 0; background: #090f13; }
 .account-panel [inert] { opacity: .45; }
 .account-error { color: #f2b3a7; margin: 8px 0 0; }
 .mission-topline { display: flex; justify-content: space-between; color: var(--muted); margin-bottom: 14px; font-size: 12px; }
-.session-stats { display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px; margin-top: 30px; }
+.session-stats { display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px; margin: 18px 0; }
 .session-stats > div { display: flex; flex-direction: column; gap: 8px; }
 .session-stats span { color: var(--muted); font-size: 11px; }
 .session-stats strong { font: 500 clamp(22px, 2.1vw, 31px) 'Manrope', sans-serif; font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
@@ -78,7 +78,7 @@ body { margin: 0; background: #090f13; }
 .answer-feedback.success { color: var(--mint); }
 .answer-feedback.missed { color: #ffaba2; }
 .service-note { color: #e9c58c; font-size: 12px; line-height: 1.5; }
-.ranking-panel { border-top: 1px solid var(--line); margin-top: 32px; padding-top: 20px; }
+.ranking-panel { margin: 0; padding: 0; }
 .ranking-heading { display: flex; align-items: center; justify-content: space-between; }
 .ranking-panel h2 { font-size: 16px; letter-spacing: -.02em; }
 .ranking-panel table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; font-variant-numeric: tabular-nums; }
@@ -86,17 +86,14 @@ body { margin: 0; background: #090f13; }
 .ranking-panel th { color: var(--muted); font-size: 10px; font-weight: 400; }
 .ranking-panel :is(th,td):first-child { text-align: left; max-width: 140px; overflow-wrap: anywhere; }
 .rank-number { color: #92aaa5; display: inline-block; min-width: 24px; }
-.planet-panel { min-width: 0; }
-.planet-stage { position: relative; height: max(520px, calc(100svh - 132px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))); isolation: isolate; }
+.planet-panel { position: relative; grid-column: 1; grid-row: 1; min-width: 0; min-height: 0; overflow: hidden; }
+.planet-stage { position: absolute; inset: 0; height: 100%; isolation: isolate; }
 .planet-stage::before { content: ''; position: absolute; inset: 5%; z-index: -1; border-radius: 50%; background: radial-gradient(ellipse, #18364644, transparent 66%); }
-.globe-tools { position: absolute; right: 0; bottom: 24px; display: flex; flex-direction: column; padding: 5px; background: #101b24e6; border: 1px solid #30444f; border-radius: 10px; backdrop-filter: blur(12px); }
-.globe-tools button { width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: none; color: #e0ebe7; border-radius: 5px; font-size: 24px; }
-.globe-tools button:hover { background: #29444980; color: var(--mint); }
 .planet-loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; gap: 15px; text-align: center; background: #090f1399; }
 .planet-loading p { max-width: 320px; color: #b2c3c9; }
 .loading-orbit { width: 30px; height: 30px; border: 1px solid #526a69; border-top-color: var(--mint); border-radius: 50%; animation: atlas-spin 1s linear infinite; }
 @keyframes atlas-spin { to { transform: rotate(360deg); } }
-.planet-warning { text-align: center; color: #e9c58c; font-size: 11px; }
+.planet-warning { position: absolute; bottom: 8px; left: 16px; right: 16px; margin: 0; pointer-events: none; text-align: center; color: #e9c58c; font-size: 11px; }
 .orbit-dialog { border: 1px solid #36505c; border-radius: 14px; background: #101b22; color: #e4ece9; max-width: 440px; width: calc(100% - 40px); max-height: 85svh; padding: 32px; font-family: 'DM Sans', sans-serif; }
 .orbit-dialog::backdrop { background: #03090dcc; backdrop-filter: blur(5px); }
 .orbit-dialog p { line-height: 1.7; }
@@ -128,34 +125,58 @@ body { margin: 0; background: #090f13; }
 .dialog-close { position: absolute; right: 6px; top: 4px; width: 44px; height: 44px; background: none; color: #c0d0d3; border: 0; font-size: 25px !important; }
 .dialog-actions { display: flex; gap: 12px; margin-top: 24px; }
 @media (min-width: 1800px) { .orbit-workspace { grid-template-columns: 360px minmax(0, 1fr); } }
-@media (max-width: 1000px) { .orbit-workspace { grid-template-columns: 270px minmax(0, 1fr); gap: 25px; } }
-@media (max-width: 720px) {
-  .orbit-header { height: 65px; }
-  .wordmark { font-size: 25px; gap: 8px; }
-  .wordmark img { width: 38px; height: 38px; }
-  .header-actions { gap: 8px; }
-  .orbit-workspace { display: flex; flex-direction: column; gap: 0; min-height: 0; }
-  .mission-panel { display: contents; }
-  .start-card, .mission-card { order: 0; width: 100%; padding: 26px 0 12px; }
-  .start-card h1 { font-size: 32px; }
-  .start-card > form { display: grid; grid-template-columns: 1fr 120px; gap: 10px; align-items: center; }
-  .name-label { grid-column: 1 / -1; margin: 0; }
-  .start-card input { margin: 0; }
-  .session-stats { margin-top: 20px; }
-  .session-stats strong { font-size: 26px; }
-  .progress-track { margin-top: 18px; }
-  .round-count { margin-bottom: 16px; }
-  .skip-button { min-height: 46px; }
-  .answer-feedback { margin-top: 10px; }
-  .planet-panel { order: 1; width: 100%; }
-  .planet-stage { margin: 0 -12px; height: clamp(320px, 90vw, 460px); }
-  .globe-tools { right: 3px; bottom: 12px; padding: 3px; }
-  .ranking-panel { order: 3; width: 100%; margin: 20px 0 30px; }
-  .service-note { order: 2; }
+
+.start-card { display: flex; justify-content: center; }
+.play-button { pointer-events: auto; width: 180px; min-height: 56px; font-size: 18px !important; box-shadow: 0 12px 48px #0008; }
+.mission-panel.is-playing { top: 16px; transform: translateX(-50%); }
+.mission-panel.is-revealing h1, .mission-panel.is-revealing .attempts-left { color: #ff8791; }
+.attempts-left { display: flex; justify-content: space-between; gap: 12px; font-size: 11px; color: var(--muted); margin: 0; }
+.attempts-left span { letter-spacing: 3px; color: var(--mint); }
+.publish-form { margin: 20px 0; padding-top: 18px; border-top: 1px solid var(--line); }
+.publication-success { color: var(--mint); }
+.ranking-sidebar { display: none; }
+.statistics-dialog { max-width: 560px; padding: 24px; }
+.statistics-tabs { display: flex; gap: 8px; }
+.statistics-tabs button { width: 50%; }
+.statistics-tabs [aria-pressed=true] { color: var(--mint); border-color: #70b198; }
+.statistics-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.statistics-table th, .statistics-table td { padding: 12px 4px; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; }
+.statistics-table th:first-child { text-align: left; font-weight: 500; }
+.statistics-table thead th { color: var(--muted); font-size: 11px; }
+@media (min-width: 1000px) {
+  .orbit-app:not(.native-app) { --sidebar: 290px; }
+  .orbit-app:not(.native-app) .orbit-workspace { grid-template-columns: var(--sidebar) minmax(0, 1fr); }
+  .orbit-app:not(.native-app) .planet-panel { grid-column: 2; }
+  .ranking-sidebar { display: block; grid-column: 1; grid-row: 1; overflow: auto; min-width: 0; padding: 28px 22px; border-right: 1px solid var(--line); background: #0b1318; }
+  .ranking-sidebar .challenge-heading { gap: 0; margin-bottom: 24px; }
+  .ranking-sidebar h1 { font-size: 28px; }
+}
+@media (max-width: 600px) {
+  .orbit-header { flex-basis: 64px; padding: 0 18px; }
+  .wordmark { font-size: 25px; gap: 10px; }
+  .wordmark img { width: 36px; height: 36px; }
+  .header-actions { gap: 10px; }
+  .account-panel { width: 128px; }
+  .account-panel.has-account { width: 0; }
+  .mission-panel.is-playing { width: min(320px, calc(100% - 32px)); top: 12px; }
+  .mission-panel.is-playing .mission-card { padding: 14px 18px; }
+  .mission-card h1 { font-size: 26px; }
+  .session-stats { margin: 12px 0; }
+  .session-stats strong { font-size: 24px; }
+  .session-stats > div { gap: 4px; }
+  .mission-topline { margin-bottom: 8px; }
+  .answer-feedback { margin-top: 8px; min-height: 16px; }
+}
+@media (max-height: 500px) {
+  .mission-panel.is-playing { width: min(640px, calc(100% - 32px)); }
+  .is-playing .mission-card { display: grid; grid-template-columns: minmax(0, 1fr) auto 92px; gap: 4px 18px; padding: 12px 16px; }
+  .is-playing .mission-topline { grid-column: 1 / -1; margin: 0; }
+  .is-playing h1 { grid-column: 1; font-size: 22px; margin: 0; }
+  .is-playing .attempts-left { grid-column: 1; }
+  .is-playing .session-stats { grid-column: 2; grid-row: 2 / 4; display: flex; align-items: center; margin: 0; }
+  .is-playing .session-stats strong { font-size: 22px; }
+  .is-playing .skip-button { grid-column: 3; grid-row: 2 / 4; align-self: center; }
+  .is-playing .answer-feedback { grid-column: 1 / -1; min-height: 0; margin: 0; }
+  .is-playing .answer-feedback:empty { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .orbit-app *, .orbit-app *::after { animation: none !important; transition: none !important; } }
-@media (orientation: landscape) and (max-height: 600px) {
-  .orbit-workspace { align-items: start; }
-  .planet-stage { height: max(280px, calc(100svh - 100px - env(safe-area-inset-top, 0px))); }
-  .mission-panel { padding-top: 24px; }
-}

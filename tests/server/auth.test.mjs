@@ -23,7 +23,7 @@ async function setup(t) {
   server.listen(0, '127.0.0.1'); await once(server, 'listening')
   t.after(() => new Promise(resolve => server.close(resolve)))
   const url = `http://127.0.0.1:${server.address().port}`
-  const request = (path, body, cookie, origin = 'http://client.test') => fetch(url + path, { method: body === undefined ? 'GET' : 'POST', headers: { Origin: origin, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(cookie ? { Cookie: cookie } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) })
+  const request = (path, body, cookie, origin = 'http://client.test') => fetch(url + path + (['/leaderboard', '/auth/session'].includes(path) ? '?rules=2' : ''), { method: body === undefined ? 'GET' : 'POST', headers: { Origin: origin, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(cookie ? { Cookie: cookie } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) })
   const challenge = async (origin) => {const response = await request('/auth/challenge', undefined, undefined, origin); return { nonce: (await response.json()).nonce, cookie: response.headers.get('set-cookie').split(';')[0] }}
   const login = async (sub = 'google-one', extra = {}) => {const pending = await challenge(); const response = await request('/auth/google', { credential: credential(pending.nonce, { sub, ...extra }) }, pending.cookie); assert.equal(response.status, 200); return { cookie: response.headers.get('set-cookie').split(';')[0], user: (await response.json()).user }}
   return { request, challenge, login, clock }
