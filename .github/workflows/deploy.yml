@@ -120,7 +120,7 @@ jobs:
           path: dist
 
   deploy:
-    if: github.event.inputs.target != 'focused' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/3d-globe')
+    if: always() && needs.build.result == 'success' && github.event.inputs.target != 'focused' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/3d-globe')
     needs: build
     runs-on: ubuntu-latest
     permissions:
