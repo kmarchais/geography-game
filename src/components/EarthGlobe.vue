@@ -128,7 +128,7 @@ function render() {
     const distance = current.lift ? progress < .18 ? THREE.MathUtils.lerp(current.startDistance, current.lift, ease(progress / .18)) : THREE.MathUtils.lerp(current.lift, current.endDistance, ease((progress - .73) / .27)) : THREE.MathUtils.lerp(current.startDistance, current.endDistance, ease(progress))
     camera.position.copy(current.start).applyQuaternion(new THREE.Quaternion().slerp(current.turn, turn)).multiplyScalar(distance)
     camera.lookAt(0, 0, 0)
-    if (progress === 1) {cancelFlight()} else {invalidate()}
+    if (progress === 1) {positionCoordinates.value = vectorToCoordinate(camera.position); cancelFlight()} else {invalidate()}
   }
   if (controls) {
     const distance = camera.position.length()

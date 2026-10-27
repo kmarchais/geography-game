@@ -50,7 +50,9 @@ test('minimal start, desktop ranking, and globe edges fill the viewport below th
   expect(button.x + button.width / 2).toBeCloseTo(canvas.x + canvas.width / 2, 0)
   expect(button.y + button.height / 2).toBeCloseTo(canvas.y + canvas.height / 2, 0)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true)
-  await page.screenshot({ path: test.info().outputPath('atlas-minimal-start.png') })
+  const screenshot = test.info().outputPath('atlas-minimal-start.png')
+  await page.screenshot({ path: screenshot })
+  await test.info().attach('Minimal start', { path: screenshot, contentType: 'image/png' })
 })
 
 test('close-zoom dragging redraws even below the controls change threshold', async ({ page }) => {
@@ -151,6 +153,7 @@ test('shows the preview before the full image and country data arrive', async ({
 })
 
 test('a real country tap scores and advances instantly without Next', async ({ page }) => {
+  await page.clock.install()
   await mockRun(page); await open(page)
   await page.getByRole('button', { name: 'Play', exact: true }).click()
   await expect(page.locator('#target-name')).toHaveText('Chad')
@@ -166,13 +169,28 @@ test('a real country tap scores and advances instantly without Next', async ({ p
   await expect(page.getByTestId('progress')).toHaveText('2 / 195')
   await earth(page).press('Enter')
   await expect(page.locator('.attempts-left')).toContainText('1')
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 50))
   await earth(page).press('Enter')
   await expect(page.getByTestId('earth-host')).toHaveAttribute('data-reveal', 'AFG')
   const paused = await page.getByTestId('timer').textContent()
-  await page.waitForTimeout(300)
-  await expect(page.getByTestId('timer')).toHaveText(paused!)
   await expect(page.getByRole('button', { name: 'Skip' })).toBeDisabled()
-  await page.screenshot({ path: test.info().outputPath('atlas-country-reveal.png') })
+  await page.clock.runFor(400)
+  await expect(page.getByTestId('timer')).toHaveText(paused!)
+  await page.clock.fastForward(1400)
+  const screenshot = test.info().outputPath('atlas-country-reveal.png')
+  await page.screenshot({ path: screenshot })
+  await test.info().attach('Correct territory revealed in red', { path: screenshot, contentType: 'image/png' })
+  const painted = await earth(page).screenshot()
+  const pixel = await page.evaluate(async source => {
+    const image = new Image(); image.src = source; await image.decode()
+    const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height
+    const context = canvas.getContext('2d')!; context.drawImage(image, 0, 0)
+    return [...context.getImageData(Math.floor(image.width / 2) + 12, Math.floor(image.height / 2), 1, 1).data]
+  }, `data:image/png;base64,${painted.toString('base64')}`)
+  expect(pixel[0]!).toBeGreaterThan(170)
+  expect(pixel[0]!).toBeGreaterThan(pixel[1]! * 1.5)
+  expect(pixel[0]!).toBeGreaterThan(pixel[2]! * 1.5)
+  await page.clock.fastForward(700)
   await expect(page.getByTestId('progress')).toHaveText('3 / 195')
   await expect(page.getByTestId('accuracy')).toHaveText('0.5%')
   await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled()
