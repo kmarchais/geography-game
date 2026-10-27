@@ -28,3 +28,5 @@ if (typeof window !== 'undefined') {
     document.querySelector('link[rel="manifest"]')?.setAttribute('href', `${import.meta.env.BASE_URL}manifest${language.value === 'fr' ? '.fr' : ''}.webmanifest`)
   }, { immediate: true })
 }
+
+export function formatScoreTime(value: number): string {return formatTime(value).replace(/[.,]\d$/, '')}

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import en from './locales/en.json'
 import fr from './locales/fr.json'
 import names from '../../public/data/globe/names.fr.json'
-import { countryName, detectLanguage, formatPercent, formatTime, language, t } from './i18n'
+import { countryName, detectLanguage, formatPercent, formatTime, formatScoreTime, language, t } from './i18n'
 
 afterEach(() => {language.value = 'en'})
 test('uses French only when the primary language is French, otherwise English', () => {
@@ -29,4 +29,12 @@ test('every quiz country has a French name without changing its identifier', () 
 test('formats percentages and the chronometer for each language', () => {
   language.value = 'fr'; expect(formatPercent(.5)).toBe('0,5\u00a0%'); expect(formatTime(12345)).toBe('00:12,3')
   language.value = 'en'; expect(formatPercent(.5)).toBe('0.5%'); expect(formatTime(12345)).toBe('00:12.3')
+})
+
+test('shows whole-second result times in both languages', () => {
+  for (const value of ['en', 'fr'] as const) {
+    language.value = value
+    expect(formatScoreTime(125900)).toBe('02:05')
+    expect(formatScoreTime(0)).toBe('00:00')
+  }
 })

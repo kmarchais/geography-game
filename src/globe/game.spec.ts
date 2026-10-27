@@ -81,3 +81,9 @@ it('rejects malformed stored identities and reads a durable personal best', () =
   expect(readPersonalScores({ getItem: () => JSON.stringify(rows) })[0]?.correct).toBe(150)
   expect(readPersonalScores({ getItem: () => '{' })).toEqual([])
 })
+
+it('reads account scores from a separate bucket without exposing them to guests', () => {
+  const storage = { getItem: (key: string) => JSON.stringify([{ name: key === 'atlas-runs-v3' ? '' : 'Private', correct: key === 'atlas-runs-v3' ? 1 : 100, total: 195, timeMs: 1000 }]) }
+  expect(readPersonalScores(storage)[0]?.correct).toBe(1)
+  expect(readPersonalScores(storage, 'atlas-runs-v3:account')[0]?.correct).toBe(100)
+})

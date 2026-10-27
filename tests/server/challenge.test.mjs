@@ -105,3 +105,16 @@ test('signed-in country statistics stay private until publishing and old rules k
   assert.equal((await (await request('/leaderboard')).json()).length, 1)
   assert.equal((await (await request('/leaderboard?rules=2')).json())[0].name, 'Legacy')
 })
+
+test('personal scores include private completed runs only for the authenticated account', async t => {
+  const { request, start, answer, login } = await setup(t)
+  const first = await login('score-owner'), run = await start(first)
+  assert.equal((await request('/scores/me')).status, 401)
+  assert.deepEqual(await (await request('/scores/me', undefined, first)).json(), [])
+  for (let i = 0; i < 3; i++) {await answer(run, i, 0, run.deck[i], first)}
+  const rows = await (await request('/scores/me', undefined, first)).json()
+  assert.equal(rows.length, 1); assert.equal(rows[0].id, run.id); assert.equal(rows[0].correct, 3)
+  assert.deepEqual(await (await request('/leaderboard')).json(), [])
+  const other = await login('other-score-owner')
+  assert.deepEqual(await (await request('/scores/me', undefined, other)).json(), [])
+})

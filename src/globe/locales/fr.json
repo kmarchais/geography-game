@@ -16,7 +16,7 @@
   "play": "Jouer",
   "loadingEarth": "Chargement de la Terre…",
   "find": "Trouvez",
-  "yourScore": "Votre score",
+  "yourScore": "Score",
   "correct": "Réussite",
   "time": "Temps",
   "timeToScore": "Temps retenu",
@@ -142,5 +142,12 @@
   "anonymousScoreSaved": "Enregistré sans nom. Cette partie contribue aux statistiques globales.",
   "privateScoreSaved": "Enregistré dans vos statistiques personnelles.",
   "scorePublished": "Score publié.",
-  "publishFailed": "Publication impossible. Réessayez."
+  "publishFailed": "Publication impossible. Réessayez.",
+  "or": "ou",
+  "nickname": "Pseudo",
+  "saveScore": "Enregistrer",
+  "scores": "Scores",
+  "personalScores": "Vos scores",
+  "backHome": "Retour à l’accueil",
+  "loadingScores": "Chargement des scores…"
 }

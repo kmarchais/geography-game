@@ -42,6 +42,10 @@ export function createAtlasApi({ db, transaction, countries, now = Date.now, ori
       const reportMatch = path.match(/^\/reports\/([0-9a-f-]{36})$/i)
       if (req.method === 'GET' && reportMatch) {const report = reports.status(reportMatch[1]); reply(res, report ? 200 : 404, report || { error: 'Report not found.' }); return}
       if (req.method === 'GET' && path === '/leaderboard') {reply(res, 200, leaderboard(rules)); return}
+      if (req.method === 'GET' && path === '/scores/me') {
+        const user = accounts.user(req)
+        reply(res, user ? 200 : 401, user ? db.prepare("SELECT id,name,correct,? AS total,time_ms AS timeMs FROM runs WHERE player=? AND complete=1 AND json_extract(state,'$.version')=3 ORDER BY correct DESC,time_ms,id LIMIT 20").all(quiz.length, `google:${user.id}`) : { error: 'Sign in to see account scores.' }); return
+      }
       if (req.method === 'GET' && path === '/stats') {reply(res, 200, statistics.read('global')); return}
       if (req.method === 'GET' && path === '/stats/me') {
         const user = accounts.user(req)

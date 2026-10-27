@@ -14,7 +14,7 @@
       <div class="header-actions">
         <GoogleLoginButton
           ref="login"
-          :disabled="playing || starting || saving"
+          :disabled="playing || starting || saving || savingResult"
           :show-sign-in="session?.phase === 'complete' || (authMenuOpen && !playing && !starting)"
           :button-target="session?.phase === 'complete' ? '#result-google-entry' : '#menu-google-entry'"
           @busy="authBusy = $event"
@@ -31,8 +31,19 @@
           @click="positionMenu"
         >
           <ProfileAvatar
-            :user="account || guestProfile"
+            v-if="account"
+            :user="account"
           />
+          <svg
+            v-else
+            class="guest-silhouette"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          ><circle
+            cx="12"
+            cy="8"
+            r="4"
+          /><path d="M4 21a8 8 0 0 1 16 0z" /></svg>
           <span
             v-if="account"
             class="account-check"
@@ -69,7 +80,7 @@
           <button
             v-if="account"
             role="menuitem"
-            :disabled="playing || starting || saving || authBusy"
+            :disabled="playing || starting || saving || savingResult || authBusy"
             @click="menu?.hidePopover(); login?.openProfile()"
           >
             {{ t('editProfile') }}
@@ -77,10 +88,17 @@
           <button
             v-if="account"
             role="menuitem"
-            :disabled="playing || starting || saving || authBusy"
+            :disabled="playing || starting || saving || savingResult || authBusy"
             @click="menu?.hidePopover(); login?.disconnect()"
           >
             {{ t('signOut') }}
+          </button>
+          <button
+            role="menuitem"
+            :disabled="playing || starting"
+            @click="menu?.hidePopover(); scoresDialog?.open()"
+          >
+            {{ t('scores') }}
           </button>
           <button
             role="menuitem"
@@ -238,6 +256,7 @@
           </h1>
           <button
             class="primary-button play-button"
+            :aria-label="starting ? t('starting') : canPlay ? t('play') : t('loadingEarth')"
             :disabled="!canPlay || starting || authBusy"
             @click="start"
           >
@@ -254,12 +273,13 @@
               class="play-spinner"
               aria-hidden="true"
             />
-            <span class="sr-only">{{ starting ? t('starting') : canPlay ? t('play') : t('loadingEarth') }}</span>
+            <span class="play-label">{{ t('play') }}</span>
           </button>
         </section>
         <section
           v-else-if="session"
           class="mission-card"
+          :class="{ 'result-card': !playing }"
           aria-labelledby="target-name"
         >
           <template v-if="playing">
@@ -282,15 +302,32 @@
           >
             {{ t('yourScore') }}
           </h1>
-          <div class="session-stats">
-            <div><span :class="{ 'sr-only': playing }">{{ t('correct') }}</span><strong data-testid="accuracy">{{ formatPercent(accuracy) }}</strong></div><div><span :class="{ 'sr-only': playing }">{{ playing ? t('time') : t('timeToScore') }}</span><strong data-testid="timer">{{ formatTime(playing ? elapsed : resultTime) }}</strong></div>
-          </div>
-          <p
+          <button
             v-if="!playing"
-            class="round-count"
+            class="result-close quiet-button"
+            :aria-label="t('backHome')"
+            :disabled="authBusy || savingResult"
+            @click="reset"
           >
-            {{ t('correctCount', { correct: found, total: session.deck.length }) }}
-          </p>
+            ×
+          </button>
+          <div
+            v-if="playing"
+            class="session-stats"
+          >
+            <div><span class="sr-only">{{ t('correct') }}</span><strong data-testid="accuracy">{{ formatPercent(accuracy) }}</strong></div>
+            <div><span class="sr-only">{{ t('time') }}</span><strong data-testid="timer">{{ formatTime(elapsed) }}</strong></div>
+          </div>
+          <div
+            v-else
+            class="result-metrics"
+          >
+            <strong data-testid="correct-total">{{ found }}/195</strong>
+            <strong data-testid="accuracy">{{ formatPercent(accuracy) }}</strong>
+            <strong
+              data-testid="timer"
+            >{{ formatScoreTime(resultTime) }}</strong>
+          </div>
           <button
             v-if="playing"
             class="secondary-button skip-button"
@@ -314,49 +351,35 @@
               class="result-google-entry"
             />
             <p
-              v-if="saving"
-              class="muted small"
-              role="status"
+              v-if="!account"
+              class="result-or"
             >
-              {{ t('savingScore') }}
-            </p>
-            <p
-              v-else-if="!unranked && !published"
-              class="muted small"
-            >
-              {{ account ? t('privateScoreSaved') : t('anonymousScoreSaved') }}
+              {{ t('or') }}
             </p>
             <form
-              v-if="pendingClaim && !published"
-              class="publish-form"
-              @submit.prevent="account ? claimScore() : publishScore()"
+              class="result-save-form"
+              @submit.prevent="saveResult"
             >
-              <template v-if="!account">
-                <label
-                  class="name-label"
-                  for="player-name"
-                >{{ t('nicknameOptional') }}</label><input
-                  id="player-name"
-                  v-model="playerName"
-                  maxlength="24"
-                  autocomplete="nickname"
-                  :placeholder="t('namePlaceholder')"
-                >
-              </template>
-              <button
-                class="secondary-button"
-                :disabled="saving || authBusy || (!account && !playerName.trim())"
+              <label
+                class="sr-only"
+                for="player-name"
+              >{{ t('nickname') }}</label>
+              <input
+                id="player-name"
+                v-model="playerName"
+                maxlength="24"
+                autocomplete="nickname"
+                :placeholder="t('nickname')"
+                :disabled="authBusy || savingResult"
               >
-                {{ t('publishScore') }}
+              <button
+                class="primary-button"
+                :disabled="saving || authBusy || savingResult"
+                :aria-busy="savingResult"
+              >
+                {{ t('saveScore') }}
               </button>
             </form>
-            <p
-              v-if="published"
-              class="small publication-success"
-              role="status"
-            >
-              {{ t('scorePublished') }}
-            </p>
             <p
               v-if="claimMessage"
               class="small service-note"
@@ -365,25 +388,12 @@
               {{ t(claimMessage) }}
             </p>
             <p
-              v-if="best"
-              class="personal-best small muted"
-            >
-              {{ account ? t('yourBest') : t('onThisDevice') }} {{ formatPercent(percentage(best.correct, best.total)) }} · {{ formatTime(best.timeMs) }}
-            </p>
-            <p
               v-if="authMessage"
               class="account-feedback small"
               role="status"
             >
               {{ t(authMessage) }}
             </p>
-            <button
-              class="primary-button"
-              :disabled="starting || saving || authBusy"
-              @click="start"
-            >
-              {{ t('playAgain') }}
-            </button>
           </template>
           <p
             v-if="unranked"
@@ -395,6 +405,7 @@
         </section>
       </div>
     </main>
+    <ScoresDialog ref="scoresDialog" />
     <StatisticsDialog
       ref="statisticsDialog"
       :countries="countries"
@@ -472,23 +483,23 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import EarthGlobe from '@/components/EarthGlobe.vue'
 import GoogleLoginButton from '@/components/auth/GoogleLoginButton.vue'
 import ProfileAvatar from '@/components/auth/ProfileAvatar.vue'
 import BugReportDialog from '@/components/BugReportDialog.vue'
 import StatisticsDialog from '@/components/StatisticsDialog.vue'
-import { account, accountBest, refreshAccount, type AtlasUser } from '@/globe/auth'
-import { avatarPresets } from '@/globe/avatars'
+import ScoresDialog from '@/components/ScoresDialog.vue'
+import { account, refreshAccount, type AtlasUser } from '@/globe/auth'
 import { fetchCountries, type Country } from '@/globe/geography'
 import { answerCountry, compareScores, correctCount, createSession, isGuestId, percentage, readPersonalScores, readCountryStats, recordCountryStat, type Answer, type RankedScore, type Session } from '@/globe/game'
 import { rankingRequest, validRanking } from '@/globe/ranking'
-import { t, language, countryName, formatPercent, formatTime, type MessageKey } from '@/globe/i18n'
+import { t, language, countryName, formatPercent, formatTime, formatScoreTime, type MessageKey } from '@/globe/i18n'
 
 const base = import.meta.env.BASE_URL
 const native = import.meta.env.VITE_NATIVE === 'true'
 const authMenuOpen = ref(false)
-const guestProfile: AtlasUser = { id: 'guest', name: '', avatar: `preset:${avatarPresets[Math.floor(Math.random() * avatarPresets.length)]!.id}` }
+const scoresDialog = ref<InstanceType<typeof ScoresDialog>>()
 const statisticsDialog = ref<InstanceType<typeof StatisticsDialog>>()
 const countries = shallowRef<Country[]>([]), session = shallowRef<Session>()
 const quizCountries = computed(() => countries.value.filter(country => country.playable).sort((a, b) => countryName(a).localeCompare(countryName(b), language.value)))
@@ -517,15 +528,13 @@ function positionCountryCount(event: MouseEvent) {
 }
 const ready = ref(false), error = ref<MessageKey | ''>(''), warning = ref<MessageKey | ''>(''), errorStatus = ref(''), globeKey = ref(0)
 const playerName = ref(''), rankings = ref<RankedScore[]>([]), rankingError = ref<MessageKey | ''>('')
-const starting = ref(false), saving = ref(false), unranked = ref(false), localBest = ref<RankedScore>()
+const starting = ref(false), saving = ref(false), savingResult = ref(false), unranked = ref(false)
 const revealing = ref(false), revealCountryId = ref<string>(), published = ref(false)
 const locallySaved = ref(false), uploadUnconfirmed = ref(false)
 const authBusy = ref(false), authMessage = ref<MessageKey | ''>('')
-const best = computed(() => account.value ? accountBest.value : localBest.value)
 function connected(user: AtlasUser) {
   playerName.value = user.name
   refreshRanking()
-  if (session.value?.phase === 'complete' && pendingClaim.value && !saving.value) {claimScore()}
 }
 const pendingClaim = ref<{ id: string; claimToken: string }>()
 const claimMessage = ref<MessageKey | ''>('')
@@ -560,6 +569,35 @@ async function publishScore() {
   } catch {if (mounted && current === generation) {claimMessage.value = 'publishFailed'}}
   finally {if (mounted && current === generation) {saving.value = false}}
 }
+async function saveResult() {
+  if (saving.value || savingResult.value || authBusy.value) {return}
+  const name = playerName.value.normalize('NFKC').trim(), current = generation
+  if (name && !/^[\p{L}\p{N} ._'’-]{1,24}$/u.test(name)) {claimMessage.value = 'invalidName'; return}
+  savingResult.value = true; claimMessage.value = ''
+  try {
+    await upload
+    if (!mounted || current !== generation) {return}
+    if (name && account.value && account.value.name !== name) {
+      await rankingRequest('/auth/profile', { name, avatar: account.value.avatar || 'google' }, 2)
+      await refreshAccount()
+      if (account.value?.name !== name) {throw new Error('Profile not confirmed')}
+    }
+    if (name && pendingClaim.value && !unranked.value) {
+      playerName.value = name
+      if (account.value) {await claimScore()} else {await publishScore()}
+      if (!published.value) {return}
+    }
+    if (mounted && current === generation) {
+      if (!account.value) {try {localStorage.setItem('atlas-name', name)} catch { /* Storage can be unavailable. */ }}
+      reset()
+    }
+  } catch {if (mounted && current === generation) {claimMessage.value = 'profileSaveFailed'}}
+  finally {if (mounted && current === generation) {savingResult.value = false}}
+}
+watch(() => account.value?.name, (name, previous) => {
+  if (name && session.value?.phase === 'complete' && name !== previous) {playerName.value = name}
+  else if (!name && previous) {playerName.value = ''}
+})
 const elapsed = ref(0), verifiedTime = ref<number>(), feedbackKind = ref<'correct' | 'wrong' | 'skip' | 'land' | ''>(''), feedbackCountry = shallowRef<Country>(), feedbackOutcome = ref('')
 const feedback = computed(() => feedbackKind.value === 'land' ? t('clickLand') : !feedbackKind.value ? '' : feedbackKind.value === 'skip' ? t('skippedCountry', { country: countryName(feedbackCountry.value) }) : `${feedbackKind.value === 'correct' ? '✓' : '×'} ${countryName(feedbackCountry.value)}`)
 const noAnswers: Answer[] = []
@@ -618,11 +656,11 @@ async function start() {
 function tick() { if (playing.value && !revealing.value) {elapsed.value = Math.max(elapsed.value, Date.now() - startedAt)} }
 function saveLocal() {
   try {
-    const rows = readPersonalScores(localStorage)
+    const key = account.value ? `atlas-runs-v3:${account.value.id}` : 'atlas-runs-v3'
+    const rows = readPersonalScores(localStorage, key)
     rows.push({ id: crypto.randomUUID(), name: account.value?.name || playerName.value.trim(), correct: found.value, total: 195, timeMs: session.value!.lastCorrectMs })
     rows.sort(compareScores)
-    localStorage.setItem('atlas-runs-v3', JSON.stringify(rows.slice(0, 20)))
-    localBest.value = rows[0]
+    localStorage.setItem(key, JSON.stringify(rows.slice(0, 20)))
     locallySaved.value = true
   } catch { if (unranked.value) {rankingError.value = 'localRunSaveFailed'} }
 }
@@ -667,7 +705,7 @@ async function answer(country: Country | null | undefined) {
   session.value = next
   feedbackCountry.value = previous; feedbackKind.value = correct ? 'correct' : country === null ? 'skip' : 'wrong'
   feedbackOutcome.value = correct ? 'success' : country === null ? 'muted' : 'missed'
-  if (session.value.phase === 'complete') {saveLocal()}
+  if (session.value.phase === 'complete') {if (account.value) {playerName.value = account.value.name} saveLocal()}
 }
 function viewportChanged() {
   if (menu.value?.matches(':popover-open')) {menu.value.hidePopover()}
@@ -676,14 +714,13 @@ function viewportChanged() {
     if (bounds.right > innerWidth || bounds.bottom > innerHeight) {countryCount.value.hidePopover()}
   }
 }
-function reset() {generation++; runId = undefined; pendingClaim.value = undefined; claimMessage.value = ''; session.value = undefined; starting.value = false; saving.value = false; feedbackKind.value = ''; revealing.value = false; revealCountryId.value = undefined; restart.value?.close(); globe.value?.reset()}
+function reset() {savingResult.value = false; generation++; runId = undefined; pendingClaim.value = undefined; claimMessage.value = ''; session.value = undefined; starting.value = false; saving.value = false; feedbackKind.value = ''; revealing.value = false; revealCountryId.value = undefined; restart.value?.close(); globe.value?.reset()}
 onMounted(() => {
   try {
     const saved = localStorage.getItem('atlas-player-id')
     if (isGuestId(saved)) {playerId = saved}
     localStorage.setItem('atlas-player-id', playerId)
     playerName.value = (localStorage.getItem('atlas-name') || '').slice(0, 24)
-    localBest.value = readPersonalScores(localStorage)[0]
   } catch { /* A temporary guest identity works without storage. */ }
   load(); refreshRanking(); timer = setInterval(tick, 100)
   if (!native) {rankingTimer = setInterval(() => {if (!document.hidden) {refreshRanking()}}, 30000)}

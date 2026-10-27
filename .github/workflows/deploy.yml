@@ -39,7 +39,7 @@ jobs:
           node-version: '24'
       - run: bun install --frozen-lockfile
       - run: bun run validate-total-rounds
-      - run: bunx eslint --config eslint.config.cjs src/globe src/views/GlobeGame.vue src/components/EarthGlobe.vue src/components/StatisticsDialog.vue src/components/BugReportDialog.vue src/components/auth server tests/globe tests/server scripts/generate-icons.mjs scripts/prepare-country-names.mjs
+      - run: bunx eslint --config eslint.config.cjs src/globe src/views/GlobeGame.vue src/components/EarthGlobe.vue src/components/StatisticsDialog.vue src/components/ScoresDialog.vue src/components/BugReportDialog.vue src/components/auth server tests/globe tests/server scripts/generate-icons.mjs scripts/prepare-country-names.mjs
       - run: bun run type-check
       - run: bun run test
       - run: bun run test:ranking

@@ -11,9 +11,9 @@ export interface Session {
 }
 export interface RankedScore { id: string; name: string; correct: number; total: number; timeMs: number }
 export function isGuestId(value: unknown): value is string { return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value) }
-export function readPersonalScores(storage: Pick<Storage, 'getItem'>): RankedScore[] {
+export function readPersonalScores(storage: Pick<Storage, 'getItem'>, key = 'atlas-runs-v3'): RankedScore[] {
   try {
-    const rows = JSON.parse(storage.getItem('atlas-runs-v3') || '[]')
+    const rows = JSON.parse(storage.getItem(key) || '[]')
     if (!Array.isArray(rows)) {return []}
     return rows.filter(s => s && typeof s.name === 'string' && s.name.length <= 24 && s.total === 195 && Number.isInteger(s.correct) && s.correct >= 0 && s.correct <= 195 && Number.isFinite(s.timeMs) && s.timeMs >= 0 && s.timeMs <= 86400000).map((s, i) => ({ ...s, id: typeof s.id === 'string' ? s.id : `local-${i}` })).sort(compareScores).slice(0, 20)
   } catch {return []}

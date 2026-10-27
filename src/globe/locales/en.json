@@ -16,7 +16,7 @@
   "play": "Play",
   "loadingEarth": "Loading Earth…",
   "find": "Find",
-  "yourScore": "Your score",
+  "yourScore": "Score",
   "correct": "Correct",
   "time": "Time",
   "timeToScore": "Time to score",
@@ -142,5 +142,12 @@
   "anonymousScoreSaved": "Saved without a name. This run contributes to global statistics.",
   "privateScoreSaved": "Saved to your private statistics.",
   "scorePublished": "Score published.",
-  "publishFailed": "Could not publish your score. Try again."
+  "publishFailed": "Could not publish your score. Try again.",
+  "or": "or",
+  "nickname": "Nickname",
+  "saveScore": "Save",
+  "scores": "Scores",
+  "personalScores": "Your scores",
+  "backHome": "Back to home",
+  "loadingScores": "Loading scores…"
 }

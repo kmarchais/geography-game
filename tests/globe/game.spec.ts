@@ -263,26 +263,26 @@ test('all 195 answers publish an accurate time despite a lost final response', a
     if (run.deck[i] === 'TCD') {await tapCenter(page)}
     else {await page.getByRole('button', { name: 'Skip' }).click()}
   }
-  await expect(page.getByRole('heading', { name: 'Your score' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Score' })).toBeVisible()
   await expect(page.getByTestId('accuracy')).toHaveText('0.5%')
-  await expect(page.getByText('Saving score…')).not.toBeVisible({ timeout: 20000 })
+  await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeEnabled({ timeout: 20000 })
   expect(correctTime).toBeGreaterThanOrEqual(0)
-  await expect(page.getByTestId('timer')).toHaveText(formatTime(correctTime))
+  await expect(page.getByTestId('timer')).toHaveText(formatTime(correctTime).replace(/\.\d$/, ''))
   expect(finalBodies).toHaveLength(2)
   expect(finalBodies[0]).toBe(finalBodies[1])
-  await expect(page.getByText('Saved without a name. This run contributes to global statistics.')).toBeVisible()
-  await page.getByLabel('Nickname (optional)', { exact: true }).fill('Atlas test')
-  await page.getByRole('button', { name: 'Publish score', exact: true }).click()
-  await expect(page.getByText('Score published.', { exact: true })).toBeVisible()
-  if (page.viewportSize()!.width >= 1000) {await expect(page.locator('.ranking-panel table')).toContainText('Atlas test')}
-  await expect(page.getByText('Saved on this device. Shared ranking unavailable.')).not.toBeVisible()
+  await expect(page.getByText('Saved without a name. This run contributes to global statistics.')).toHaveCount(0)
+  await expect(page.getByTestId('correct-total')).toHaveText('1/195')
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   if (test.info().project.use.isMobile) {
     const viewport = page.viewportSize()!
-    await page.evaluate(() => scrollTo(0, 200))
     await page.setViewportSize({ width: viewport.height, height: viewport.width })
     await page.setViewportSize(viewport)
-    await expect.poll(async () => (await page.getByRole('heading', { name: 'Your score' }).boundingBox())!.y).toBeGreaterThanOrEqual(0)
+    await expect.poll(async () => (await page.getByRole('heading', { name: 'Score', exact: true }).boundingBox())!.y).toBeGreaterThanOrEqual(0)
   }
+  await page.getByLabel('Nickname', { exact: true }).fill('Atlas test')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled()
+  if (page.viewportSize()!.width >= 1000) {await expect(page.locator('.ranking-panel table')).toContainText('Atlas test')}
   await page.reload()
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('atlas-runs-v3') || '[]')[0].correct)).toBe(1)
   await page.getByRole('button', { name: 'Menu', exact: true }).click()
