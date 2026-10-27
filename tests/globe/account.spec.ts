@@ -301,6 +301,45 @@ test('an empty nickname keeps a personal score without public publication and re
   await expect(scores).toContainText('00:00')
 })
 
+test('leaving the result waits for the final answer acknowledgment', async ({ page }) => {
+  await googleAccount(page)
+  let release!: () => void
+  const gate = new Promise<void>(resolve => {release = resolve})
+  await page.route('**/atlas-api/runs/*/answers', async route => {
+    if (route.request().postDataJSON().index === 194) {await gate}
+    await route.continue()
+  })
+  try {
+    await page.goto('./')
+    await page.getByRole('button', { name: 'Play', exact: true }).click()
+    const final = page.waitForResponse(r => r.url().endsWith('/answers') && r.request().postDataJSON().index === 194)
+    await page.locator('.skip-button').evaluate(button => {for (let i = 0; i < 195; i++) {(button as HTMLButtonElement).click()}})
+    await expect(page.getByRole('heading', { name: 'Score', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Back to home', exact: true })).toBeDisabled()
+    await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled()
+    release()
+    expect((await (await final).json()).complete).toBe(true)
+    await expect(page.getByRole('button', { name: 'Back to home', exact: true })).toBeEnabled()
+    await page.getByRole('button', { name: 'Back to home', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled()
+  } finally {release()}
+})
+
+test('a run cannot claim to save when both shared and local storage fail', async ({ page }) => {
+  await googleAccount(page)
+  await page.route('**/atlas-api/runs', route => route.fulfill({ status: 503, json: { error: 'Unavailable' } }))
+  await page.addInitScript(() => {
+    const set = Storage.prototype.setItem
+    Storage.prototype.setItem = function(key, value) {if (key === 'atlas-runs-v3') {throw new Error('Blocked')} return set.call(this, key, value)}
+  })
+  await page.goto('./'); await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await page.locator('.skip-button').evaluate(button => {for (let i = 0; i < 195; i++) {(button as HTMLButtonElement).click()}})
+  await expect(page.getByRole('heading', { name: 'Score', exact: true })).toBeVisible()
+  await expect(page.getByText('Ranking unavailable. This device could not save your score.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Back to home', exact: true })).toBeEnabled()
+})
+
 test('legacy mode bookmarks open the same Atlas screen', async ({ page }) => {
   for (const path of ['classic', 'game/world-countries']) {
     await page.goto(path)

@@ -306,7 +306,7 @@
             v-if="!playing"
             class="result-close quiet-button"
             :aria-label="t('backHome')"
-            :disabled="authBusy || savingResult"
+            :disabled="authBusy || saving || savingResult"
             @click="reset"
           >
             ×
@@ -374,8 +374,8 @@
               >
               <button
                 class="primary-button"
-                :disabled="saving || authBusy || savingResult"
-                :aria-busy="savingResult"
+                :disabled="saving || authBusy || savingResult || (unranked && !locallySaved)"
+                :aria-busy="saving || savingResult"
               >
                 {{ t('saveScore') }}
               </button>
@@ -570,7 +570,7 @@ async function publishScore() {
   finally {if (mounted && current === generation) {saving.value = false}}
 }
 async function saveResult() {
-  if (saving.value || savingResult.value || authBusy.value) {return}
+  if (saving.value || savingResult.value || authBusy.value || (unranked.value && !locallySaved.value)) {return}
   const name = playerName.value.normalize('NFKC').trim(), current = generation
   if (name && !/^[\p{L}\p{N} ._'’-]{1,24}$/u.test(name)) {claimMessage.value = 'invalidName'; return}
   savingResult.value = true; claimMessage.value = ''
