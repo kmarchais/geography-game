@@ -99,6 +99,7 @@ test('Andorra is unpainted before finding it and its zoomed territory remains se
   await page.route('**/atlas-api/runs', route => route.fulfill({ json: { id: '11111111-1111-4111-8111-111111111111', deck: ['AND', ...order.filter(id => id !== 'AND')] } }))
   await open(page)
   await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await expect(page.locator('#target-name')).toHaveText('Andorra')
   let longitude = 18, latitude = 16, distance = 3.1
   // Navigate through the same keyboard controls as a player, refining at each zoom.
   for (let level = 0; level <= 20; level++) {
@@ -226,6 +227,7 @@ test('completed countries stay green, yellow, orange, and red according to the r
   const first = ['TCD', 'SDN', 'EGY', 'LBY']
   await mockRun(page, [...first, ...order.filter(id => !first.includes(id))])
   await open(page); await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await expect(page.locator('#target-name')).toHaveText('Chad')
   await earth(page).press('Enter') // Chad, first attempt.
   await expect(page.getByTestId('progress')).toHaveText('2 / 195')
   await earth(page).press('Enter') // Chad is wrong for Sudan.
@@ -237,6 +239,7 @@ test('completed countries stay green, yellow, orange, and red according to the r
   await earth(page).press('Enter') // Egypt, third attempt.
   await expect(page.getByTestId('progress')).toHaveText('4 / 195')
   await page.getByRole('button', { name: 'Skip' }).click() // Libya is red.
+  await expect(page.getByTestId('answer-cue')).toHaveCount(0)
   const bounds = (await earth(page).boundingBox())!, camera = new PerspectiveCamera(42, bounds.width / bounds.height, .01, 100)
   camera.position.fromArray(coordinateToVector([30.6, 28.6])).multiplyScalar(3.1)
   camera.lookAt(0, 0, 0); camera.updateMatrixWorld()
