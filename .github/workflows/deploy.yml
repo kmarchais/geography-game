@@ -88,13 +88,13 @@ jobs:
         if: github.event.inputs.target == 'interface'
         run: |
           bun run build-only
-          bunx playwright test --config playwright.globe.config.ts --grep 'minimal start|Google entry|guest avatar|profile picture|guest results|connected play prefills|empty nickname|leaving the result|both shared and local|menu reports|failed report|data errors retry|French system language'
+          bunx playwright test --config playwright.globe.config.ts --grep 'minimal start|Google entry|guest avatar|profile picture|guest results|connected play prefills|empty nickname|leaving the result|both shared and local|menu reports|failed report|data errors retry|French system language|cross-country hover|mouse hover|Andorra is unpainted|UN-associated'
       - name: Gameplay regressions across browser profiles
         if: github.event.inputs.target == 'gameplay'
         timeout-minutes: 10
         run: |
           bun run build-only
-          bunx playwright test --config playwright.globe.config.ts --grep 'completed countries|a real country tap|all 195 answers|Andorra is unpainted|translates the game|UN-associated|mouse hover'
+          bunx playwright test --config playwright.globe.config.ts --grep 'completed countries|a real country tap|all 195 answers|Andorra is unpainted|translates the game|UN-associated|mouse hover|cross-country hover'
       - name: Upload browser report
         if: always()
         uses: actions/upload-artifact@v4

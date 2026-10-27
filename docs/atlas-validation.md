@@ -2,6 +2,16 @@
 
 The Atlas challenge replaces Orbit's expedition settings. Historical Orbit results in `validation.md` do not verify the new mode or ranking service.
 
+## Hover performance, 28 October 2026
+
+The desktop reproduction crossed Chad, Nigeria, Niger, Libya, Sudan, and South Sudan twice. The previous implementation uploaded twelve 4096 × 2048 RGBA canvases, 384 MiB in total, and rebuilt 16,014 canvas path segments. Disabling those uploads alone reduced the local headless sweep from about 2.85 to 2.18 seconds. These are local comparison timings, not a physical-device frame-rate claim.
+
+The renderer now uploads a country-ID mask once and changes a shader uniform when the hovered country changes. It combines pointer movements into one pick per animation frame and reuses existing small-country geometry. The same sweep took about 2.12 seconds, uploaded the mask once, 32 MiB, and rebuilt no polygon paths. Subsequent territory changes upload nothing. Touch-only devices do not prepare the mask until a mouse is used.
+
+The new production-path regression failed against the previous renderer with six unexpected uploads. It passes with the fix and checks country IDs, zero subsequent uploads, zero polygon redraws, the final pointer position in a burst, touch exclusion, and cancellation on pointer leave. Existing pixel checks prove that grey hover restores the completed green colour and works on zoomed Andorra. The focused desktop run passed all four cases. Type-checking and scoped lint passed; the unit suite passed 653 tests with 26 legacy skips. Evidence: `.local/hover-baseline.json`, `.local/hover-no-upload.json`, `.local/hover-fixed.json`, `.local/hover-regression-red.log`, `.local/hover-browser-green.log`, `.local/hover-types.log`, `.local/hover-lint.log`, and `.local/hover-unit.log`.
+
+Production builds, cross-profile browser checks, and publication are pending. No phone installation or physical test is claimed for this hover change.
+
 ## Weighted outcomes and UN map replacement, released 28 October 2026
 
 Source `32f41a2` replaces the rejected grey-territory approach from `a6ebe8b`. Workflow 40590189766 was cancelled before publication, and its temporary Pages permission was removed. Its provisional Android build was subsequently replaced. Neither website served the grey-territory revision.

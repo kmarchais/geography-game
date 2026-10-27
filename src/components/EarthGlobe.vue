@@ -54,10 +54,10 @@ const positionCoordinates = ref<Coordinate>()
 const positionText = computed(() => positionCoordinates.value ? t('globePosition', { coordinates: positionCoordinates.value.map(formatCoordinate).join(language.value === 'fr' ? ' ; ' : ', ') }) : '')
 const baseDetail = ref('preview')
 const hovered = ref<Country>()
-let hoverMesh: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> | undefined
+let hoverMesh: THREE.Mesh<THREE.SphereGeometry, THREE.ShaderMaterial> | undefined
 let hoverSurface: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial> | undefined
-let hoverCanvas: HTMLCanvasElement | undefined
-let hoverTexture: THREE.CanvasTexture | undefined
+const hoverIds = new Map<string, number>()
+let hoverPending = false
 const feedback = ref<{ id: number; outcome: 'correct' | 'wrong'; x: number; y: number }>()
 let feedbackId = 0
 let feedbackTimer: ReturnType<typeof setTimeout>
@@ -161,6 +161,10 @@ function render() {
     invalidate()
     scheduleDetail()
   }
+  if (hoverPending) {
+    hoverPending = false
+    if (mousePosition && !pointers.size && !props.disabled && !flight) {hoverCountry(countryAt(...mousePosition))}
+  }
   const focalLength = host.value!.clientHeight / (2 * Math.tan(21 * Math.PI / 180))
   const distance = camera.position.length()
   borderMesh.visible = props.borders && distance >= 1.4
@@ -213,6 +217,7 @@ function configureCountries() {
     markerGroup.add(surface, sprite)
     markerPositions.push({ country, position, sprite, surface, angularSize: countryAngularSize(country), blend: 0, highlighted: false })
   }
+  if (hoverMesh || matchMedia('(any-hover: hover)').matches) {prepareHover()}
   updateHighlights()
 }
 
@@ -256,7 +261,7 @@ function drawCountry(context: CanvasRenderingContext2D, country: Country) {
   }
 }
 
-function updateHighlights() {
+function updateHighlights(redraw = true) {
   if (!fillTexture) {return}
   const context = fillCanvas.getContext('2d')!
   const answers = new Map(props.answers.map(answer => [answer.id, answer]))
@@ -289,7 +294,7 @@ function updateHighlights() {
     if (color) {marker.surface.material.color.set(color)}
   })
   if (controls && !flight) {controls.enabled = !props.reveal}
-  invalidate()
+  if (redraw) {invalidate()}
 }
 
 function focus(coordinate: Coordinate, distance = 2.8) {
@@ -344,37 +349,62 @@ function selectAt(x: number, y: number) {
   emit('select', countryAt(x, y))
 }
 function clearHover() {
+  hoverPending = false
   if (!hovered.value) {return}
   hovered.value = undefined
   if (hoverMesh) {hoverMesh.visible = false}
   if (hoverSurface) {hoverSurface.visible = false}
   updateHighlights()
 }
+function prepareHover() {
+  if (hoverMesh) {
+    const texture = hoverMesh.material.uniforms.mask!.value as THREE.Texture
+    texture.dispose(); textures.splice(textures.indexOf(texture), 1)
+    scene.remove(hoverMesh); hoverMesh.material.dispose()
+  }
+  const { image, texture } = makeOverlay(), context = image.getContext('2d')!
+  // Upload country IDs once. Hover changes one uniform, never the whole globe texture.
+  texture.colorSpace = THREE.NoColorSpace
+  texture.minFilter = texture.magFilter = THREE.NearestFilter
+  hoverIds.clear()
+  props.countries.forEach((country, index) => {
+    if (country.small) {return}
+    hoverIds.set(country.id, index + 1)
+    context.fillStyle = `rgb(${index + 1}, 0, 0)`
+    drawCountry(context, country)
+  })
+  hoverMesh = new THREE.Mesh(baseGeometry, new THREE.ShaderMaterial({
+    uniforms: { mask: { value: texture }, selected: { value: 0 }, color: { value: new THREE.Color('#c3c9d0') } },
+    vertexShader: 'varying vec2 maskUv; void main(){ maskUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }',
+    fragmentShader: `uniform sampler2D mask; uniform float selected; uniform vec3 color; varying vec2 maskUv;
+      void main(){ if(abs(texture2D(mask,maskUv).r*255.-selected)>.5) discard;
+        gl_FragColor=vec4(color,.45);
+        #include <colorspace_fragment>
+      }`,
+    transparent: true, depthWrite: false,
+  }))
+  hoverMesh.scale.setScalar(1.00028); hoverMesh.renderOrder = 2; hoverMesh.visible = false; scene.add(hoverMesh)
+}
 function hoverCountry(country: Country | undefined) {
   if (country?.id === hovered.value?.id) {return}
   hovered.value = country
   if (hoverSurface) {hoverSurface.visible = false}
   if (country && !country.small) {
-    if (!hoverMesh) {
-      const overlay = makeOverlay(); hoverCanvas = overlay.image; hoverTexture = overlay.texture
-      hoverMesh = new THREE.Mesh(baseGeometry, new THREE.MeshBasicMaterial({ map: hoverTexture, transparent: true, depthWrite: false, opacity: .45 }))
-      hoverMesh.scale.setScalar(1.00028); hoverMesh.renderOrder = 2; scene.add(hoverMesh)
-    }
-    const context = hoverCanvas!.getContext('2d')!
-    context.clearRect(0, 0, overlayWidth, overlayHeight); context.fillStyle = '#c3c9d0'
-    drawCountry(context, country); hoverTexture!.needsUpdate = true
-    hoverMesh.visible = true
+    if (!hoverMesh) {prepareHover()}
+    hoverMesh!.material.uniforms.selected!.value = hoverIds.get(country.id)
+    hoverMesh!.visible = true
   } else {
     if (hoverMesh) {hoverMesh.visible = false}
     if (country?.small) {
+      const geometry = markerPositions.find(marker => marker.country.id === country.id)!.surface.geometry
       if (!hoverSurface) {
-        hoverSurface = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ color: '#c3c9d0', transparent: true, depthWrite: false, opacity: .45, side: THREE.DoubleSide }))
+        hoverSurface = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: '#c3c9d0', transparent: true, depthWrite: false, opacity: .45, side: THREE.DoubleSide }))
         hoverSurface.renderOrder = 2; hoverSurface.scale.setScalar(1.00001); scene.add(hoverSurface)
       }
-      hoverSurface.geometry.dispose(); hoverSurface.geometry = countrySurface(country); hoverSurface.visible = true
+      hoverSurface.geometry = geometry; hoverSurface.visible = true
     }
   }
-  updateHighlights()
+  updateHighlights(false) // Already inside the frame that will draw this hover.
 }
 function onPointerLeave() {mousePosition = undefined; clearHover()}
 
@@ -387,7 +417,7 @@ function onPointerDown(event: PointerEvent) {
 function onPointerMove(event: PointerEvent) {
   if (event.pointerType === 'mouse') {
     mousePosition = [event.clientX, event.clientY]
-    if (!pointers.size && !props.disabled && !flight) {hoverCountry(countryAt(event.clientX, event.clientY))}
+    if (!pointers.size && !props.disabled && !flight) {hoverPending = true; invalidate()}
   }
   if (pointerStart && Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) > 6) {dragged = true}
   if (pointers.size) {invalidate()}
@@ -561,7 +591,7 @@ onMounted(async () => {
 watch(() => props.disabled, disabled => {if (disabled) {clearHover()}})
 watch(() => props.borders, visible => { if (borderMesh) { borderMesh.visible = visible; invalidate() } })
 watch(() => props.countries, configureCountries)
-watch(() => [props.answers, props.paintFound, props.markers, props.reveal], updateHighlights)
+watch(() => [props.answers, props.paintFound, props.markers, props.reveal], () => updateHighlights())
 onBeforeUnmount(() => {
   disposed = true
   cancelFlight()
