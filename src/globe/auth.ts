@@ -7,7 +7,7 @@ export const account = ref<AtlasUser | null>(null)
 export const accountBest = ref<RankedScore>()
 export const googleClientId = ref('')
 export async function refreshAccount() {
-  const result = await rankingRequest<{ user: AtlasUser | null; best: unknown; googleClientId: string }>('/auth/session')
+  const result = await rankingRequest<{ user: AtlasUser | null; best: unknown; googleClientId: string }>('/auth/session?rules=4')
   account.value = result.user
   accountBest.value = result.best ? validRanking([result.best])[0] : undefined
   googleClientId.value = result.googleClientId || ''

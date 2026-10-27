@@ -13,12 +13,15 @@ async function open(page: Page) {
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled()
 }
 async function mockRun(page: Page, deck = order) {
-  let correct = 0
-  await page.route('**/atlas-api/runs', route => route.fulfill({ json: { id: '11111111-1111-4111-8111-111111111111', deck } }))
+  let correct = 0, timeMs = 0
+  const counts = { green: 0, yellow: 0, orange: 0, red: 0 }
+  await page.route('**/atlas-api/runs?*', route => route.fulfill({ json: { id: '11111111-1111-4111-8111-111111111111', deck } }))
   await page.route('**/atlas-api/runs/*/answers', route => {
     const data = route.request().postDataJSON()
-    correct += Number(data.guess === deck[data.index])
-    return route.fulfill({ json: { complete: false, correct, total: 195, timeMs: 1000 } })
+    const found = data.guess === deck[data.index], resolved = found || data.guess === null || data.attempt === 2
+    if (found) {correct++; timeMs = data.elapsedMs}
+    if (resolved) {counts[found ? (['green', 'yellow', 'orange'] as const)[data.attempt as 0 | 1 | 2] : 'red']++}
+    return route.fulfill({ json: { complete: resolved && data.index === 194, correct, total: 195, timeMs, ...counts, score: counts.green + counts.yellow / 2 + counts.orange / 4 } })
   })
 }
 async function tapCenter(page: Page) {
@@ -96,7 +99,7 @@ test('close-zoom dragging redraws even below the controls change threshold', asy
 test('Andorra is unpainted before finding it and its zoomed territory remains selectable', async ({ page }) => {
   await page.route('https://gibs.earthdata.nasa.gov/**', route => route.abort())
   await mockRun(page)
-  await page.route('**/atlas-api/runs', route => route.fulfill({ json: { id: '11111111-1111-4111-8111-111111111111', deck: ['AND', ...order.filter(id => id !== 'AND')] } }))
+  await page.route('**/atlas-api/runs?*', route => route.fulfill({ json: { id: '11111111-1111-4111-8111-111111111111', deck: ['AND', ...order.filter(id => id !== 'AND')] } }))
   await open(page)
   await page.getByRole('button', { name: 'Play', exact: true }).click()
   await expect(page.locator('#target-name')).toHaveText('Andorra')
@@ -118,25 +121,38 @@ test('Andorra is unpainted before finding it and its zoomed territory remains se
     }
   }
   const before = await earth(page).screenshot({ path: test.info().outputPath('andorra-unanswered.png') })
-  const pixel = await page.evaluate(async source => {
+  const sample = (png: Buffer) => page.evaluate(async source => {
     const image = new Image(); image.src = source
     await image.decode()
     const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height
     const context = canvas.getContext('2d')!; context.drawImage(image, 0, 0)
     return [...context.getImageData(Math.floor(image.width / 2) + 12, Math.floor(image.height / 2), 1, 1).data]
-  }, `data:image/png;base64,${before.toString('base64')}`)
+  }, `data:image/png;base64,${png.toString('base64')}`)
+  const pixel = await sample(before)
   expect(Math.abs(pixel[0]! - 119) + Math.abs(pixel[1]! - 156) + Math.abs(pixel[2]! - 121)).toBeGreaterThan(20)
   await tapCenter(page)
   await expect(page.getByTestId('progress')).toHaveText('2 / 195')
   await expect(page.getByTestId('accuracy')).toHaveText('0.5%')
-  await earth(page).screenshot({ path: test.info().outputPath('andorra-found.png') })
+  await expect(page.getByTestId('answer-cue')).toHaveCount(0)
+  const found = await earth(page).screenshot({ path: test.info().outputPath('andorra-found.png'), style: '.mission-panel { visibility: hidden !important; }' })
+  if (!test.info().project.use.isMobile) {
+    const green = await sample(found), box = (await earth(page).boundingBox())!
+    await page.mouse.move(box.x + box.width / 2 + 8, box.y + box.height / 2)
+    await expect(page.getByTestId('earth-host')).toHaveAttribute('data-hover', 'AND')
+    const grey = await sample(await earth(page).screenshot({ style: '.mission-panel { visibility: hidden !important; }' }))
+    expect(grey[0]! + grey[2]!).toBeGreaterThan(green[0]! + green[2]! + 15)
+    await page.mouse.move(10, 10)
+    await expect(page.getByTestId('earth-host')).not.toHaveAttribute('data-hover')
+    const restored = await sample(await earth(page).screenshot({ style: '.mission-panel { visibility: hidden !important; }' }))
+    expect(restored.reduce((n, value, i) => n + Math.abs(value - green[i]!), 0)).toBeLessThan(8)
+  }
 })
 
 test('wheel zoom keeps Andorra under the mouse until its territory is directly selectable', async ({ page }) => {
   test.skip(!!test.info().project.use.isMobile, 'Mouse wheel interaction is a desktop control')
   await page.route('https://gibs.earthdata.nasa.gov/**', route => route.abort())
   await mockRun(page)
-  await page.route('**/atlas-api/runs', route => route.fulfill({ json: { id: '11111111-1111-4111-8111-111111111111', deck: ['AND', ...order.filter(id => id !== 'AND')] } }))
+  await page.route('**/atlas-api/runs?*', route => route.fulfill({ json: { id: '11111111-1111-4111-8111-111111111111', deck: ['AND', ...order.filter(id => id !== 'AND')] } }))
   await open(page)
   await page.getByRole('button', { name: 'Play', exact: true }).click()
   const box = (await earth(page).boundingBox())!
@@ -231,6 +247,7 @@ test('completed countries stay green, yellow, orange, and red according to the r
   await earth(page).press('Enter') // Chad, first attempt.
   await expect(page.getByTestId('progress')).toHaveText('2 / 195')
   await earth(page).press('Enter') // Chad is wrong for Sudan.
+  await expect(page.locator('.answer-feedback')).toHaveText('× Chad')
   for (let i = 0; i < 3; i++) {await earth(page).press('ArrowRight')}
   await earth(page).press('Enter') // Sudan, second attempt.
   await expect(page.getByTestId('progress')).toHaveText('3 / 195')
@@ -238,6 +255,7 @@ test('completed countries stay green, yellow, orange, and red according to the r
   for (let i = 0; i < 3; i++) {await earth(page).press('ArrowUp')}
   await earth(page).press('Enter') // Egypt, third attempt.
   await expect(page.getByTestId('progress')).toHaveText('4 / 195')
+  await expect(page.getByTestId('accuracy')).toHaveText('0.9%') // 1 + .5 + .25 points.
   await page.getByRole('button', { name: 'Skip' }).click() // Libya is red.
   await expect(page.getByTestId('answer-cue')).toHaveCount(0)
   const bounds = (await earth(page).boundingBox())!, camera = new PerspectiveCamera(42, bounds.width / bounds.height, .01, 100)
@@ -329,7 +347,7 @@ test('all 195 answers publish an accurate time despite a lost final response', a
     }, `data:image/png;base64,${screenshot.toString('base64')}`)
   }
   const unpainted = await centrePixel()
-  const runResponse = page.waitForResponse(r => r.url().endsWith('/atlas-api/runs') && r.request().method() === 'POST')
+  const runResponse = page.waitForResponse(r => r.url().endsWith('/atlas-api/runs?rules=4') && r.request().method() === 'POST')
   await page.getByRole('button', { name: 'Play', exact: true }).click()
   const run = await (await runResponse).json()
   for (let i = 0; i < 195; i++) {
@@ -345,6 +363,10 @@ test('all 195 answers publish an accurate time despite a lost final response', a
   expect(finalBodies[0]).toBe(finalBodies[1])
   await expect(page.getByText('Saved without a name. This run contributes to global statistics.')).toHaveCount(0)
   await expect(page.getByTestId('correct-total')).toHaveText('1/195')
+  await expect(page.locator('.outcome-counts .green')).toHaveText('1')
+  await expect(page.locator('.outcome-counts .yellow')).toHaveText('0')
+  await expect(page.locator('.outcome-counts .orange')).toHaveText('0')
+  await expect(page.locator('.outcome-counts .red')).toHaveText('194')
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   if (test.info().project.use.isMobile) {
     const viewport = page.viewportSize()!
@@ -359,7 +381,7 @@ test('all 195 answers publish an accurate time despite a lost final response', a
   expect(resetPixel.reduce((sum, value, index) => sum + Math.abs(value - unpainted[index]!), 0)).toBeLessThan(15)
   if (page.viewportSize()!.width >= 1000) {await expect(page.locator('.ranking-panel table')).toContainText('Atlas test')}
   await page.reload()
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('atlas-runs-v3') || '[]')[0].correct)).toBe(1)
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('atlas-runs-v4') || '[]')[0].correct)).toBe(1)
   await page.getByRole('button', { name: 'Menu', exact: true }).click()
   await page.getByRole('menuitem', { name: 'Statistics', exact: true }).click()
   await expect(page.getByRole('dialog', { name: 'Statistics', exact: true })).toContainText('Chad')
@@ -415,4 +437,61 @@ test('stops rendering when the full globe is idle', async ({ page }) => {
   const before = await page.evaluate(() => Reflect.get(window, 'atlasFrames'))
   await page.waitForTimeout(500)
   expect(await page.evaluate(() => Reflect.get(window, 'atlasFrames'))).toBe(before)
+})
+
+
+test('mouse hover greys the actual territory and clears without changing its result', async ({ page }) => {
+  test.skip(!!test.info().project.use.isMobile, 'Hover requires a mouse')
+  await page.route('https://gibs.earthdata.nasa.gov/**', route => route.abort())
+  await mockRun(page); await open(page)
+  await expect(page.getByTestId('earth-host')).toHaveAttribute('data-base-detail', 'full')
+  await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await expect(page.locator('#target-name')).toHaveText('Chad')
+  await earth(page).press('Enter')
+  await expect(page.getByTestId('progress')).toHaveText('2 / 195')
+  await expect(page.getByTestId('answer-cue')).toHaveCount(0)
+  const pixel = async () => {
+    const png = await earth(page).screenshot({ style: '.mission-panel, .answer-cue { visibility: hidden !important; }' })
+    return page.evaluate(async source => {
+      const image = new Image(); image.src = source; await image.decode()
+      const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height
+      const context = canvas.getContext('2d')!; context.drawImage(image, 0, 0)
+      return [...context.getImageData(Math.floor(image.width / 2) + 12, Math.floor(image.height / 2), 1, 1).data]
+    }, `data:image/png;base64,${png.toString('base64')}`)
+  }
+  const before = await pixel(), box = (await earth(page).boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await expect(page.getByTestId('earth-host')).toHaveAttribute('data-hover', 'TCD')
+  const hovered = await pixel()
+  expect(hovered[0]! + hovered[2]!).toBeGreaterThan(before[0]! + before[2]! + 15)
+  await page.mouse.move(10, 10)
+  await expect(page.getByTestId('earth-host')).not.toHaveAttribute('data-hover')
+  const after = await pixel()
+  expect(after.reduce((n, value, i) => n + Math.abs(value - before[i]!), 0)).toBeLessThan(8)
+  await expect(page.getByTestId('accuracy')).toHaveText('0.5%')
+})
+
+
+test('territories outside the challenge cannot be selected or consume an attempt', async ({ page }) => {
+  let requests = 0
+  await mockRun(page)
+  page.on('request', request => {if (request.url().endsWith('/answers')) {requests++}})
+  await open(page); await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await expect(page.locator('#target-name')).toHaveText('Chad')
+  const box = (await earth(page).boundingBox())!, camera = new PerspectiveCamera(42, box.width / box.height, .01, 100)
+  camera.position.fromArray(coordinateToVector([18, 16])).multiplyScalar(3.1)
+  camera.lookAt(0, 0, 0); camera.updateMatrixWorld()
+  const snapshot = JSON.parse(readFileSync('public/data/globe/countries.json', 'utf8'))
+  const coordinate = snapshot.find((c: { id: string }) => c.id === 'SOL').center
+  const point = new Vector3(...coordinateToVector(coordinate)).multiplyScalar(1.0003).project(camera)
+  const x = box.x + (point.x + 1) * box.width / 2, y = box.y + (1 - point.y) * box.height / 2
+  if (test.info().project.use.isMobile) {await page.touchscreen.tap(x, y)} else {
+    await page.mouse.move(x, y)
+    await expect(page.getByTestId('earth-host')).not.toHaveAttribute('data-hover')
+    await page.mouse.click(x, y)
+  }
+  await expect(page.getByTestId('progress')).toHaveText('1 / 195')
+  await expect(page.locator('.attempts-left')).toContainText('Attempts left: 3')
+  await expect(page.getByTestId('answer-cue')).toHaveCount(0)
+  expect(requests).toBe(0)
 })

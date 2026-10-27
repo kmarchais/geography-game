@@ -47,8 +47,8 @@
   "membership": "Les 193 États membres de l'ONU et ses deux États observateurs non membres : la Palestine et le Saint-Siège, représenté ici par le Vatican. Cette sélection repose sur leur statut à l'ONU, et non sur une reconnaissance par tous les pays.",
   "unMembers": "Membres de l'ONU",
   "unObservers": "États observateurs de l'ONU",
-  "instructions": "Faites glisser pour tourner. Faites défiler ou pincez pour zoomer. Vous avez trois essais par pays. Vert : premier essai, jaune : deuxième, orange : troisième, rouge : manqué ou passé. Après trois erreurs, Atlas montre le territoire et dézoome avant le pays suivant.",
-  "rankingInstructions": "La réussite est calculée sur 195 pays. Les égalités sont départagées par le temps du dernier pays trouvé. Le chronomètre s’arrête pendant les révélations automatiques. Un score apparaît au classement uniquement si vous le publiez.",
+  "instructions": "Faites glisser pour tourner. Faites défiler ou pincez pour zoomer. Vous avez trois essais par pays. Vert : premier essai, jaune : deuxième, orange : troisième, rouge : manqué ou passé. Après trois erreurs, Atlas montre le territoire et dézoome avant le pays suivant. Les territoires gris ne font pas partie des 195 pays et ne sont pas sélectionnables.",
+  "rankingInstructions": "Vert : 1 point, jaune : 0,5, orange : 0,25, rouge : 0. Le score est sur 195. À égalité, le temps de la dernière bonne réponse départage les joueurs. Le chrono est en pause pendant les révélations automatiques. Publiez votre score pour rejoindre le classement.",
   "keyboardInstructions": "Clavier : flèches pour tourner, +/− pour zoomer, Entrée pour choisir le pays au centre.",
   "credits": "Frontières Natural Earth · Imagerie NASA. Côtes simplifiées et frontières contestées. Le classement invité sert à s'entraîner.",
   "restartDialog": "Recommencer le défi",
@@ -128,7 +128,7 @@
   "statistics": "Statistiques",
   "yourStats": "Vos statistiques",
   "globalStats": "Statistiques globales",
-  "statsExplanation": "Pays terminés, y compris les pays passés.",
+  "statsExplanation": "Résultats par tentative. Le rouge inclut les échecs et les pays passés.",
   "loadingStats": "Chargement des statistiques…",
   "statsUnavailable": "Statistiques indisponibles. Réessayez plus tard.",
   "foundCount": "Trouvés / joués",
@@ -149,5 +149,10 @@
   "scores": "Scores",
   "personalScores": "Vos scores",
   "backHome": "Retour à l’accueil",
-  "loadingScores": "Chargement des scores…"
+  "loadingScores": "Chargement des scores…",
+  "points": "Points",
+  "green": "Vert",
+  "yellow": "Jaune",
+  "orange": "Orange",
+  "red": "Rouge"
 }

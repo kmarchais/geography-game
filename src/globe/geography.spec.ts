@@ -16,7 +16,7 @@ describe('the checked-in geography', () => {
     [139.69, 35.68, 'JPN'], [-77.04, 38.9, 'USA'], [177.98, -17.8, 'FJI'],
     [-172.4, -13.65, 'WSM'], [179.2096, -8.5137, 'TUV'], [12.4534, 41.903, 'VAT'],
     [28.23, -29.61, 'LSO'], [28.04, -26.2, 'ZAF'], [31.2, -26.5, 'SWZ'],
-    [174.78, -41.29, 'NZL'], [-149.9, 61.22, 'USA'], [-42, 72, 'GRL'],
+    [174.78, -41.29, 'NZL'], [-149.9, 61.22, 'USA'],
   ])('picks longitude %s, latitude %s as %s', (lon, lat, id) => expect(pick([lon as number, lat as number])?.id).toBe(id))
   it('does not count oceans as countries', () => {
     expect(pick([-30, 0])).toBeUndefined()

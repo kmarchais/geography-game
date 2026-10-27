@@ -35,7 +35,7 @@ function inRing([lon, lat]: Coordinate, ring: Ring): boolean {
 
 // Prepare once. The broad bounds check avoids scanning every coastline on a tap.
 export function createCountryPicker(countries: Country[]) {
-  const parts = countries.flatMap(country => country.polygons.map(polygon => {
+  const parts = countries.filter(country => country.playable).flatMap(country => country.polygons.map(polygon => {
     const rings = polygon.map(unwrapRing)
     const outer = rings[0]!
     return {

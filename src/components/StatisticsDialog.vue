@@ -57,9 +57,13 @@
           <th scope="col">
             {{ t('country') }}
           </th><th scope="col">
-            {{ t('foundCount') }}
+            {{ t('green') }}
           </th><th scope="col">
-            {{ t('successRate') }}
+            {{ t('yellow') }}
+          </th><th scope="col">
+            {{ t('orange') }}
+          </th><th scope="col">
+            {{ t('red') }}
           </th>
         </tr>
       </thead>
@@ -70,7 +74,7 @@
         >
           <th scope="row">
             {{ countryName(byId.get(row.id)) }}
-          </th><td>{{ row.found }} / {{ row.played }}</td><td>{{ formatPercent(percentage(row.found, row.played)) }}</td>
+          </th><td>{{ row.green }}</td><td>{{ row.yellow }}</td><td>{{ row.orange }}</td><td>{{ row.red }}</td>
         </tr>
       </tbody>
     </table>
@@ -85,20 +89,20 @@
 <script setup lang="ts">
 import { computed, ref, watch, onBeforeUnmount } from 'vue'
 import { account } from '@/globe/auth'
-import { readCountryStats, validCountryStats, percentage, type CountryStat } from '@/globe/game'
+import { readCountryStats, validCountryStats, weightedScore, type CountryStat } from '@/globe/game'
 import type { Country } from '@/globe/geography'
-import { countryName, t, formatPercent } from '@/globe/i18n'
+import { countryName, t } from '@/globe/i18n'
 import { rankingRequest } from '@/globe/ranking'
 const props = defineProps<{ countries: Country[] }>()
 const dialog = ref<HTMLDialogElement>(), global = ref(false), values = ref<CountryStat[]>([]), loading = ref(false), failed = ref(false)
 const byId = computed(() => new Map(props.countries.map(country => [country.id, country])))
-const rows = computed(() => values.value.filter(row => byId.value.has(row.id)).sort((a, b) => a.found / a.played - b.found / b.played || b.played - a.played || a.id.localeCompare(b.id)))
+const rows = computed(() => values.value.filter(row => byId.value.has(row.id)).sort((a, b) => weightedScore(a) / a.played - weightedScore(b) / b.played || b.played - a.played || a.id.localeCompare(b.id)))
 let generation = 0
 async function load() {
   const current = ++generation
   loading.value = true; failed.value = false
   try {
-    const data = global.value || account.value ? validCountryStats(await rankingRequest<unknown>(global.value ? '/stats' : '/stats/me', undefined, 1)) : readCountryStats(localStorage)
+    const data = global.value || account.value ? validCountryStats(await rankingRequest<unknown>(global.value ? '/stats?rules=4' : '/stats/me?rules=4', undefined, 1)) : readCountryStats(localStorage)
     if (current === generation) {values.value = data}
   } catch {if (current === generation) {failed.value = true}}
   finally {if (current === generation) {loading.value = false}}

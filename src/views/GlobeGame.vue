@@ -178,7 +178,7 @@
                 <th scope="col">
                   {{ t('player') }}
                 </th><th scope="col">
-                  {{ t('correct') }}
+                  {{ t('points') }}
                 </th><th scope="col">
                   {{ t('time') }}
                 </th>
@@ -188,7 +188,7 @@
                 v-for="(row, i) in rankings"
                 :key="row.id"
               >
-                <td><span class="rank-number">{{ i + 1 }}</span>{{ row.name }}</td><td>{{ formatPercent(percentage(row.correct, row.total)) }}</td><td>{{ formatTime(row.timeMs) }}</td>
+                <td><span class="rank-number">{{ i + 1 }}</span>{{ row.name }}</td><td>{{ formatPercent(percentage(row.score ?? row.correct, row.total)) }}</td><td>{{ formatTime(row.timeMs) }}</td>
               </tr>
             </tbody>
           </table>
@@ -314,18 +314,30 @@
             v-if="playing"
             class="session-stats"
           >
-            <div><span class="sr-only">{{ t('correct') }}</span><strong data-testid="accuracy">{{ formatPercent(accuracy) }}</strong></div>
+            <div><span class="sr-only">{{ t('points') }}</span><strong data-testid="accuracy">{{ formatPercent(accuracy) }}</strong></div>
             <div><span class="sr-only">{{ t('time') }}</span><strong data-testid="timer">{{ formatTime(elapsed) }}</strong></div>
           </div>
           <div
             v-else
             class="result-metrics"
           >
-            <strong data-testid="correct-total">{{ found }}/195</strong>
+            <strong data-testid="correct-total">{{ formatPoints(session ? sessionScore(session) : 0) }}/195</strong>
             <strong data-testid="accuracy">{{ formatPercent(accuracy) }}</strong>
             <strong
               data-testid="timer"
             >{{ formatScoreTime(resultTime) }}</strong>
+          </div>
+          <div
+            v-if="!playing"
+            class="outcome-counts"
+            data-testid="outcome-counts"
+          >
+            <span
+              v-for="grade in grades"
+              :key="grade"
+              :class="grade"
+              :aria-label="t(grade)"
+            >{{ outcomeCounts(session.answers)[grade] }}</span>
           </div>
           <button
             v-if="playing"
@@ -491,9 +503,9 @@ import StatisticsDialog from '@/components/StatisticsDialog.vue'
 import ScoresDialog from '@/components/ScoresDialog.vue'
 import { account, refreshAccount, type AtlasUser } from '@/globe/auth'
 import { fetchCountries, type Country } from '@/globe/geography'
-import { answerCountry, compareScores, correctCount, createSession, isGuestId, percentage, readPersonalScores, readCountryStats, recordCountryStat, type Answer, type RankedScore, type Session } from '@/globe/game'
+import { answerCountry, compareScores, correctCount, sessionScore, outcomeCounts, createSession, isGuestId, percentage, readPersonalScores, readCountryStats, recordCountryStat, type Answer, type RankedScore, type Session } from '@/globe/game'
 import { rankingRequest, validRanking } from '@/globe/ranking'
-import { t, language, countryName, formatPercent, formatTime, formatScoreTime, type MessageKey } from '@/globe/i18n'
+import { t, language, countryName, formatPercent, formatTime, formatScoreTime, formatPoints, type MessageKey } from '@/globe/i18n'
 
 const base = import.meta.env.BASE_URL
 const native = import.meta.env.VITE_NATIVE === 'true'
@@ -605,12 +617,13 @@ watch(() => account.value?.name, (name, previous) => {
 })
 const elapsed = ref(0), verifiedTime = ref<number>(), feedbackKind = ref<'correct' | 'wrong' | 'skip' | 'land' | ''>(''), feedbackCountry = shallowRef<Country>(), feedbackOutcome = ref('')
 const feedback = computed(() => feedbackKind.value === 'land' ? t('clickLand') : !feedbackKind.value ? '' : feedbackKind.value === 'skip' ? t('skippedCountry', { country: countryName(feedbackCountry.value) }) : `${feedbackKind.value === 'correct' ? '✓' : '×'} ${countryName(feedbackCountry.value)}`)
+const grades = ['green', 'yellow', 'orange', 'red'] as const
 const noAnswers: Answer[] = []
 const playing = computed(() => session.value?.phase === 'playing')
 const canPlay = computed(() => ready.value && countries.value.length > 0 && !error.value)
 const target = computed(() => session.value?.deck[session.value.answers.length])
 const found = computed(() => session.value ? correctCount(session.value) : 0)
-const accuracy = computed(() => percentage(found.value, session.value?.deck.length ?? 195))
+const accuracy = computed(() => percentage(session.value ? sessionScore(session.value) : 0, session.value?.deck.length ?? 195))
 const resultTime = computed(() => verifiedTime.value ?? session.value?.lastCorrectMs ?? 0)
 const serviceNote = computed(() => {
   if (playing.value && unranked.value) {return uploadUnconfirmed.value ? t('rankingLost') : t('offlineUnranked')}
@@ -628,7 +641,7 @@ let playerId: string = crypto.randomUUID()
 
 async function refreshRanking() {
   if (native) {return}
-  try { const rows = validRanking(await rankingRequest<unknown>('/leaderboard')); if (mounted) {rankings.value = rows; rankingError.value = ''} }
+  try { const rows = validRanking(await rankingRequest<unknown>('/leaderboard?rules=4')); if (mounted) {rankings.value = rows; rankingError.value = ''} }
   catch { if (mounted) {rankingError.value = 'rankingUnavailable'} }
 }
 async function load() {
@@ -647,7 +660,7 @@ async function start() {
   let next: Session
   try {
     if (!navigator.onLine) {throw new Error('Offline')}
-    const result = await rankingRequest<{ id: string; deck: string[]; claimToken?: string }>('/runs', {})
+    const result = await rankingRequest<{ id: string; deck: string[]; claimToken?: string }>('/runs?rules=4', {})
     if (!isGuestId(result.id) || !Array.isArray(result.deck)) {throw new Error('Invalid run')}
     next = createSession(countries.value, result.deck)
     runId = result.id; rankingError.value = ''
@@ -661,9 +674,9 @@ async function start() {
 function tick() { if (playing.value && !revealing.value) {elapsed.value = Math.max(elapsed.value, Date.now() - startedAt)} }
 function saveLocal() {
   try {
-    const key = account.value ? `atlas-runs-v3:${account.value.id}` : 'atlas-runs-v3'
+    const key = account.value ? `atlas-runs-v4:${account.value.id}` : 'atlas-runs-v4'
     const rows = readPersonalScores(localStorage, key)
-    rows.push({ id: crypto.randomUUID(), name: account.value?.name || playerName.value.trim(), correct: found.value, total: 195, timeMs: session.value!.lastCorrectMs })
+    rows.push({ id: crypto.randomUUID(), name: account.value?.name || playerName.value.trim(), correct: found.value, score: sessionScore(session.value!), ...outcomeCounts(session.value!.answers), total: 195, timeMs: session.value!.lastCorrectMs })
     rows.sort(compareScores)
     localStorage.setItem(key, JSON.stringify(rows.slice(0, 20)))
     locallySaved.value = true
@@ -675,10 +688,10 @@ function sendAnswer(index: number, attempt: number, guess: string | null, elapse
   saving.value = true
   upload = upload.then(async () => {
     if (current !== generation || runId !== id) {return}
-    const result = await rankingRequest<{ complete: boolean; correct: number; total: number; timeMs: number }>(`/runs/${id}/answers`, { index, attempt, guess, elapsedMs }, 2)
+    const result = await rankingRequest<{ complete: boolean; correct: number; total: number; timeMs: number; score: number; green: number; yellow: number; orange: number; red: number }>(`/runs/${id}/answers`, { index, attempt, guess, elapsedMs }, 2)
     if (!mounted || current !== generation) {return}
     if (result.complete) {
-      if (result.correct !== correctCount(next) || result.total !== 195 || result.timeMs !== next.lastCorrectMs) {throw new Error('Invalid result')}
+      if (result.correct !== correctCount(next) || result.total !== 195 || result.timeMs !== next.lastCorrectMs || result.score !== sessionScore(next) || Object.entries(outcomeCounts(next.answers)).some(([key, value]) => Reflect.get(result, key) !== value)) {throw new Error('Invalid result')}
       verifiedTime.value = result.timeMs; saving.value = false
       await refreshRanking()
       if (account.value) {await refreshAccount()}
@@ -695,7 +708,7 @@ async function answer(country: Country | null | undefined) {
   const next = answerCountry(session.value, country, elapsed.value)
   sendAnswer(index, attempt, country?.id ?? null, answeredAt, next)
   if (!account.value && next.answers.length > index) {
-    try {localStorage.setItem('atlas-country-stats', JSON.stringify(recordCountryStat(readCountryStats(localStorage), next.answers.at(-1)!)))} catch { /* Global statistics remain available when local storage is blocked. */ }
+    try {localStorage.setItem('atlas-country-stats-v4', JSON.stringify(recordCountryStat(readCountryStats(localStorage), next.answers.at(-1)!)))} catch { /* Global statistics remain available when local storage is blocked. */ }
   }
   if (country && !correct && next.answers.length > index) {
     const pausedAt = Date.now()
@@ -710,7 +723,7 @@ async function answer(country: Country | null | undefined) {
     revealing.value = false; revealCountryId.value = undefined
   }
   session.value = next
-  feedbackCountry.value = previous; feedbackKind.value = correct ? 'correct' : country === null ? 'skip' : 'wrong'
+  feedbackCountry.value = country ?? previous; feedbackKind.value = correct ? 'correct' : country === null ? 'skip' : 'wrong'
   feedbackOutcome.value = correct ? 'success' : country === null ? 'muted' : 'missed'
   if (session.value.phase === 'complete') {if (account.value) {playerName.value = account.value.name} saveLocal()}
 }

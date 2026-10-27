@@ -15,7 +15,7 @@ beforeEach(() => {
   user = null; keepSession = false
   mocks.signIn.mockResolvedValue({ credential: 'test-credential' })
   mocks.request.mockImplementation(async (path: string) => {
-    if (path === '/auth/session') {return { user, best: null, googleClientId: 'test.apps.googleusercontent.com' }}
+    if (path === '/auth/session?rules=4') {return { user, best: null, googleClientId: 'test.apps.googleusercontent.com' }}
     if (path === '/auth/challenge') {return { nonce: 'test-nonce' }}
     if (path === '/auth/google') {
       if (keepSession) {user = { id: 'account-id', name: 'Alex' }}

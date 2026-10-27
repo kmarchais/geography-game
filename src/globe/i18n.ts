@@ -30,3 +30,5 @@ if (typeof window !== 'undefined') {
 }
 
 export function formatScoreTime(value: number): string {return formatTime(value).replace(/[.,]\d$/, '')}
+
+export function formatPoints(value: number): string {return new Intl.NumberFormat(language.value, { maximumFractionDigits: 2 }).format(value)}

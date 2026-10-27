@@ -2,6 +2,18 @@
 
 The Atlas challenge replaces Orbit's expedition settings. Historical Orbit results in `validation.md` do not verify the new mode or ranking service.
 
+## Weighted outcomes and map parity, in progress
+
+The original regression is `.local/territory-red.log`: non-quiz territories were selectable despite not appearing in the deck. Picking and outlines now use the 195 playable countries. Other features remain grey, without selectable markers or hover feedback. The source snapshot and shared boundaries have not changed.
+
+Rules 4 store integer quarter-points and independent green/yellow/orange/red counts. Old rules 2 and 3 keep their rankings and request formats. Server statistics reconstruct retained rules-3 attempt arrays once, inside a transaction, and update colour counters for later rules-3 and rules-4 answers. Old found-only device totals remain stored under their original key but are not shown as colour statistics. The new local score and statistics buckets are separate. The migration replay test passes; rollback-failure injection has not been tested.
+
+Current checks: 639 unit tests passed with 26 legacy skips; 27 API tests passed with one opt-in Worker skip. Three initial desktop browser cases passed, including all 195 answers with a lost response and hover pixel restoration. An early excluded-territory browser assertion used the wrong English word order; the actual UI retained all three attempts. That assertion is corrected. Cross-profile checks, actual Worker execution, production migration, and updated native installation are still pending.
+
+The cross-model review found that microstate hover reused the result material. It now uses a separate translucent vector layer and the existing Andorra browser case checks the underlying green colour returns after hover. Large countries use a separate raster hover layer. These overlays upload only when the hovered country changes; sustained hover performance is not measured.
+
+Evidence: `.local/weighted-all-unit-final.log`, `.local/weighted-server.log`, `.local/weighted-browser-first.log`, `.local/weighted-browser-profiles.log`, and `tests/server/statistics.test.mjs`.
+
 ## Attempt colours and contextual reveal, 27 October 2026
 
 The published source is `f3217b7bbd449446a09ec6cf9c50bf53d9b3514d`. Its application files are byte-identical to the performance-corrected `54d7d92`, with test-readiness fixes added for release. Completed-country painting is on by default, and each answer retains its attempt number. A shared rendering helper gives polygons, tiny-country surfaces, and markers the same green, yellow, orange, or red colour. Green is a first-attempt success, yellow second, orange third, and red a miss or skip. Unanswered countries remain unpainted.

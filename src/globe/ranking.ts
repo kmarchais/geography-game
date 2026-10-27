@@ -1,4 +1,4 @@
-import type { RankedScore } from './game'
+import { validScoreOutcomes, type RankedScore } from './game'
 
 const endpoint = (import.meta.env.VITE_ATLAS_API_URL || '/atlas-api').replace(/\/$/, '')
 export async function rankingRequest<T>(path: string, body?: unknown, retries = 0): Promise<T> {
@@ -17,5 +17,5 @@ export async function rankingRequest<T>(path: string, body?: unknown, retries = 
 }
 export function validRanking(value: unknown): RankedScore[] {
   if (!Array.isArray(value) || value.length > 20) {throw new Error('Invalid ranking.')}
-  return value.filter(s => s && typeof s.id === 'string' && typeof s.name === 'string' && s.name.length <= 24 && s.total === 195 && Number.isInteger(s.correct) && s.correct >= 0 && s.correct <= 195 && Number.isFinite(s.timeMs) && s.timeMs >= 0)
+  return value.filter(s => s && typeof s.id === 'string' && typeof s.name === 'string' && s.name.length <= 24 && s.total === 195 && Number.isInteger(s.correct) && s.correct >= 0 && s.correct <= 195 && Number.isFinite(s.timeMs) && s.timeMs >= 0 && validScoreOutcomes(s))
 }

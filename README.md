@@ -129,3 +129,7 @@ The local API host uses GitHub CLI authenticated as `kmarchais`. A hosted API ca
 Read [asset provenance](docs/assets.md), [the original architecture review](docs/project-review.md), and [Atlas validation](docs/atlas-validation.md). The append-only [decision trail](docs/decisions.tsv) records the redesign. Do not regenerate geography during a normal build.
 
 Repository instructions for coding agents are in [AGENTS.md](AGENTS.md).
+
+## Weighted challenge
+
+Green earns 1 point, yellow 0.5, orange 0.25, and red 0. Weighted runs use rules 4, separate from earlier rankings. The selectable map matches the 195-country deck; other features are grey and unselectable.

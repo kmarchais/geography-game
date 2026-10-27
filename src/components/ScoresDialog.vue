@@ -57,7 +57,7 @@
             {{ personal ? t('yourScore') : t('player') }}
           </th>
           <th scope="col">
-            {{ t('correct') }}
+            {{ t('points') }}
           </th>
           <th scope="col">
             {{ t('time') }}
@@ -70,9 +70,9 @@
           :key="row.id"
         >
           <th scope="row">
-            {{ personal ? `${row.correct}/${row.total}` : row.name }}
+            {{ personal ? `${formatPoints(row.score ?? row.correct)}/${row.total}` : row.name }}
           </th>
-          <td>{{ formatPercent(percentage(row.correct, row.total)) }}</td>
+          <td>{{ formatPercent(percentage(row.score ?? row.correct, row.total)) }}</td>
           <td>{{ formatScoreTime(row.timeMs) }}</td>
         </tr>
       </tbody>
@@ -90,7 +90,7 @@ import { onBeforeUnmount, ref, watch } from 'vue'
 import { account } from '@/globe/auth'
 import { readPersonalScores, percentage, type RankedScore } from '@/globe/game'
 import { rankingRequest, validRanking } from '@/globe/ranking'
-import { t, formatPercent, formatScoreTime } from '@/globe/i18n'
+import { t, formatPercent, formatScoreTime, formatPoints } from '@/globe/i18n'
 const dialog = ref<HTMLDialogElement>(), personal = ref(false), rows = ref<RankedScore[]>([]), loading = ref(false), failed = ref(false)
 let generation = 0
 async function load() {
@@ -99,12 +99,12 @@ async function load() {
   try {
     let values: RankedScore[]
     if (personal.value) {
-      const key = account.value ? `atlas-runs-v3:${account.value.id}` : 'atlas-runs-v3'
+      const key = account.value ? `atlas-runs-v4:${account.value.id}` : 'atlas-runs-v4'
       if (account.value) {
-        try {values = validRanking(await rankingRequest('/scores/me', undefined, 1))}
+        try {values = validRanking(await rankingRequest('/scores/me?rules=4', undefined, 1))}
         catch {values = readPersonalScores(localStorage, key)}
       } else {values = readPersonalScores(localStorage, key)}
-    } else {values = validRanking(await rankingRequest('/leaderboard', undefined, 1))}
+    } else {values = validRanking(await rankingRequest('/leaderboard?rules=4', undefined, 1))}
     if (current === generation) {rows.value = values}
   } catch {if (current === generation) {failed.value = true}}
   finally {if (current === generation) {loading.value = false}}

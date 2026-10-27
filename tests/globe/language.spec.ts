@@ -5,7 +5,7 @@ const countries = JSON.parse(readFileSync('public/data/globe/countries.json', 'u
 test.describe('French system language', () => {
   test.use({ locale: 'fr-FR' })
   test('translates the game, country prompts, help and controls', async ({ page }) => {
-    await page.route('**/atlas-api/runs', route => route.fulfill({ json: { id: '11111111-1111-4111-8111-111111111111', deck: ['TCD', ...countries.map((country: { id: string }) => country.id).filter((id: string) => id !== 'TCD')] } }))
+    await page.route('**/atlas-api/runs?*', route => route.fulfill({ json: { id: '11111111-1111-4111-8111-111111111111', deck: ['TCD', ...countries.map((country: { id: string }) => country.id).filter((id: string) => id !== 'TCD')] } }))
     await page.route('**/atlas-api/runs/*/answers', route => route.fulfill({ json: { complete: false, correct: 0, total: 195, timeMs: 0 } }))
     await page.goto('./')
     await expect(page.locator('html')).toHaveAttribute('lang', 'fr')
@@ -45,7 +45,7 @@ test.describe('French system language', () => {
     await expect(dialog).toBeHidden()
   })
   test('translates the connected profile and avatar choices', async ({ page }) => {
-    await page.route('**/atlas-api/auth/session', route => route.fulfill({ json: { user: { id: '11111111-1111-4111-8111-111111111111', name: 'Alex', avatar: 'preset:earth' }, best: null } }))
+    await page.route('**/atlas-api/auth/session?*', route => route.fulfill({ json: { user: { id: '11111111-1111-4111-8111-111111111111', name: 'Alex', avatar: 'preset:earth' }, best: null } }))
     await page.goto('./')
     await page.getByRole('button', { name: 'Menu', exact: true }).click()
     await expect(page.locator('.account-identity strong')).toContainText('Connecté : Alex')

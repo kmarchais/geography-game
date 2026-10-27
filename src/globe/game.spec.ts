@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { answerCountry, compareScores, correctCount, createSession, formatTime, isGuestId, percentage, readPersonalScores, recordCountryStat, readCountryStats, type RankedScore } from './game'
+import { answerCountry, compareScores, correctCount, createSession, formatTime, isGuestId, percentage, readPersonalScores, recordCountryStat, readCountryStats, outcomeCounts, sessionScore, validScoreOutcomes, type RankedScore } from './game'
 import type { Country } from './geography'
 
 const country = (id: string, playable = true): Country => ({ id, name: id, playable, continent: 'Europe', center: [0, 0], small: false, polygons: [] })
@@ -54,7 +54,7 @@ it('stores anonymous device statistics once per resolved country and rejects cor
   let rows = recordCountryStat([], { id: 'AAA', name: 'A', outcome: 'correct', attempt: 1 })
   rows = recordCountryStat(rows, { id: 'AAA', name: 'A', outcome: 'missed', attempt: 3 })
   rows = recordCountryStat(rows, { id: 'AAA', name: 'A', outcome: 'skipped', attempt: 1 })
-  expect(rows).toEqual([{ id: 'AAA', played: 3, found: 1, skipped: 1 }])
+  expect(rows).toEqual([{ id: 'AAA', played: 3, found: 1, skipped: 1, green: 1, yellow: 0, orange: 0, red: 2 }])
   expect(readCountryStats({ getItem: () => JSON.stringify([...rows, { id: 'BBB', played: 1, found: 2, skipped: 0 }]) })).toEqual(rows)
   expect(readCountryStats({ getItem: () => '{' })).toEqual([])
 })
@@ -88,12 +88,35 @@ it('rejects malformed stored identities and reads a durable personal best', () =
     { name: 'Player', correct: 150, total: 195, timeMs: 9000 },
     { name: 'Bad', correct: 196, total: 195, timeMs: 0 },
   ]
-  expect(readPersonalScores({ getItem: () => JSON.stringify(rows) })[0]?.correct).toBe(150)
+  expect(readPersonalScores({ getItem: () => JSON.stringify(rows) }, 'atlas-runs-v3')[0]?.correct).toBe(150)
   expect(readPersonalScores({ getItem: () => '{' })).toEqual([])
 })
 
 it('reads account scores from a separate bucket without exposing them to guests', () => {
   const storage = { getItem: (key: string) => JSON.stringify([{ name: key === 'atlas-runs-v3' ? '' : 'Private', correct: key === 'atlas-runs-v3' ? 1 : 100, total: 195, timeMs: 1000 }]) }
-  expect(readPersonalScores(storage)[0]?.correct).toBe(1)
+  expect(readPersonalScores(storage, 'atlas-runs-v3')[0]?.correct).toBe(1)
   expect(readPersonalScores(storage, 'atlas-runs-v3:account')[0]?.correct).toBe(100)
+})
+
+it('weights all four outcomes and keeps their counts independently of the score', () => {
+  let session = answerCountry(game(), a, 100)
+  session = answerCountry(session, a, 200)
+  session = answerCountry(session, b, 300)
+  session = answerCountry(session, a, 400)
+  session = answerCountry(session, b, 500)
+  session = answerCountry(session, c, 600)
+  expect(outcomeCounts(session.answers)).toEqual({ green: 1, yellow: 1, orange: 1, red: 0 })
+  expect(sessionScore(session)).toBe(1.75)
+  const skipped = answerCountry(answerCountry(game(), b, 10), null, 20)
+  expect(sessionScore(skipped)).toBe(0)
+  expect(outcomeCounts(skipped.answers).red).toBe(1)
+  const rows = [
+    { id: 'many-late', name: '', correct: 195, total: 195, timeMs: 10, score: 48.75, green: 0, yellow: 0, orange: 195, red: 0 },
+    { id: 'first', name: '', correct: 100, total: 195, timeMs: 10000, score: 100, green: 100, yellow: 0, orange: 0, red: 95 },
+  ]
+  expect(rows.sort(compareScores)[0]!.id).toBe('first')
+  expect(rows.every(validScoreOutcomes)).toBe(true)
+  expect(validScoreOutcomes({ ...rows[0]!, score: 195 })).toBe(false)
+  expect(readPersonalScores({ getItem: () => JSON.stringify(rows) })).toEqual(rows)
+  expect(readPersonalScores({ getItem: () => JSON.stringify([{ ...rows[0], score: 195 }]) })).toEqual([])
 })

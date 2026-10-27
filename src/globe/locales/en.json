@@ -47,8 +47,8 @@
   "membership": "The 193 UN member states plus its two non-member observer states: Palestine and the Holy See, represented here by Vatican City. This is a membership-based quiz list, not a list of states recognized by every country.",
   "unMembers": "UN members",
   "unObservers": "UN observer states",
-  "instructions": "Drag to rotate. Scroll or pinch to zoom. You have three attempts per country. Green means first attempt, yellow second, orange third, and red missed or skipped. After three errors, Atlas shows the territory and pulls back before the next country.",
-  "rankingInstructions": "Accuracy is out of 195. Ties use the time of your last correct answer. The clock pauses during automatic reveals. Scores appear in the ranking only when you publish them.",
+  "instructions": "Drag to rotate. Scroll or pinch to zoom. You have three attempts per country. Green means first attempt, yellow second, orange third, and red missed or skipped. After three errors, Atlas shows the territory and pulls back before the next country. Grey territories are outside the 195-country challenge and cannot be selected.",
+  "rankingInstructions": "Green earns 1 point, yellow 0.5, orange 0.25, and red 0. Scores are out of 195. Ties use the time of your last correct answer. The clock pauses during automatic reveals. Publish your score to join the ranking.",
   "keyboardInstructions": "Keyboard: arrows rotate, +/− zoom, Enter selects the center.",
   "credits": "Natural Earth boundaries · NASA imagery. Generalized coastlines and disputed boundaries. Guest rankings are for practice.",
   "restartDialog": "Restart challenge",
@@ -128,7 +128,7 @@
   "statistics": "Statistics",
   "yourStats": "Your stats",
   "globalStats": "Global stats",
-  "statsExplanation": "Completed country rounds, including skips.",
+  "statsExplanation": "Country outcomes by attempt. Red includes misses and skips.",
   "loadingStats": "Loading statistics…",
   "statsUnavailable": "Statistics are unavailable. Try again later.",
   "foundCount": "Found / played",
@@ -149,5 +149,10 @@
   "scores": "Scores",
   "personalScores": "Your scores",
   "backHome": "Back to home",
-  "loadingScores": "Loading scores…"
+  "loadingScores": "Loading scores…",
+  "points": "Points",
+  "green": "Green",
+  "yellow": "Yellow",
+  "orange": "Orange",
+  "red": "Red"
 }

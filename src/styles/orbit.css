@@ -207,3 +207,10 @@ body { margin: 0; background: #090f13; }
   .is-playing .answer-feedback:empty { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .orbit-app *, .orbit-app *::after { animation: none !important; transition: none !important; } }
+
+.outcome-counts { display: flex; justify-content: space-around; gap: 12px; font-variant-numeric: tabular-nums; }
+.outcome-counts span::before { content: ''; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: currentcolor; margin-right: 6px; }
+.outcome-counts .green { color: #48e7b0; }
+.outcome-counts .yellow { color: #f4d35e; }
+.outcome-counts .orange { color: #f49b42; }
+.outcome-counts .red { color: #ff4c58; }

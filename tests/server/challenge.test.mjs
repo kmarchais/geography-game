@@ -19,7 +19,7 @@ async function setup(t) {
   const db = new DatabaseSync(databasePath, { readOnly: true })
   t.after(async () => {db.close(); await new Promise(resolve => {server.close(resolve); server.closeAllConnections()}); rmSync(directory, { recursive: true, force: true })})
   const start = async cookie => {const result = await request('/runs', {}, cookie); assert.equal(result.status, 201); return result.json()}
-  const answer = async (run, index, attempt, guess, cookie) => {time += 100; return request(`/runs/${run.id}/answers`, { index, attempt, guess, elapsedMs: time - 100000 }, cookie)}
+  const answer = async (run, index, attempt, guess, cookie) => {time += 100; return request(`/runs/${run.id}/answers`, { index, attempt, guess, elapsedMs: time - 100000 - (run.offset || 0) }, cookie)}
   const login = async sub => {
     const challenge = await request('/auth/challenge')
     const cookie = challenge.headers.get('set-cookie').split(';')[0]
@@ -117,4 +117,48 @@ test('personal scores include private completed runs only for the authenticated 
   assert.deepEqual(await (await request('/leaderboard')).json(), [])
   const other = await login('other-score-owner')
   assert.deepEqual(await (await request('/scores/me', undefined, other)).json(), [])
+})
+
+test('weighted runs store colours, validate guesses, retry idempotently, and rank points before found count', async t => {
+  const { request, answer, db, login, elapsed } = await setup(t)
+  const make = async () => ({ ...await (await request('/runs?rules=4', {})).json(), offset: elapsed() })
+  const play = async (run, index, attempt) => {
+    for (let n = 0; n < attempt; n++) {assert.equal((await answer(run, index, n, run.deck[(index + 1) % 3])).status, 200)}
+    const response = await answer(run, index, attempt, run.deck[index])
+    assert.equal(response.status, 200); return response.json()
+  }
+  const first = await make()
+  const firstAnswer = await play(first, 0, 0)
+  assert.equal(firstAnswer.score, 1)
+  await answer(first, 1, 0, null); await answer(first, 2, 0, null)
+  await request(`/runs/${first.id}/publish`, { claimToken: first.claimToken, playerId: randomUUID(), name: 'First attempt' })
+  const late = await make()
+  let result
+  for (let i = 0; i < 3; i++) {result = await play(late, i, 2)}
+  assert.equal(result.correct, 3); assert.equal(result.score, .75)
+  assert.equal(result.green, 0); assert.equal(result.yellow, 0); assert.equal(result.orange, 3); assert.equal(result.red, 0)
+  const state = JSON.parse(db.prepare('SELECT state FROM runs WHERE id=?').get(late.id).state)
+  assert.equal((await request(`/runs/${late.id}/answers`, { index: 2, attempt: 2, guess: late.deck[2], elapsedMs: state.answers[2].elapsedMs })).status, 200)
+  await request(`/runs/${late.id}/publish`, { claimToken: late.claimToken, playerId: randomUUID(), name: 'Third attempts' })
+  const rows = await (await request('/leaderboard?rules=4')).json()
+  assert.deepEqual(rows.map(row => row.name), ['First attempt', 'Third attempts'])
+  assert.equal(rows[0].score, 1); assert.equal(rows[0].red, 2)
+  assert.deepEqual(await (await request('/leaderboard')).json(), [])
+  const mixed = await make()
+  await play(mixed, 0, 0); await play(mixed, 1, 1); result = await play(mixed, 2, 2)
+  assert.equal(result.score, 1.75)
+  assert.deepEqual([result.green, result.yellow, result.orange, result.red], [1, 1, 1, 0])
+  const totals = await (await request('/stats?rules=4')).json()
+  assert.equal(totals.reduce((n, row) => n + row.played, 0), 9)
+  assert.deepEqual(totals.reduce((a, row) => a.map((n, i) => n + row[['green', 'yellow', 'orange', 'red'][i]]), [0, 0, 0, 0]), [2, 1, 4, 2])
+  assert.ok(totals.every(row => row.green + row.yellow + row.orange + row.red === row.played))
+  const cookie = await login('weighted-owner')
+  const claim = `/runs/${mixed.id}/claim`, body = { claimToken: mixed.claimToken }
+  await request(claim, body, cookie); await request(claim, body, cookie)
+  const mine = await (await request('/stats/me?rules=4', undefined, cookie)).json()
+  assert.deepEqual(mine.reduce((a, row) => a.map((n, i) => n + row[['green', 'yellow', 'orange', 'red'][i]]), [0, 0, 0, 0]), [1, 1, 1, 0])
+  assert.equal((await (await request('/scores/me?rules=4', undefined, cookie)).json())[0].score, 1.75)
+  assert.equal((await (await request('/auth/session?rules=4', undefined, cookie)).json()).best.score, 1.75)
+  assert.equal((await request('/stats/me?rules=4')).status, 401)
+  assert.equal((await request(`/runs/${(await make()).id}/answers`, { index: 0, attempt: 0, guess: 'GRL', elapsedMs: 0 })).status, 400)
 })

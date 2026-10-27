@@ -4,6 +4,7 @@
     class="earth-host"
     :data-base-detail="baseDetail"
     :data-reveal="reveal"
+    :data-hover="hovered?.id"
     data-testid="earth-host"
   >
     <canvas
@@ -52,6 +53,11 @@ const canvas = ref<HTMLCanvasElement>()
 const positionCoordinates = ref<Coordinate>()
 const positionText = computed(() => positionCoordinates.value ? t('globePosition', { coordinates: positionCoordinates.value.map(formatCoordinate).join(language.value === 'fr' ? ' ; ' : ', ') }) : '')
 const baseDetail = ref('preview')
+const hovered = ref<Country>()
+let hoverMesh: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> | undefined
+let hoverSurface: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial> | undefined
+let hoverCanvas: HTMLCanvasElement | undefined
+let hoverTexture: THREE.CanvasTexture | undefined
 const feedback = ref<{ id: number; outcome: 'correct' | 'wrong'; x: number; y: number }>()
 let feedbackId = 0
 let feedbackTimer: ReturnType<typeof setTimeout>
@@ -144,6 +150,7 @@ function render() {
     const geometry = detailedGeometry && distance < 1.6 ? detailedGeometry : baseGeometry
     earth.geometry = geometry
     fillMesh.geometry = geometry
+    if (hoverMesh) {hoverMesh.geometry = geometry}
   }
   previousPosition.copy(camera.position)
   previousRotation.copy(camera.quaternion)
@@ -170,6 +177,7 @@ function render() {
     marker.sprite.visible = marker.position.dot(camera.position) > marker.position.lengthSq() && (props.markers || marker.country.id === props.reveal) && marker.blend < 1
     marker.surface.visible = marker.highlighted && marker.blend > 0
     marker.surface.material.opacity = marker.blend * .65
+    if (hoverSurface && marker.country.id === hovered.value?.id) {hoverSurface.material.opacity = marker.blend * .45}
   }
   renderer.render(scene, camera)
 }
@@ -183,7 +191,8 @@ function configureCountries() {
   if (!markerTexture || !scene) {return}
   pickCountry = createCountryPicker(props.countries)
   borderMesh.geometry.dispose()
-  borderMesh.geometry = countryOutlines(props.countries)
+  clearHover()
+  borderMesh.geometry = countryOutlines(props.countries.filter(c => c.playable))
   for (const border of nearbyBorders.children as THREE.LineSegments[]) {border.geometry.dispose()}
   nearbyBorders.clear()
   for (const geometry of outlineBatches(borderMesh.geometry)) {
@@ -253,9 +262,9 @@ function updateHighlights() {
   const answers = new Map(props.answers.map(answer => [answer.id, answer]))
   const fills = new Map<string, string>()
   for (const country of props.countries) {
-    if (country.small) {continue} // Small countries use their exact vector surface.
+    if (country.small && country.playable) {continue} // Small countries use their exact vector surface.
     const answer = answers.get(country.id)
-    const color = country.id === props.reveal ? '#ff4c58' : props.paintFound ? answerColor(answer) : undefined
+    const color = !country.playable ? '#58616b' : country.id === props.reveal ? '#ff4c58' : props.paintFound ? answerColor(answer) : undefined
     if (color) {fills.set(country.id, color + 'a6')}
   }
   // Keep resolved polygons on the canvas instead of redrawing the whole run.
@@ -275,7 +284,7 @@ function updateHighlights() {
   markerPositions.forEach(marker => {
     const answer = answers.get(marker.country.id)
     const color = marker.country.id === props.reveal ? '#ff4c58' : props.paintFound ? answerColor(answer) : undefined
-    marker.sprite.material.color.set(color ?? '#ccddd9')
+    marker.sprite.material.color.set(marker.country.id === hovered.value?.id ? '#c3c9d0' : color ?? '#ccddd9')
     marker.highlighted = Boolean(color)
     if (color) {marker.surface.material.color.set(color)}
   })
@@ -306,10 +315,9 @@ function zoom(direction: number) {
 function reset() { focus([18, 16], 3.1) }
 defineExpose({ focus, zoom, reset, showFeedback, revealCountry, pullBack })
 
-function selectAt(x: number, y: number) {
-  if (!canvas.value || !controls || props.disabled) {return}
+function countryAt(x: number, y: number): Country | undefined {
+  if (!canvas.value || !controls) {return}
   const bounds = canvas.value.getBoundingClientRect()
-  lastTap = { x: x - bounds.left, y: y - bounds.top }
   mouse.set((x - bounds.left) / bounds.width * 2 - 1, -(y - bounds.top) / bounds.height * 2 + 1)
   raycaster.setFromCamera(mouse, camera)
   if (!raycaster.ray.intersectSphere(pickingSphere, hitPoint)) {return}
@@ -326,16 +334,61 @@ function selectAt(x: number, y: number) {
     const distance = Math.hypot(dx, dy)
     if (distance < closest) { closest = distance; markerHit = marker.country }
   }
-  emit('select', markerHit ?? pickCountry(vectorToCoordinate(hitPoint)))
+  return markerHit ?? pickCountry(vectorToCoordinate(hitPoint))
 }
 
+function selectAt(x: number, y: number) {
+  if (!canvas.value || props.disabled) {return}
+  const bounds = canvas.value.getBoundingClientRect()
+  lastTap = { x: x - bounds.left, y: y - bounds.top }
+  emit('select', countryAt(x, y))
+}
+function clearHover() {
+  if (!hovered.value) {return}
+  hovered.value = undefined
+  if (hoverMesh) {hoverMesh.visible = false}
+  if (hoverSurface) {hoverSurface.visible = false}
+  updateHighlights()
+}
+function hoverCountry(country: Country | undefined) {
+  if (country?.id === hovered.value?.id) {return}
+  hovered.value = country
+  if (hoverSurface) {hoverSurface.visible = false}
+  if (country && !country.small) {
+    if (!hoverMesh) {
+      const overlay = makeOverlay(); hoverCanvas = overlay.image; hoverTexture = overlay.texture
+      hoverMesh = new THREE.Mesh(baseGeometry, new THREE.MeshBasicMaterial({ map: hoverTexture, transparent: true, depthWrite: false, opacity: .45 }))
+      hoverMesh.scale.setScalar(1.00028); hoverMesh.renderOrder = 2; scene.add(hoverMesh)
+    }
+    const context = hoverCanvas!.getContext('2d')!
+    context.clearRect(0, 0, overlayWidth, overlayHeight); context.fillStyle = '#c3c9d0'
+    drawCountry(context, country); hoverTexture!.needsUpdate = true
+    hoverMesh.visible = true
+  } else {
+    if (hoverMesh) {hoverMesh.visible = false}
+    if (country?.small) {
+      if (!hoverSurface) {
+        hoverSurface = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ color: '#c3c9d0', transparent: true, depthWrite: false, opacity: .45, side: THREE.DoubleSide }))
+        hoverSurface.renderOrder = 2; hoverSurface.scale.setScalar(1.00001); scene.add(hoverSurface)
+      }
+      hoverSurface.geometry.dispose(); hoverSurface.geometry = countrySurface(country); hoverSurface.visible = true
+    }
+  }
+  updateHighlights()
+}
+function onPointerLeave() {mousePosition = undefined; clearHover()}
+
 function onPointerDown(event: PointerEvent) {
+  clearHover()
   pointers.add(event.pointerId)
   if (pointers.size > 1) {dragged = true}
   else { dragged = false; pointerStart = { x: event.clientX, y: event.clientY } }
 }
 function onPointerMove(event: PointerEvent) {
-  if (event.pointerType === 'mouse') {mousePosition = [event.clientX, event.clientY]}
+  if (event.pointerType === 'mouse') {
+    mousePosition = [event.clientX, event.clientY]
+    if (!pointers.size && !props.disabled && !flight) {hoverCountry(countryAt(event.clientX, event.clientY))}
+  }
   if (pointerStart && Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) > 6) {dragged = true}
   if (pointers.size) {invalidate()}
 }
@@ -345,10 +398,11 @@ function onPointerUp(event: PointerEvent) {
   if (pointerStart && !dragged && pointers.size === 0) {selectAt(event.clientX, event.clientY)}
   if (!pointers.size) {pointerStart = undefined}
 }
-function cancelPointer() { pointers.clear(); pointerStart = undefined; mousePosition = undefined; dragged = true }
+function cancelPointer() { clearHover(); pointers.clear(); pointerStart = undefined; mousePosition = undefined; dragged = true }
 
 function onWheel(event: WheelEvent) {
   if (flight || props.reveal) {event.preventDefault(); return}
+  clearHover()
   if (!controls || !canvas.value) {return}
   event.preventDefault()
   event.stopImmediatePropagation()
@@ -406,7 +460,7 @@ onMounted(async () => {
     controls.minDistance = 1.002
     controls.maxDistance = 5
     canvas.value!.addEventListener('wheel', onWheel, { capture: true, passive: false })
-    controls.addEventListener('change', () => { invalidate(); scheduleDetail() })
+    controls.addEventListener('change', () => { clearHover(); invalidate(); scheduleDetail() })
     controls.addEventListener('start', () => { dragged = pointers.size > 1 || dragged })
     const geometry = new THREE.SphereGeometry(1, 96, 64)
     baseGeometry = geometry
@@ -466,6 +520,7 @@ onMounted(async () => {
     canvas.value!.addEventListener('pointermove', onPointerMove)
     canvas.value!.addEventListener('pointerup', onPointerUp)
     canvas.value!.addEventListener('pointercancel', cancelPointer)
+    canvas.value!.addEventListener('pointerleave', onPointerLeave)
     canvas.value!.addEventListener('webglcontextlost', onContextLost)
     document.addEventListener('visibilitychange', onVisibility)
     reset()
@@ -503,6 +558,7 @@ onMounted(async () => {
   }
 })
 
+watch(() => props.disabled, disabled => {if (disabled) {clearHover()}})
 watch(() => props.borders, visible => { if (borderMesh) { borderMesh.visible = visible; invalidate() } })
 watch(() => props.countries, configureCountries)
 watch(() => [props.answers, props.paintFound, props.markers, props.reveal], updateHighlights)
@@ -522,6 +578,7 @@ onBeforeUnmount(() => {
   canvas.value?.removeEventListener('pointermove', onPointerMove)
   canvas.value?.removeEventListener('pointerup', onPointerUp)
   canvas.value?.removeEventListener('pointercancel', cancelPointer)
+  canvas.value?.removeEventListener('pointerleave', onPointerLeave)
   canvas.value?.removeEventListener('wheel', onWheel, true)
   canvas.value?.removeEventListener('webglcontextlost', onContextLost)
   const geometries = new Set<THREE.BufferGeometry>()

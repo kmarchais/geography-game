@@ -6,8 +6,8 @@ async function googleAccount(page: import('@playwright/test').Page, reject = fal
   let user = { id: '11111111-1111-4111-8111-111111111111', name: 'Alex', picture: 'https://lh3.googleusercontent.com/atlas-test', avatar: 'google' }
   await page.route(user.picture, route => route.fulfill({ contentType: 'image/png', body: readFileSync('public/atlas-192.png') }))
   await page.route('https://accounts.google.com/gsi/client', route => route.fulfill({ contentType: 'application/javascript', body: `window.google={accounts:{id:{initialize(config){window.atlasGoogleConfig=config},renderButton(host,options){window.atlasGoogleButtonOptions=options;const b=document.createElement('div');b.setAttribute('role','button');b.tabIndex=0;b.textContent='Sign in with Google';b.style.width=options.width+'px';b.style.height='40px';b.onclick=()=>window.atlasGoogleConfig.callback({credential:'signed-test-credential'});b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();b.click()}};host.append(b)},disableAutoSelect(){}}}}` }))
-  await page.route('**/atlas-api/auth/session', route => route.fulfill({ json: { user: connected ? user : null, best: connected ? { id: 'best', name: user.name, correct: 100, total: 195, timeMs: 5000 } : null, googleClientId: 'test.apps.googleusercontent.com' } }))
-  await page.route('**/atlas-api/scores/me', route => route.fulfill({ json: connected ? [{ id: 'best', name: user.name, correct: 100, total: 195, timeMs: 5000 }] : [] }))
+  await page.route('**/atlas-api/auth/session?*', route => route.fulfill({ json: { user: connected ? user : null, best: connected ? { id: 'best', name: user.name, correct: 100, total: 195, timeMs: 5000 } : null, googleClientId: 'test.apps.googleusercontent.com' } }))
+  await page.route('**/atlas-api/scores/me?*', route => route.fulfill({ json: connected ? [{ id: 'best', name: user.name, correct: 100, total: 195, timeMs: 5000 }] : [] }))
   await page.route('**/atlas-api/auth/challenge', route => route.fulfill({ json: { nonce: 'a'.repeat(43) } }))
   await page.route('**/atlas-api/auth/google', route => {
     expect(route.request().postDataJSON()).toEqual({ credential: 'signed-test-credential' })
@@ -127,7 +127,7 @@ test('the profile picture opens account actions and sign-out restores the minima
 
 test('signed-in countries do not enter the guest statistics after sign-out', async ({ page }) => {
   await googleAccount(page); await page.goto('./'); await finishRun(page)
-  const guestStatistics = await page.evaluate(() => localStorage.getItem('atlas-country-stats'))
+  const guestStatistics = await page.evaluate(() => localStorage.getItem('atlas-country-stats-v4'))
   await page.getByRole('button', { name: 'Sign in with Google', exact: true }).click()
   const avatar = page.locator('.account-avatar:not(.guest-avatar)')
   await expect(avatar).toHaveAttribute('title', 'Connected as Alex')
@@ -135,7 +135,7 @@ test('signed-in countries do not enter the guest statistics after sign-out', asy
   await page.locator('.skip-button').evaluate(button => {for (let i = 0; i < 195; i++) {(button as HTMLButtonElement).click()}})
   await expect(page.getByRole('heading', { name: 'Score', exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeEnabled({ timeout: 20000 })
-  expect(await page.evaluate(() => localStorage.getItem('atlas-country-stats'))).toBe(guestStatistics)
+  expect(await page.evaluate(() => localStorage.getItem('atlas-country-stats-v4'))).toBe(guestStatistics)
   await avatar.click()
   await page.getByRole('menuitem', { name: 'Sign out', exact: true }).click()
   await page.getByRole('button', { name: 'Menu', exact: true }).click()
@@ -157,7 +157,7 @@ test('connected play prefills the editable account nickname instead of an old gu
   await googleAccount(page)
   await page.addInitScript(() => localStorage.setItem('atlas-name', 'Previous guest'))
   await page.goto('./'); await connectFromMenu(page)
-  const started = page.waitForRequest(request => request.url().endsWith('/atlas-api/runs') && request.method() === 'POST')
+  const started = page.waitForRequest(request => request.url().endsWith('/atlas-api/runs?rules=4') && request.method() === 'POST')
   await page.getByRole('button', { name: 'Play', exact: true }).click()
   expect((await started).postDataJSON()).toEqual({})
   await page.locator('.skip-button').evaluate(button => {for (let i = 0; i < 195; i++) {(button as HTMLButtonElement).click()}})
@@ -257,7 +257,7 @@ test('guest results offer Google, prefill an editable nickname, and save with id
     return route.fulfill({ status: attempts <= 3 ? 503 : 200, json: attempts <= 3 ? { error: 'Unavailable' } : { saved: true } })
   })
   await page.goto('./')
-  const started = page.waitForResponse(response => response.url().endsWith('/atlas-api/runs') && response.request().method() === 'POST')
+  const started = page.waitForResponse(response => response.url().endsWith('/atlas-api/runs?rules=4') && response.request().method() === 'POST')
   await page.getByRole('button', { name: 'Play', exact: true }).click()
   const run: { id: string; claimToken: string } = await (await started).json()
   await page.locator('.skip-button').evaluate(button => {for (let i = 0; i < 195; i++) {(button as HTMLButtonElement).click()}})
@@ -328,10 +328,10 @@ test('leaving the result waits for the final answer acknowledgment', async ({ pa
 
 test('a run cannot claim to save when both shared and local storage fail', async ({ page }) => {
   await googleAccount(page)
-  await page.route('**/atlas-api/runs', route => route.fulfill({ status: 503, json: { error: 'Unavailable' } }))
+  await page.route('**/atlas-api/runs?*', route => route.fulfill({ status: 503, json: { error: 'Unavailable' } }))
   await page.addInitScript(() => {
     const set = Storage.prototype.setItem
-    Storage.prototype.setItem = function(key, value) {if (key === 'atlas-runs-v3') {throw new Error('Blocked')} return set.call(this, key, value)}
+    Storage.prototype.setItem = function(key, value) {if (key === 'atlas-runs-v4') {throw new Error('Blocked')} return set.call(this, key, value)}
   })
   await page.goto('./'); await page.getByRole('button', { name: 'Play', exact: true }).click()
   await page.locator('.skip-button').evaluate(button => {for (let i = 0; i < 195; i++) {(button as HTMLButtonElement).click()}})
