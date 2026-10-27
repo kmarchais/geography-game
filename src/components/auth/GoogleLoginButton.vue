@@ -105,6 +105,7 @@ async function finish(credential?: string) {
   } catch {if (alive) {await prepare(); if (!account.value) {error.value = accepted ? 'googleUnconfirmed' : 'googleFailed'}}}
   finally {if (alive) {setBusy(false)}}
 }
+function entryVisible() {return props.showSignIn !== false}
 async function prepare() {
   if (preparing) {return}
   preparing = true
@@ -113,13 +114,13 @@ async function prepare() {
     await refreshAccount()
     if (!alive) {return}
     if (account.value) {error.value = ''; notice.value = ''; return}
-    if (props.showSignIn === false) {error.value = ''; notice.value = ''; return}
+    if (!entryVisible()) {error.value = ''; notice.value = ''; return}
     if (!googleClientId.value) {throw new Error('Google is unavailable')}
     if (nativeAccount) {return}
     await loadGoogle()
-    if (!alive || props.showSignIn === false) {return}
+    if (!alive || !entryVisible()) {return}
     const challenge = await rankingRequest<{ nonce: string }>('/auth/challenge')
-    if (!alive || props.showSignIn === false) {return}
+    if (!alive || !entryVisible()) {return}
     await nextTick()
     window.google.accounts.id.initialize({ client_id: googleClientId.value, nonce: challenge.nonce, callback: response => {finish(response.credential)} })
     if (buttonHost.value) {
