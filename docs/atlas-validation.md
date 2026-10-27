@@ -2,9 +2,23 @@
 
 The Atlas challenge replaces Orbit's expedition settings. Historical Orbit results in `validation.md` do not verify the new mode or ranking service.
 
+## Play button correction, 27 October 2026
+
+Source `d09a86f919fd93c06775b33b521f716c9631b07f` replaces the outlined circle and thick halo with a compact mint button. Its icon and label sit side by side. Hover changes colour without scaling. Only the start panel allows visible overflow; game and result cards retain their scrolling behavior.
+
+The original browser reproduction recorded a hover transform of 1.04, a client height of 88 pixels, and a scroll height of 90 pixels. The corrected check records 56 pixels for both heights, no transform, and visible overflow. Evidence is `.local/play-overflow-before.json` and `.local/play-overflow-after.json`. The production-container desktop and phone screenshots in `.local/play-hosting-ui/` were visually inspected. They show the mint button without a scrollbar or halo. The browser regression checks hover, keyboard focus, button proportions, and the start panel's overflow on desktop, phone, and tablet.
+
+The Android build and all 303 source inputs are verified in `.local/play-android-source-proof.json`. The update retains the existing development certificate, as recorded in `.local/play-apk-signature.txt`. It has not been installed or checked physically because the Pixel disconnected from ADB. Earlier physical checks below do not verify this button change.
+
+[Workflow 40563742671](https://github.com/kmarchais/geography-game/actions/runs/40563742671) passed frozen installation, scoped lint, type-checking, 634 unit tests with 26 legacy skips, and 25 API tests with one opt-in Worker skip. The actual isolated Worker and production-container interface also passed. The browser interface suite reports 44 clean passes and one flaky case that passed on retry. That case checks Google-menu keyboard focus; no account code changed in this CSS fix, and the intermittent focus issue remains separate. All three start-layout regressions passed. The retained log is `.local/play-ci-build.log`.
+
+Cloudflare deployment `2718831c-8397-4580-8d72-9589b79a1e24` and nine matching artifact files are recorded in `.local/play-cloudflare-deploy.log` and `.local/play-deployment-proof.json`. This update changes no API rules or database schema. The signed APK is `.local/artifacts/Atlas-d09a86f-debug.apk`, 10,976,274 bytes, SHA-256 `9b7613c507637fb4694997638657e166fdd8acad8d7da774892e2cf095266b39`. `.local/play-apk-proof.json` explicitly records physical verification as pending.
+
+[Atlas publication 40564729835](https://github.com/kmarchais/atlas/actions/runs/40564729835) passed ten prefix and offline-shell browser cases and deployed `/atlas/`. HTTP checks verified both Pages addresses against `d09a86f`, including the compact button rule, visible start overflow, no hover scaling, correct manifest scope, and the direct Cloudflare API endpoint. Evidence is `.local/play-atlas-ci.log`, `.local/atlas-published-pages-d09a86f.json`, and `.local/atlas-published-d09a86f.json`. The original repository's temporary deployment policy was removed; `.local/play-pages-policies-clean.json` retains only `main` and `gh-pages`.
+
 ## Minimal results and Atlas address, 27 October 2026
 
-The current runtime source is `28e903308db70dfa3bb4888295a06d2b0c49563a`. [Play Atlas](https://kmarchais.github.io/atlas/) uses the same Cloudflare API and database as Android. The original `/geography-game/` address and Cloudflare website also serve this source. Later documentation-only commits do not change these verified runtime inputs.
+The runtime source for this release is `28e903308db70dfa3bb4888295a06d2b0c49563a`. [Play Atlas](https://kmarchais.github.io/atlas/) uses the same Cloudflare API and database as Android. The original `/geography-game/` address and Cloudflare website also received this source. Later documentation-only commits do not change these verified runtime inputs.
 
 The guest menu uses a person silhouette. Google sign-in appears inside that menu before a run and on the results card afterward. Results show Score, the count out of 195, percentage, whole-second time, Google, "or", nickname, and Save. The confirmed account nickname prefills the field but stays editable. Save updates a changed profile name without replacing its avatar, publishes or claims the score, and returns to the labelled, opaque Play control. Shared ranking and personal scores are available from the avatar menu. `/scores/me` takes its identity from the authenticated server session. New account-local history is separate from guest history.
 

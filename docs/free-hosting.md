@@ -23,7 +23,7 @@ Sources: [Workers pricing](https://developers.cloudflare.com/workers/platform/pr
 
 Wrangler 4.153.0 is authenticated. Official Cloudflare skills and its MCP server are installed in the developer's Codex configuration, and MCP OAuth authentication is verified. Restart the agent to load newly installed MCP tools. The optional `cf` CLI was not installed.
 
-The current production source is `28e903308db70dfa3bb4888295a06d2b0c49563a`, verified in [workflow 40556534965](https://github.com/kmarchais/geography-game/actions/runs/40556534965). The root web artifact is retained as `atlas-cloudflare-web`. Production variables are `GOOGLE_CLIENT_ID`, JSON `ATLAS_ALLOWED_ORIGINS`, and JSON `ATLAS_CROSS_SITE_ORIGINS`. Preserve them when updating from the generic root configuration. The GitHub token is a Worker secret, never a frontend variable.
+The current production source is `d09a86f919fd93c06775b33b521f716c9631b07f`, verified in [workflow 40563742671](https://github.com/kmarchais/geography-game/actions/runs/40563742671). The root web artifact is retained as `atlas-cloudflare-web`. Production variables are `GOOGLE_CLIENT_ID`, JSON `ATLAS_ALLOWED_ORIGINS`, and JSON `ATLAS_CROSS_SITE_ORIGINS`. Preserve them when updating from the generic root configuration. The GitHub token is a Worker secret, never a frontend variable.
 
 For a local PowerShell build and update after the required checks:
 
@@ -68,3 +68,5 @@ The matching Cloudflare deployment is version `812b03f2-aad2-46c2-9136-9a34c155b
 An initial physical-test setup created one empty run before network mocking was active. No answers or country counters were submitted. That run was removed by its exact ID and empty state. Starting it also performed the existing 24-hour expiry of three older incomplete runs; no completed score was deleted. The migration checkpoints still retain those historical rows. See `.local/phone/atlas-minimal-empty-run-cleanup.json`.
 
 The temporary feature-branch permission in the original repository's Pages environment was removed after deployment. Only its `main` and `gh-pages` policies remain; the new hosting repository keeps its `main` policy. Rollback still requires preserving current cloud data, and must not restart a writable service from the frozen local migration checkpoint.
+
+The later Play-button correction uses source `d09a86f` and Cloudflare version `2718831c-8397-4580-8d72-9589b79a1e24`. [Atlas publication 40564729835](https://github.com/kmarchais/atlas/actions/runs/40564729835) passed ten prefix and offline tests. It changes the button's CSS and start-layout regression only, with no API or database change. Configuration was preserved with `--keep-vars`; the temporary original-site deployment policy was removed again after publication.
