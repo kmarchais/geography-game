@@ -57,7 +57,7 @@ const hovered = ref<Country>()
 let hoverMesh: THREE.Mesh<THREE.SphereGeometry, THREE.ShaderMaterial> | undefined
 let hoverSurface: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial> | undefined
 const hoverIds = new Map<string, number>()
-let hoverPending = false
+let hoverFrame = 0
 const feedback = ref<{ id: number; outcome: 'correct' | 'wrong'; x: number; y: number }>()
 let feedbackId = 0
 let feedbackTimer: ReturnType<typeof setTimeout>
@@ -161,10 +161,6 @@ function render() {
     invalidate()
     scheduleDetail()
   }
-  if (hoverPending) {
-    hoverPending = false
-    if (mousePosition && !pointers.size && !props.disabled && !flight) {hoverCountry(countryAt(...mousePosition))}
-  }
   const focalLength = host.value!.clientHeight / (2 * Math.tan(21 * Math.PI / 180))
   const distance = camera.position.length()
   borderMesh.visible = props.borders && distance >= 1.4
@@ -261,7 +257,7 @@ function drawCountry(context: CanvasRenderingContext2D, country: Country) {
   }
 }
 
-function updateHighlights(redraw = true) {
+function updateHighlights() {
   if (!fillTexture) {return}
   const context = fillCanvas.getContext('2d')!
   const answers = new Map(props.answers.map(answer => [answer.id, answer]))
@@ -294,7 +290,7 @@ function updateHighlights(redraw = true) {
     if (color) {marker.surface.material.color.set(color)}
   })
   if (controls && !flight) {controls.enabled = !props.reveal}
-  if (redraw) {invalidate()}
+  invalidate()
 }
 
 function focus(coordinate: Coordinate, distance = 2.8) {
@@ -349,7 +345,7 @@ function selectAt(x: number, y: number) {
   emit('select', countryAt(x, y))
 }
 function clearHover() {
-  hoverPending = false
+  cancelAnimationFrame(hoverFrame); hoverFrame = 0
   if (!hovered.value) {return}
   hovered.value = undefined
   if (hoverMesh) {hoverMesh.visible = false}
@@ -404,7 +400,7 @@ function hoverCountry(country: Country | undefined) {
       hoverSurface.geometry = geometry; hoverSurface.visible = true
     }
   }
-  updateHighlights(false) // Already inside the frame that will draw this hover.
+  updateHighlights()
 }
 function onPointerLeave() {mousePosition = undefined; clearHover()}
 
@@ -417,7 +413,12 @@ function onPointerDown(event: PointerEvent) {
 function onPointerMove(event: PointerEvent) {
   if (event.pointerType === 'mouse') {
     mousePosition = [event.clientX, event.clientY]
-    if (!pointers.size && !props.disabled && !flight) {hoverPending = true; invalidate()}
+    if (!pointers.size && !props.disabled && !flight && !hoverFrame) {
+      hoverFrame = requestAnimationFrame(() => {
+        hoverFrame = 0
+        if (mousePosition && !pointers.size && !props.disabled && !flight) {hoverCountry(countryAt(...mousePosition))}
+      })
+    }
   }
   if (pointerStart && Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) > 6) {dragged = true}
   if (pointers.size) {invalidate()}
@@ -591,11 +592,12 @@ onMounted(async () => {
 watch(() => props.disabled, disabled => {if (disabled) {clearHover()}})
 watch(() => props.borders, visible => { if (borderMesh) { borderMesh.visible = visible; invalidate() } })
 watch(() => props.countries, configureCountries)
-watch(() => [props.answers, props.paintFound, props.markers, props.reveal], () => updateHighlights())
+watch(() => [props.answers, props.paintFound, props.markers, props.reveal], updateHighlights)
 onBeforeUnmount(() => {
   disposed = true
   cancelFlight()
   cancelAnimationFrame(frame)
+  cancelAnimationFrame(hoverFrame)
   clearTimeout(feedbackTimer)
   clearTimeout(detailTimer)
   clearTimeout(geometryTimer)

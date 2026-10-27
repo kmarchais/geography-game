@@ -10,7 +10,7 @@ The renderer now uploads a country-ID mask once and changes a shader uniform whe
 
 The new production-path regression failed against the previous renderer with six unexpected uploads. It passes with the fix and checks country IDs, zero subsequent uploads, zero polygon redraws, the final pointer position in a burst, touch exclusion, and cancellation on pointer leave. Existing pixel checks prove that grey hover restores the completed green colour and works on zoomed Andorra. The focused desktop run passed all four cases. Type-checking and scoped lint passed; the unit suite passed 653 tests with 26 legacy skips. Evidence: `.local/hover-baseline.json`, `.local/hover-no-upload.json`, `.local/hover-fixed.json`, `.local/hover-regression-red.log`, `.local/hover-browser-green.log`, `.local/hover-types.log`, `.local/hover-lint.log`, and `.local/hover-unit.log`.
 
-Production builds, cross-profile browser checks, and publication are pending. No phone installation or physical test is claimed for this hover change.
+Self-review caught an unnecessary redraw when the first implementation processed hover inside the main render loop. Hover picking now has its own coalesced animation-frame callback and requests rendering only when the selected territory changes. The regression also checks that twenty pointer movements within the same country produce no globe draw calls. Run 40604476616 was cancelled before publication while checking this correction; its Android and hosting jobs passed, but its interface run did not finish. Updated production checks and publication are pending. No phone installation or physical test is claimed for this hover change.
 
 ## Weighted outcomes and UN map replacement, released 28 October 2026
 

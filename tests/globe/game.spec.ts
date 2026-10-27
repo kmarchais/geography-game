@@ -466,6 +466,7 @@ test('cross-country hover reuses its GPU mask and coalesces pointer bursts', asy
   await mockRun(page); await open(page)
   await page.getByRole('button', { name: 'Play', exact: true }).click()
   await expect(page.locator('#target-name')).toHaveText('Chad')
+  await expect(page.getByTestId('earth-host')).toHaveAttribute('data-base-detail', 'full')
   const box = (await earth(page).boundingBox())!, camera = new PerspectiveCamera(42, box.width / box.height, .01, 100)
   camera.position.fromArray(coordinateToVector([18, 16])).multiplyScalar(3.1)
   camera.lookAt(0, 0, 0); camera.updateMatrixWorld()
@@ -478,9 +479,11 @@ test('cross-country hover reuses its GPU mask and coalesces pointer bursts', asy
   // Finish the initial mask upload before measuring subsequent territory changes.
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
   const result = await earth(page).evaluate(async (canvas, points) => {
-    let uploads = 0, lines = 0
+    let uploads = 0, lines = 0, draws = 0
     const prototype = WebGL2RenderingContext.prototype
     const image = prototype.texImage2D, subImage = prototype.texSubImage2D, line = CanvasRenderingContext2D.prototype.lineTo
+    const draw = prototype.drawElements
+    prototype.drawElements = function(...args) {draws++; return draw.apply(this, args)}
     prototype.texImage2D = function(...args: Parameters<typeof image>) {
       if (args.some(value => value instanceof HTMLCanvasElement)) {uploads++}
       return image.apply(this, args)
@@ -502,15 +505,20 @@ test('cross-country hover reuses its GPU mask and coalesces pointer bursts', asy
       const synchronous = canvas.parentElement!.dataset.hover
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
       const final = canvas.parentElement!.dataset.hover
+      draws = 0
+      for (let n = 0; n < 20; n++) {canvas.dispatchEvent(new PointerEvent('pointermove', { pointerType: 'mouse', clientX: points[0]!.x, clientY: points[0]!.y }))}
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+      const unchangedDraws = draws
       canvas.dispatchEvent(new PointerEvent('pointermove', { pointerType: 'touch', clientX: points[1]!.x, clientY: points[1]!.y }))
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
       const touch = canvas.parentElement!.dataset.hover
       canvas.dispatchEvent(new PointerEvent('pointermove', { pointerType: 'mouse', clientX: points[1]!.x, clientY: points[1]!.y }))
       canvas.dispatchEvent(new PointerEvent('pointerleave'))
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
-      return { uploads, lines, ids, before, synchronous, final, touch, cancelled: canvas.parentElement!.dataset.hover }
+      return { uploads, lines, ids, before, synchronous, final, touch, unchangedDraws, cancelled: canvas.parentElement!.dataset.hover }
     } finally {
       prototype.texImage2D = image; prototype.texSubImage2D = subImage; CanvasRenderingContext2D.prototype.lineTo = line
+      prototype.drawElements = draw
     }
   }, points)
   expect(result.ids).toEqual(['NGA', 'NER', 'LBY', 'SDN', 'SSD'])
@@ -519,6 +527,7 @@ test('cross-country hover reuses its GPU mask and coalesces pointer bursts', asy
   expect(result.synchronous).toBe(result.before)
   expect(result.final).toBe('TCD')
   expect(result.touch).toBe('TCD')
+  expect(result.unchangedDraws).toBe(0)
   expect(result.cancelled).toBeUndefined()
   await page.mouse.move(10, 10)
   await expect(page.getByTestId('earth-host')).not.toHaveAttribute('data-hover')
