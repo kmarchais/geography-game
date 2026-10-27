@@ -367,6 +367,25 @@ test('all 195 answers publish an accurate time despite a lost final response', a
   await expect(page.locator('.outcome-counts .yellow')).toHaveText('0')
   await expect(page.locator('.outcome-counts .orange')).toHaveText('0')
   await expect(page.locator('.outcome-counts .red')).toHaveText('194')
+  // Pull back enough to see the sample territories on narrow viewports too.
+  await earth(page).press('-')
+  // A finished run must also paint associated territories, not leave extra polygons behind.
+  const box = (await earth(page).boundingBox())!, camera = new PerspectiveCamera(42, box.width / box.height, .01, 100)
+  camera.position.fromArray(coordinateToVector([18, 16])).multiplyScalar(4)
+  camera.lookAt(0, 0, 0); camera.updateMatrixWorld()
+  const territoryPoints = [[46, 9], [21, 42.6], [-42, 72]].map(coordinate => {
+    const p = new Vector3(...coordinateToVector(coordinate as [number, number])).multiplyScalar(1.0003).project(camera)
+    return [(p.x + 1) / 2, (1 - p.y) / 2]
+  })
+  const finishedMap = await earth(page).screenshot({ style: '.mission-panel, .answer-cue { visibility: hidden !important; }' })
+  const territoryPixels = await page.evaluate(async ({ source, points }) => {
+    const image = new Image(); image.src = source; await image.decode()
+    const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height
+    const context = canvas.getContext('2d')!; context.drawImage(image, 0, 0)
+    return points.map(([x, y]) => [...context.getImageData(Math.round(x! * image.width), Math.round(y! * image.height), 1, 1).data])
+  }, { source: `data:image/png;base64,${finishedMap.toString('base64')}`, points: territoryPoints })
+  for (const pixel of territoryPixels) {expect(pixel[0]!).toBeGreaterThan(pixel[1]! * 1.5); expect(pixel[0]!).toBeGreaterThan(pixel[2]! * 1.5)}
+
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   if (test.info().project.use.isMobile) {
     const viewport = page.viewportSize()!
@@ -472,26 +491,25 @@ test('mouse hover greys the actual territory and clears without changing its res
 })
 
 
-test('territories outside the challenge cannot be selected or consume an attempt', async ({ page }) => {
-  let requests = 0
+test('UN-associated territory clicks identify the quiz country and consume an attempt', async ({ page }) => {
+  const requests: { guess: string }[] = []
   await mockRun(page)
-  page.on('request', request => {if (request.url().endsWith('/answers')) {requests++}})
+  page.on('request', request => {if (request.url().endsWith('/answers')) {requests.push(request.postDataJSON())}})
   await open(page); await page.getByRole('button', { name: 'Play', exact: true }).click()
   await expect(page.locator('#target-name')).toHaveText('Chad')
   const box = (await earth(page).boundingBox())!, camera = new PerspectiveCamera(42, box.width / box.height, .01, 100)
   camera.position.fromArray(coordinateToVector([18, 16])).multiplyScalar(3.1)
   camera.lookAt(0, 0, 0); camera.updateMatrixWorld()
-  const snapshot = JSON.parse(readFileSync('public/data/globe/countries.json', 'utf8'))
-  const coordinate = snapshot.find((c: { id: string }) => c.id === 'SOL').center
-  const point = new Vector3(...coordinateToVector(coordinate)).multiplyScalar(1.0003).project(camera)
+  const point = new Vector3(...coordinateToVector([46, 9])).multiplyScalar(1.0003).project(camera)
   const x = box.x + (point.x + 1) * box.width / 2, y = box.y + (1 - point.y) * box.height / 2
   if (test.info().project.use.isMobile) {await page.touchscreen.tap(x, y)} else {
     await page.mouse.move(x, y)
-    await expect(page.getByTestId('earth-host')).not.toHaveAttribute('data-hover')
+    await expect(page.getByTestId('earth-host')).toHaveAttribute('data-hover', 'SOM')
     await page.mouse.click(x, y)
   }
   await expect(page.getByTestId('progress')).toHaveText('1 / 195')
-  await expect(page.locator('.attempts-left')).toContainText('Attempts left: 3')
-  await expect(page.getByTestId('answer-cue')).toHaveCount(0)
-  expect(requests).toBe(0)
+  await expect(page.locator('.attempts-left')).toContainText('Attempts left: 2')
+  await expect(page.locator('.answer-feedback')).toHaveText('× Somalia')
+  await expect(page.getByTestId('answer-cue')).toHaveAttribute('data-outcome', 'wrong')
+  expect(requests).toHaveLength(1); expect(requests[0]!.guess).toBe('SOM')
 })

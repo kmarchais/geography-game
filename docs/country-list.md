@@ -6,7 +6,9 @@ The quiz contains exactly the 193 UN member states plus the two non-member obser
 
 This selection defines the quiz. UN membership and observer status are different from diplomatic recognition. The [UN explains that recognition is granted by states, not by the UN itself](https://www.un.org/about-us/about-un-membership).
 
-Territories and other states, including Kosovo and Taiwan, are outside this quiz list. Boundaries are generalized Natural Earth data and are not an official UN boundary endorsement.
+The geographic snapshot is derived from the United Nations “Countries Combined with associated territories” layer, hosted by UNEP-WCMC. Features are grouped by its `isoclr` code, giving the same 195 country IDs as this list. Associated territories share their country’s answer and paint. There are no separate grey territory polygons. A documented Tuvalu coastline refinement preserves an islet omitted by the generalized source, without changing its country assignment. The source treats Western Sahara, Antarctica, and unsettled areas separately; those areas remain background, without extra quiz polygons or an invented sovereign assignment.
+
+Source: [UN combined-country layer](https://data-gis.unep-wcmc.org/server/rest/services/Hosted/UN_Boundaries/MapServer/6). Based on United Nations boundary data. Boundaries and names do not imply official UN endorsement or acceptance.
 
 | Atlas name | Code | Basis |
 | --- | --- | --- |

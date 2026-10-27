@@ -47,7 +47,7 @@ jobs:
       # Tests use their own in-memory API, never the live ranking database.
       - run: bun run test:globe
         if: github.event.inputs.target != 'focused' && github.event.inputs.target != 'interface' && github.event.inputs.target != 'gameplay'
-        timeout-minutes: 15
+        timeout-minutes: 25
       - name: Focused interface regressions
         if: github.event.inputs.target == 'focused'
         run: |

@@ -69,11 +69,11 @@ export function vectorToCoordinate({ x, y, z }: { x: number; y: number; z: numbe
 }
 
 export function validateCountries(value: unknown): Country[] {
-  if (!Array.isArray(value) || value.length < 195) {throw new Error('The country data is incomplete.')}
+  if (!Array.isArray(value) || value.length !== 195) {throw new Error('The country data is incomplete.')}
   const ids = new Set<string>()
   for (const c of value as Country[]) {
     if (!c || typeof c.id !== 'string' || ids.has(c.id) || typeof c.name !== 'string' || typeof c.continent !== 'string'
-      || typeof c.playable !== 'boolean' || typeof c.small !== 'boolean' || !Array.isArray(c.center) || c.center.length !== 2
+      || c.playable !== true || typeof c.small !== 'boolean' || !Array.isArray(c.center) || c.center.length !== 2
       || !c.center.every(Number.isFinite) || Math.abs(c.center[0]) > 180 || Math.abs(c.center[1]) > 90 || !Array.isArray(c.polygons)
       || !c.polygons.every(p => Array.isArray(p) && p.length > 0 && p.every(r => Array.isArray(r) && r.length >= 4 && r.every(v => Array.isArray(v) && v.length === 2 && v.every(Number.isFinite) && Math.abs(v[0]) <= 180 && Math.abs(v[1]) <= 90)))) {
       throw new Error('The country data could not be read.')

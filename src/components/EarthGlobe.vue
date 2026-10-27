@@ -262,9 +262,9 @@ function updateHighlights() {
   const answers = new Map(props.answers.map(answer => [answer.id, answer]))
   const fills = new Map<string, string>()
   for (const country of props.countries) {
-    if (country.small && country.playable) {continue} // Small countries use their exact vector surface.
+    if (country.small) {continue} // Small countries use their exact vector surface.
     const answer = answers.get(country.id)
-    const color = !country.playable ? '#58616b' : country.id === props.reveal ? '#ff4c58' : props.paintFound ? answerColor(answer) : undefined
+    const color = country.id === props.reveal ? '#ff4c58' : props.paintFound ? answerColor(answer) : undefined
     if (color) {fills.set(country.id, color + 'a6')}
   }
   // Keep resolved polygons on the canvas instead of redrawing the whole run.

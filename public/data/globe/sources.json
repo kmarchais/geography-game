@@ -1,14 +1,73 @@
 {
   "sources": {
-    "borders": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_admin_0_countries.geojson",
+    "borders": "https://data-gis.unep-wcmc.org/server/rest/services/Hosted/UN_Boundaries/MapServer/6/query?where=1%3D1&outFields=iso3cd%2Cromnam%2Cisoclr%2Cstscod&returnGeometry=true&outSR=4326&geometryPrecision=5&f=geojson",
     "countries": "https://cdn.jsdelivr.net/npm/world-countries@5.1.0/countries.json",
     "earth": "https://cdn.jsdelivr.net/npm/three-globe@2.44.0/example/img/earth-blue-marble.jpg"
   },
   "sha256": {
-    "borders": "239eec57ac17f100a11e2536cffc56752c318b50ae765b0918ff7aab4ce8f255",
+    "borders": "9d121bbf79bce16ca0801d0fd815f9ad2cf750694b2819bbf7d003b6bc2e1208",
     "countries": "359431fb9475666dfad1ea5e72e53521cef40520f65eecd08e02ba569eb8491b",
     "earth": "228deba2e4b600146bdcb6cfa359b8ead6aacc2b1c13550a29cd82824cfa1c01"
   },
   "countryCount": 195,
-  "markerOnly": []
+  "markerOnly": [],
+  "background": [
+    {
+      "id": "xAC",
+      "name": "Aksai Chin",
+      "status": 99
+    },
+    {
+      "id": "xJK",
+      "name": "Jammu and Kashmir",
+      "status": 99
+    },
+    {
+      "id": "ATA",
+      "name": "Antarctica",
+      "status": 0
+    },
+    {
+      "id": "ESH",
+      "name": "Western Sahara",
+      "status": 3
+    },
+    {
+      "id": "xSR",
+      "name": " ",
+      "status": 99
+    },
+    {
+      "id": "xAB",
+      "name": "Abyei",
+      "status": 99
+    },
+    {
+      "id": "xJL",
+      "name": " ",
+      "status": 99
+    },
+    {
+      "id": "xPI",
+      "name": " ",
+      "status": 99
+    },
+    {
+      "id": "xSI",
+      "name": " ",
+      "status": 99
+    }
+  ],
+  "attribution": "Based on United Nations boundary data. Boundaries and names do not imply UN endorsement or acceptance.",
+  "sourceLayer": "Countries Combined with associated territories",
+  "grouping": "isoclr",
+  "preparedAt": "2026-10-27T22:16:05.500Z",
+  "coastlineRefinements": [
+    {
+      "id": "TUV",
+      "source": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_admin_0_countries.geojson",
+      "sourceSha256": "239eec57ac17f100a11e2536cffc56752c318b50ae765b0918ff7aab4ce8f255",
+      "reason": "Retain the Funafuti islet omitted by the generalized UN source. The UN country assignment is unchanged."
+    }
+  ]
 }

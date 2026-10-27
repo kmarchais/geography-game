@@ -22,7 +22,9 @@ export function createAtlasApi({ db, transaction, countries, now = Date.now, ori
   const quiz = countries.filter(c => c.playable).map(c => c.id)
   const accounts = createAccounts(db, { clientId: googleClientId, verify: verifyGoogle, now, crossSiteOrigins })
   const reports = createBugReports(db, { now, publish: reportPublisher, wake: reportWake })
-  const ids = new Set(quiz), legacyIds = new Set(countries.map(c => c.id))
+  const ids = new Set(quiz)
+  // Older clients can still submit their former map features as wrong guesses.
+  const legacyIds = new Set([...quiz, ...'WSB ALA ASM AIA ATA ABW ATC IOA KAB BJN BMU BRT BRI IOT VGB CYM CLP COK CSI CUW ESB FLK FRO PYF ATF GIB GRL GUM USG GGY HMD HKG IMN JEY KOS MAC MSR NCL NIU NFK MNP PCN PRI BLM SHN MAF SPM SCR SER KAS SXM SOL SGS SPI TWN CYN TCA CNM UMI VIR PGA WLF ESH'.split(' ')])
   const scoreColumns = version => version === 4 ? ",points/4.0 AS score,json_extract(state,'$.green') AS green,json_extract(state,'$.yellow') AS yellow,json_extract(state,'$.orange') AS orange,json_extract(state,'$.red') AS red" : ''
   const leaderboard = (version = 3) => db.prepare(`SELECT id, name, correct, ? AS total, time_ms AS timeMs${scoreColumns(version)} FROM
     (SELECT *, ROW_NUMBER() OVER (PARTITION BY player ORDER BY ${version === 4 ? 'points' : 'correct'} DESC, time_ms, id) AS place FROM runs WHERE complete=1 AND published=1 AND json_extract(state,'$.version')=?)
