@@ -315,6 +315,17 @@ test('all 195 answers publish an accurate time despite a lost final response', a
     await route.continue()
   })
   await open(page)
+  await expect(page.getByTestId('earth-host')).toHaveAttribute('data-base-detail', 'full')
+  const centrePixel = async () => {
+    const screenshot = await earth(page).screenshot()
+    return page.evaluate(async source => {
+      const image = new Image(); image.src = source; await image.decode()
+      const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height
+      const context = canvas.getContext('2d')!; context.drawImage(image, 0, 0)
+      return [...context.getImageData(Math.floor(image.width / 2) + 12, Math.floor(image.height / 2), 1, 1).data]
+    }, `data:image/png;base64,${screenshot.toString('base64')}`)
+  }
+  const unpainted = await centrePixel()
   const runResponse = page.waitForResponse(r => r.url().endsWith('/atlas-api/runs') && r.request().method() === 'POST')
   await page.getByRole('button', { name: 'Play', exact: true }).click()
   const run = await (await runResponse).json()
@@ -341,6 +352,8 @@ test('all 195 answers publish an accurate time despite a lost final response', a
   await page.getByLabel('Nickname', { exact: true }).fill('Atlas test')
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled()
+  const resetPixel = await centrePixel()
+  expect(resetPixel.reduce((sum, value, index) => sum + Math.abs(value - unpainted[index]!), 0)).toBeLessThan(15)
   if (page.viewportSize()!.width >= 1000) {await expect(page.locator('.ranking-panel table')).toContainText('Atlas test')}
   await page.reload()
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('atlas-runs-v3') || '[]')[0].correct)).toBe(1)

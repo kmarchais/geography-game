@@ -93,6 +93,8 @@ const markerPositions: { country: Country; position: THREE.Vector3; sprite: THRE
 let markerTexture: THREE.CanvasTexture
 let fillCanvas: HTMLCanvasElement
 let fillTexture: THREE.CanvasTexture
+let fillCountries: Country[] | undefined
+const paintedFills = new Map<string, string>()
 let flight: { start: THREE.Vector3; turn: THREE.Quaternion; startDistance: number; endDistance: number; lift: number; started: number; duration: number; resolve: () => void } | undefined
 function cancelFlight() {
   const current = flight
@@ -221,7 +223,8 @@ function makeOverlay() {
   image.height = overlayHeight
   const texture = new THREE.CanvasTexture(image)
   texture.colorSpace = THREE.SRGBColorSpace
-  texture.anisotropy = Math.min(4, renderer!.capabilities.getMaxAnisotropy())
+  texture.generateMipmaps = false
+  texture.minFilter = THREE.LinearFilter
   textures.push(texture)
   return { image, texture }
 }
@@ -247,20 +250,28 @@ function drawCountry(context: CanvasRenderingContext2D, country: Country) {
 function updateHighlights() {
   if (!fillTexture) {return}
   const context = fillCanvas.getContext('2d')!
-  context.clearRect(0, 0, overlayWidth, overlayHeight)
   const answers = new Map(props.answers.map(answer => [answer.id, answer]))
-  let hasFill = false
+  const fills = new Map<string, string>()
   for (const country of props.countries) {
     if (country.small) {continue} // Small countries use their exact vector surface.
     const answer = answers.get(country.id)
     const color = country.id === props.reveal ? '#ff4c58' : props.paintFound ? answerColor(answer) : undefined
-    if (!color) {continue}
-    context.fillStyle = color + (country.id === props.reveal ? 'bf' : 'a6')
-    drawCountry(context, country)
-    hasFill = true
+    if (color) {fills.set(country.id, color + 'a6')}
   }
-  fillMesh.visible = hasFill
-  fillTexture.needsUpdate = true
+  // Keep resolved polygons on the canvas instead of redrawing the whole run.
+  const clear = fillCountries !== props.countries || [...paintedFills].some(([id, color]) => fills.get(id) !== color)
+  let changed = clear
+  if (clear) {context.clearRect(0, 0, overlayWidth, overlayHeight); paintedFills.clear()}
+  for (const country of props.countries) {
+    const color = fills.get(country.id)
+    if (!color || paintedFills.get(country.id) === color) {continue}
+    context.fillStyle = color
+    drawCountry(context, country)
+    paintedFills.set(country.id, color); changed = true
+  }
+  fillCountries = props.countries
+  fillMesh.visible = fills.size > 0
+  if (changed) {fillTexture.needsUpdate = true}
   markerPositions.forEach(marker => {
     const answer = answers.get(marker.country.id)
     const color = marker.country.id === props.reveal ? '#ff4c58' : props.paintFound ? answerColor(answer) : undefined
