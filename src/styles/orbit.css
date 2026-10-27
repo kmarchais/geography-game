@@ -129,6 +129,15 @@ body { margin: 0; background: #090f13; }
 .start-card { display: flex; justify-content: center; }
 .play-button { pointer-events: auto; width: 180px; min-height: 56px; font-size: 18px !important; box-shadow: 0 12px 48px #0008; }
 .mission-panel.is-playing { top: 16px; transform: translateX(-50%); }
+.is-playing .mission-card { display: grid; grid-template-columns: minmax(0, 1fr) 76px; gap: 8px 12px; padding: 16px; }
+.is-playing .mission-topline { grid-column: 1 / -1; margin: 0; }
+.is-playing h1 { grid-column: 1; font-size: 26px; margin: 0; }
+.is-playing .attempts-left { grid-column: 1; }
+.is-playing .skip-button { grid-column: 2; grid-row: 2 / 4; align-self: center; padding: 10px; }
+.is-playing .session-stats { grid-column: 1 / -1; display: flex; justify-content: space-between; margin: 4px 0 0; }
+.is-playing .session-stats strong { font-size: 24px; }
+.is-playing .answer-feedback { grid-column: 1 / -1; min-height: 0; margin: 0; }
+.is-playing .answer-feedback:empty { display: none; }
 .mission-panel.is-revealing h1, .mission-panel.is-revealing .attempts-left { color: #ff8791; }
 .attempts-left { display: flex; justify-content: space-between; gap: 12px; font-size: 11px; color: var(--muted); margin: 0; }
 .attempts-left span { letter-spacing: 3px; color: var(--mint); }

@@ -258,7 +258,7 @@
             {{ t('yourScore') }}
           </h1>
           <div class="session-stats">
-            <div><span>{{ t('correct') }}</span><strong data-testid="accuracy">{{ formatPercent(accuracy) }}</strong></div><div><span>{{ playing ? t('time') : t('timeToScore') }}</span><strong data-testid="timer">{{ formatTime(playing ? elapsed : resultTime) }}</strong></div>
+            <div><span :class="{ 'sr-only': playing }">{{ t('correct') }}</span><strong data-testid="accuracy">{{ formatPercent(accuracy) }}</strong></div><div><span :class="{ 'sr-only': playing }">{{ playing ? t('time') : t('timeToScore') }}</span><strong data-testid="timer">{{ formatTime(playing ? elapsed : resultTime) }}</strong></div>
           </div>
           <p
             v-if="!playing"
