@@ -85,6 +85,25 @@ test('the profile picture opens account actions and sign-out restores the minima
   await expect(page.locator('.google-web-button')).toHaveCount(0)
 })
 
+test('signed-in countries do not enter the guest statistics after sign-out', async ({ page }) => {
+  await googleAccount(page); await page.goto('./'); await finishRun(page)
+  const guestStatistics = await page.evaluate(() => localStorage.getItem('atlas-country-stats'))
+  await page.getByRole('button', { name: 'Sign in with Google', exact: true }).click()
+  const avatar = page.locator('.account-avatar')
+  await expect(avatar).toHaveAttribute('title', 'Connected as Alex')
+  await page.getByRole('button', { name: 'Play again', exact: true }).click()
+  await page.locator('.skip-button').evaluate(button => {for (let i = 0; i < 195; i++) {(button as HTMLButtonElement).click()}})
+  await expect(page.getByRole('heading', { name: 'Your score', exact: true })).toBeVisible()
+  await expect(page.getByText('Saving score…')).toBeHidden({ timeout: 20000 })
+  expect(await page.evaluate(() => localStorage.getItem('atlas-country-stats'))).toBe(guestStatistics)
+  await avatar.click()
+  await page.getByRole('menuitem', { name: 'Sign out', exact: true }).click()
+  await page.getByRole('button', { name: 'Menu', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Statistics', exact: true }).click()
+  await expect(page.getByRole('dialog', { name: 'Statistics', exact: true })).toContainText('On this device')
+  expect(await page.getByRole('dialog', { name: 'Statistics', exact: true }).locator('tbody tr').count()).toBe(195)
+})
+
 test('Google login without a retained session explicitly stays disconnected', async ({ page }) => {
   await googleAccount(page, false, false)
   await page.goto('./'); await finishRun(page)

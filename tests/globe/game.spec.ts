@@ -70,6 +70,7 @@ test('close-zoom dragging redraws even below the controls change threshold', asy
     WebGL2RenderingContext.prototype.drawElements = function(...args) {counter.atlasDraws++; return draw.apply(this, args)}
   })
   await open(page)
+  await page.getByRole('button', { name: 'Play', exact: true }).click()
   for (let i = 0; i < 21; i++) {await earth(page).press('+')}
   const box = (await earth(page).boundingBox())!
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)

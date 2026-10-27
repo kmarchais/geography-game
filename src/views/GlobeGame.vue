@@ -625,7 +625,7 @@ async function answer(country: Country | null | undefined) {
   if (country) {globe.value?.showFeedback(correct)}
   const next = answerCountry(session.value, country, elapsed.value)
   sendAnswer(index, attempt, country?.id ?? null, answeredAt, next)
-  if (next.answers.length > index) {
+  if (!account.value && next.answers.length > index) {
     try {localStorage.setItem('atlas-country-stats', JSON.stringify(recordCountryStat(readCountryStats(localStorage), next.answers.at(-1)!)))} catch { /* Global statistics remain available when local storage is blocked. */ }
   }
   if (country && !correct && next.answers.length > index) {
