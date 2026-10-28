@@ -47,7 +47,7 @@ import { wheelPointer, zoomAtPointer, orbitPosition } from '@/globe/navigation'
 import { t, language, formatCoordinate, type MessageKey } from '@/globe/i18n'
 
 const props = defineProps<{ countries: Country[]; borders: boolean; paintFound: boolean; markers: boolean; answers: Answer[]; reveal?: string; disabled: boolean }>()
-const emit = defineEmits<{ select: [country: Country | undefined]; ready: []; error: [message: MessageKey]; warning: [message: MessageKey] }>()
+const emit = defineEmits<{ select: [country: Country | undefined, deferredMs?: number]; tapPending: [pending: boolean]; ready: []; error: [message: MessageKey]; warning: [message: MessageKey] }>()
 const host = ref<HTMLElement>()
 const canvas = ref<HTMLCanvasElement>()
 const positionCoordinates = ref<Coordinate>()
@@ -82,8 +82,9 @@ let frame = 0
 let disposed = false
 let observer: ResizeObserver | undefined
 let pointerStart: { x: number; y: number } | undefined
-let holdTimer: ReturnType<typeof setTimeout> | undefined
-let touchZoom: { id: number; x: number; y: number; lastY: number } | undefined
+let tapTimer: ReturnType<typeof setTimeout> | undefined
+let pendingTap: { country: Country | undefined; x: number; y: number; started: number } | undefined
+let touchZoom: { id: number; x: number; y: number; lastY: number; moved: boolean } | undefined
 let mousePosition: [number, number] | undefined
 let dragged = false
 const pointers = new Set<number>()
@@ -313,8 +314,8 @@ function zoom(direction: number) {
   invalidate()
 }
 
-function reset() { focus([18, 16], 3.1) }
-defineExpose({ focus, zoom, reset, showFeedback, revealCountry, pullBack })
+function reset() { cancelPointer(); focus([18, 16], 3.1) }
+defineExpose({ focus, zoom, reset, showFeedback, revealCountry, pullBack, cancelInput: cancelPointer })
 
 function countryAt(x: number, y: number): Country | undefined {
   if (!canvas.value || !controls) {return}
@@ -340,11 +341,26 @@ function countryAt(x: number, y: number): Country | undefined {
   return markerHit ?? pickCountry(vectorToCoordinate(hitPoint))
 }
 
-function selectAt(x: number, y: number) {
-  if (!canvas.value || props.disabled) {return}
+function selectAt(x: number, y: number, defer = false) {
+  cancelTap()
+  if (!canvas.value || (props.disabled && !defer)) {return}
   const bounds = canvas.value.getBoundingClientRect()
   lastTap = { x: x - bounds.left, y: y - bounds.top }
-  emit('select', countryAt(x, y))
+  const country = countryAt(x, y)
+  if (defer) {
+    pendingTap = { country, x, y, started: Date.now() }
+    emit('tapPending', true)
+    tapTimer = setTimeout(commitTap, 300)
+  } else {emit('select', country)}
+}
+function cancelTap() {
+  clearTimeout(tapTimer); tapTimer = undefined
+  if (pendingTap) {pendingTap = undefined; emit('tapPending', false)}
+}
+function commitTap() {
+  const tap = pendingTap
+  cancelTap()
+  if (tap && !props.disabled) {emit('select', tap.country, Math.max(0, Date.now() - tap.started))}
 }
 function clearHover() {
   cancelAnimationFrame(hoverFrame); hoverFrame = 0
@@ -411,24 +427,26 @@ function onPointerDown(event: PointerEvent) {
   if (event.pointerType !== 'mouse') {mousePosition = undefined}
   if (flight || props.reveal) {return}
   cancelTouchZoom()
+  const tap = pendingTap
+  const doubleTap = event.pointerType === 'touch' && !pointers.size && tap && Date.now() - tap.started <= 300 && Math.hypot(event.clientX - tap.x, event.clientY - tap.y) <= 32
+  if (doubleTap && controls) {
+    cancelTap(); pointers.add(event.pointerId); pointerStart = { x: event.clientX, y: event.clientY }; dragged = true
+    touchZoom = { id: event.pointerId, x: tap.x, y: tap.y, lastY: event.clientY, moved: false }
+    controls.enableRotate = false
+    return
+  }
+  commitTap()
   pointers.add(event.pointerId)
   if (pointers.size > 1) {dragged = true}
   else {
     dragged = false; pointerStart = { x: event.clientX, y: event.clientY }
-    if (event.pointerType === 'touch') {
-      holdTimer = setTimeout(() => {
-        holdTimer = undefined
-        if (!controls || flight || props.reveal || pointers.size !== 1 || dragged) {return}
-        touchZoom = { id: event.pointerId, x: event.clientX, y: event.clientY, lastY: event.clientY }
-        controls.enableRotate = false; dragged = true
-      }, 300)
-    }
   }
 }
 function onPointerMove(event: PointerEvent) {
   if (touchZoom?.id === event.pointerId) {
     const delta = touchZoom.lastY - event.clientY
     touchZoom.lastY = event.clientY
+    touchZoom.moved ||= Math.hypot(event.clientX - pointerStart!.x, event.clientY - pointerStart!.y) > 6
     if (delta) {zoomFromPoint(touchZoom.x, touchZoom.y, Math.exp(delta * .006))}
     return
   }
@@ -441,21 +459,23 @@ function onPointerMove(event: PointerEvent) {
       })
     }
   }
-  if (pointerStart && Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) > 6) {dragged = true; clearTimeout(holdTimer)}
+  if (pointerStart && Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) > 6) {dragged = true}
   if (pointers.size) {invalidate()}
 }
 function onPointerUp(event: PointerEvent) {
   if (!pointers.has(event.pointerId)) {return}
+  const zoom = touchZoom?.id === event.pointerId ? touchZoom : undefined
   cancelTouchZoom()
   pointers.delete(event.pointerId)
-  if (pointerStart && !dragged && pointers.size === 0) {selectAt(event.clientX, event.clientY)}
+  if (zoom && !zoom.moved) {zoomFromPoint(zoom.x, zoom.y, .7)}
+  if (pointerStart && !dragged && pointers.size === 0) {selectAt(event.clientX, event.clientY, event.pointerType === 'touch')}
   if (!pointers.size) {pointerStart = undefined}
 }
 function cancelTouchZoom() {
-  clearTimeout(holdTimer); holdTimer = undefined; touchZoom = undefined
+  touchZoom = undefined
   if (controls) {controls.enableRotate = true}
 }
-function cancelPointer() { cancelTouchZoom(); clearHover(); pointers.clear(); pointerStart = undefined; mousePosition = undefined; dragged = true }
+function cancelPointer() { cancelTap(); cancelTouchZoom(); clearHover(); pointers.clear(); pointerStart = undefined; mousePosition = undefined; dragged = true }
 
 function zoomFromPoint(x: number, y: number, factor: number) {
   if (!controls || !canvas.value || flight || props.reveal) {return}
@@ -626,7 +646,7 @@ watch(() => props.countries, configureCountries)
 watch([() => props.answers.length ? props.answers : undefined, () => props.paintFound, () => props.markers, () => props.reveal], updateHighlights)
 onBeforeUnmount(() => {
   disposed = true
-  cancelTouchZoom()
+  cancelTap(); cancelTouchZoom()
   cancelFlight()
   cancelAnimationFrame(frame)
   cancelAnimationFrame(hoverFrame)

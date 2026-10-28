@@ -88,7 +88,7 @@ jobs:
         if: github.event.inputs.target == 'input'
         run: |
           bun run build-only
-          bunx playwright test --config playwright.globe.config.ts --grep 'starting a run keeps|changed home view|one-handed hold|real touch dragging|wheel zoom keeps|Andorra is unpainted|UN-associated|hover stays visible|cross-country hover|mouse hover|Stop cancels|translates the game'
+          bunx playwright test --config playwright.globe.config.ts --grep 'starting a run keeps|changed home view|one-handed|touch tap timing|real touch dragging|wheel zoom keeps|Andorra is unpainted|UN-associated|hover stays visible|cross-country hover|mouse hover|Stop cancels|translates the game|chronometer includes'
       - name: Interface checks across browser profiles
         if: github.event.inputs.target == 'interface'
         run: |

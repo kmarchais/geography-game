@@ -370,7 +370,7 @@ test('completed countries stay green, yellow, orange, and red according to the r
   expect(red![0]!).toBeGreaterThan(red![2]! * 1.5)
 })
 
-test('one-handed hold zoom stays anchored and never answers a country', async ({ page }) => {
+test('one-handed double-tap zoom stays anchored and never answers a country', async ({ page }) => {
   test.skip(!test.info().project.use.isMobile, 'One-finger zoom requires touch input')
   await page.route('https://gibs.earthdata.nasa.gov/**', route => route.abort())
   await mockRun(page); await open(page); await page.getByRole('button', { name: 'Play', exact: true }).click()
@@ -388,6 +388,7 @@ test('one-handed hold zoom stays anchored and never answers a country', async ({
   }, `data:image/png;base64,${png.toString('base64')}`)
   const before = await coverage(await picture()), input = await page.context().newCDPSession(page)
   try {
+    await page.touchscreen.tap(x, y)
     await input.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] })
     await page.waitForTimeout(350)
     for (let n = 1; n <= 4; n++) {await input.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y + n * 30, id: 1 }] })}
@@ -403,7 +404,7 @@ test('one-handed hold zoom stays anchored and never answers a country', async ({
   } finally {await input.detach()}
 })
 
-test('one-handed hold cancellation and a second finger restore normal touch controls', async ({ page }) => {
+test('one-handed double-tap cancellation and a second finger restore normal touch controls', async ({ page }) => {
   test.skip(!test.info().project.use.isMobile, 'One-finger zoom requires touch input')
   await page.route('https://gibs.earthdata.nasa.gov/**', route => route.abort())
   await mockRun(page); await open(page); await page.getByRole('button', { name: 'Play', exact: true }).click()
@@ -411,15 +412,18 @@ test('one-handed hold cancellation and a second finger restore normal touch cont
   const box = (await earth(page).boundingBox())!, x = box.x + box.width / 2, y = box.y + box.height / 2
   const input = await page.context().newCDPSession(page)
   try {
+    await page.touchscreen.tap(x, y)
     await input.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] })
     await page.waitForTimeout(350)
     await input.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-    await expect(page.getByTestId('progress')).toHaveText('1 / 195') // A stationary hold is not a guess.
+    await expect(page.getByTestId('progress')).toHaveText('1 / 195') // A double tap zooms rather than guessing.
+    await page.touchscreen.tap(x, y)
     await input.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] })
     await page.waitForTimeout(350)
     await input.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] })
     await page.touchscreen.tap(x, y)
     await expect(page.getByTestId('progress')).toHaveText('2 / 195')
+    await page.touchscreen.tap(x, y)
     await input.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] })
     await page.waitForTimeout(350)
     await input.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }, { x: x + 50, y, id: 2 }] })
@@ -433,6 +437,47 @@ test('one-handed hold cancellation and a second finger restore normal touch cont
     expect(beforeDrag.equals(await picture())).toBe(false)
     await expect(page.getByTestId('progress')).toHaveText('2 / 195')
   } finally {await input.detach()}
+})
+
+test('touch tap timing excludes the double-tap recognition delay', async ({ page }) => {
+  test.skip(!test.info().project.use.isMobile, 'Touch taps have a double-tap recognition window')
+  await page.clock.install()
+  const times: number[] = []
+  page.on('request', request => {if (request.url().endsWith('/answers')) {times.push(request.postDataJSON().elapsedMs)}})
+  const deck = ['TCD', 'SDN', ...order.filter(id => !['TCD', 'SDN'].includes(id))]
+  await mockRun(page, deck); await open(page)
+  await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await expect(page.locator('#target-name')).toHaveText('Chad')
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 50))
+  await page.clock.runFor(1000)
+  await tapCenter(page)
+  const paused = await page.getByTestId('timer').textContent()
+  await expect(page.getByTestId('progress')).toHaveText('1 / 195')
+  await page.clock.runFor(299)
+  await expect(page.getByTestId('progress')).toHaveText('1 / 195')
+  await expect(page.getByTestId('timer')).toHaveText(paused!)
+  await page.clock.runFor(1)
+  await expect(page.getByTestId('progress')).toHaveText('2 / 195')
+  await expect(page.getByTestId('timer')).toHaveText(paused!)
+  for (let n = 0; n < 2; n++) {await earth(page).press('ArrowRight')}
+  await page.clock.runFor(1000)
+  await tapCenter(page)
+  await page.clock.runFor(300)
+  await expect(page.getByTestId('progress')).toHaveText('3 / 195')
+  await expect.poll(() => times.length).toBe(2)
+  expect(times[1]! - times[0]!).toBe(1000)
+  const box = (await earth(page).boundingBox())!, x = box.x + box.width / 2, y = box.y + box.height / 2
+  const input = await page.context().newCDPSession(page)
+  try {
+    await page.touchscreen.tap(x, y)
+    await input.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] })
+    await page.clock.runFor(1000)
+    await expect(page.getByTestId('progress')).toHaveText('3 / 195')
+    await input.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] })
+  } finally {await input.detach()}
+  await page.getByRole('button', { name: 'Skip', exact: true }).click()
+  await expect.poll(() => times.length).toBe(3)
+  expect(times[2]! - times[1]!).toBe(1000) // Holding the zoom gesture remains real playing time.
 })
 
 test('real touch dragging and pinch zoom do not answer countries', async ({ page }) => {

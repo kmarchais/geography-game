@@ -16,7 +16,7 @@
           v-if="playing"
           class="quiet-button stop-run-button"
           :aria-label="t('stopRun')"
-          @click="stopDialog?.showModal()"
+          @click="openStopDialog"
         >
           {{ t('stop') }}
         </button>
@@ -118,7 +118,7 @@
           <button
             v-if="playing"
             role="menuitem"
-            @click="menu?.hidePopover(); stopDialog?.showModal()"
+            @click="menu?.hidePopover(); openStopDialog()"
           >
             {{ t('stopRun') }}
           </button>
@@ -225,6 +225,7 @@
             :reveal="revealCountryId"
             :disabled="!playing || revealing"
             @select="answer"
+            @tap-pending="setTapPending"
             @ready="ready = true"
             @error="error = $event"
             @warning="warning = $event"
@@ -544,6 +545,7 @@ function menuKey(event: KeyboardEvent) {
 async function menuToggled() {
   authMenuOpen.value = menu.value?.matches(':popover-open') || false
   if (!authMenuOpen.value) {return}
+  globe.value?.cancelInput()
   await nextTick()
   if (menu.value?.matches(':popover-open')) {menu.value.querySelector<HTMLButtonElement>('button[role="menuitem"]:not(:disabled)')?.focus()}
 }
@@ -556,7 +558,7 @@ function positionCountryCount(event: MouseEvent) {
 const ready = ref(false), error = ref<MessageKey | ''>(''), warning = ref<MessageKey | ''>(''), errorStatus = ref(''), globeKey = ref(0)
 const playerName = ref(''), rankings = ref<RankedScore[]>([]), rankingError = ref<MessageKey | ''>('')
 const starting = ref(false), saving = ref(false), savingResult = ref(false), unranked = ref(false)
-const revealing = ref(false), revealCountryId = ref<string>(), published = ref(false)
+const revealing = ref(false), waitingForTap = ref(false), revealCountryId = ref<string>(), published = ref(false)
 const locallySaved = ref(false), uploadUnconfirmed = ref(false)
 const authBusy = ref(false), authMessage = ref<MessageKey | ''>('')
 function connected(user: AtlasUser) {
@@ -663,6 +665,7 @@ async function load() {
 }
 async function start() {
   if (!canPlay.value || starting.value || authBusy.value) {return}
+  globe.value?.cancelInput()
   starting.value = true
   const current = ++generation
   pendingClaim.value = undefined; claimMessage.value = ''; published.value = false; revealing.value = false; revealCountryId.value = undefined
@@ -681,7 +684,9 @@ async function start() {
   upload = Promise.resolve()
   globe.value?.reset()
 }
-function tick() { if (playing.value && !revealing.value) {elapsed.value = Math.max(elapsed.value, Date.now() - startedAt)} }
+function tick() { if (playing.value && !revealing.value && !waitingForTap.value) {elapsed.value = Math.max(elapsed.value, Date.now() - startedAt)} }
+function setTapPending(pending: boolean) {if (pending) {tick()} waitingForTap.value = pending}
+function openStopDialog() {globe.value?.cancelInput(); stopDialog.value?.showModal()}
 function saveLocal() {
   try {
     const key = account.value ? `atlas-runs-v4:${account.value.id}` : 'atlas-runs-v4'
@@ -708,9 +713,11 @@ function sendAnswer(index: number, attempt: number, guess: string | null, elapse
     }
   }).catch(() => { if (mounted && current === generation) {unranked.value = true; uploadUnconfirmed.value = true; runId = undefined; pendingClaim.value = undefined; saving.value = false} })
 }
-async function answer(country: Country | null | undefined) {
+async function answer(country: Country | null | undefined, deferredMs = 0) {
   if (!session.value || !playing.value || revealing.value) {return}
+  globe.value?.cancelInput()
   if (country === undefined) {feedbackKind.value = 'land'; return}
+  startedAt += deferredMs
   tick()
   const previous = target.value!, index = session.value.answers.length, attempt = session.value.attempts, correct = country?.id === previous.id
   const current = generation, answeredAt = Math.floor(elapsed.value)
