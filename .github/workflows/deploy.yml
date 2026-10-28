@@ -10,7 +10,7 @@ on:
       target:
         description: Verification scope
         type: choice
-        options: [all, hosting, focused, interface, gameplay]
+        options: [all, hosting, focused, input, interface, gameplay]
         default: all
 
 permissions:
@@ -26,7 +26,7 @@ env:
 jobs:
   browser:
     name: browser (${{ matrix.profile }})
-    if: github.event.inputs.target != 'hosting' && github.event.inputs.target != 'focused' && github.event.inputs.target != 'interface' && github.event.inputs.target != 'gameplay'
+    if: github.event.inputs.target != 'hosting' && github.event.inputs.target != 'focused' && github.event.inputs.target != 'input' && github.event.inputs.target != 'interface' && github.event.inputs.target != 'gameplay'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -84,6 +84,11 @@ jobs:
         run: |
           bun run build-only
           bunx playwright test --config playwright.globe.config.ts --project desktop --grep 'minimal start|a real country tap|Google entry|all 195 answers|guest results' --max-failures 3
+      - name: Input checks across browser profiles
+        if: github.event.inputs.target == 'input'
+        run: |
+          bun run build-only
+          bunx playwright test --config playwright.globe.config.ts --grep 'starting a run keeps|changed home view|one-handed hold|real touch dragging|wheel zoom keeps|Andorra is unpainted|UN-associated|hover stays visible|cross-country hover|mouse hover|Stop cancels|translates the game'
       - name: Interface checks across browser profiles
         if: github.event.inputs.target == 'interface'
         run: |

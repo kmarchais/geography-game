@@ -370,25 +370,96 @@ test('completed countries stay green, yellow, orange, and red according to the r
   expect(red![0]!).toBeGreaterThan(red![2]! * 1.5)
 })
 
-test('real touch dragging and pinch zoom do not answer countries', async ({ page }) => {
+test('one-handed hold zoom stays anchored and never answers a country', async ({ page }) => {
+  test.skip(!test.info().project.use.isMobile, 'One-finger zoom requires touch input')
+  await page.route('https://gibs.earthdata.nasa.gov/**', route => route.abort())
   await mockRun(page); await open(page); await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await expect(page.getByTestId('earth-host')).toHaveAttribute('data-base-detail', 'full')
+  const box = (await earth(page).boundingBox())!, x = box.x + box.width / 2, y = box.y + box.height / 2
+  const picture = () => earth(page).screenshot({ style: '.mission-panel { visibility: hidden !important; }' })
+  const coverage = (png: Buffer) => page.evaluate(async source => {
+    const image = new Image(); image.src = source; await image.decode()
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 96
+    const context = canvas.getContext('2d')!; context.drawImage(image, 0, 0, 96, 96)
+    const pixels = context.getImageData(0, 0, 96, 96).data
+    let count = 0
+    for (let i = 0; i < pixels.length; i += 4) {if (pixels[i]! > 35 || pixels[i + 1]! > 40 || pixels[i + 2]! > 65) {count++}}
+    return count
+  }, `data:image/png;base64,${png.toString('base64')}`)
+  const before = await coverage(await picture()), input = await page.context().newCDPSession(page)
+  try {
+    await input.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] })
+    await page.waitForTimeout(350)
+    for (let n = 1; n <= 4; n++) {await input.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y + n * 30, id: 1 }] })}
+    const zoomed = await coverage(await picture())
+    expect(zoomed).toBeGreaterThan(before * 1.15)
+    for (let n = 3; n >= 0; n--) {await input.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y + n * 30, id: 1 }] })}
+    const restored = await coverage(await picture())
+    expect(Math.abs(restored - before)).toBeLessThan(before * .03)
+    await input.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await expect(page.getByTestId('progress')).toHaveText('1 / 195')
+    await page.touchscreen.tap(x, y)
+    await expect(page.getByTestId('progress')).toHaveText('2 / 195') // Zoom preserved the country under the finger.
+  } finally {await input.detach()}
+})
+
+test('one-handed hold cancellation and a second finger restore normal touch controls', async ({ page }) => {
+  test.skip(!test.info().project.use.isMobile, 'One-finger zoom requires touch input')
+  await page.route('https://gibs.earthdata.nasa.gov/**', route => route.abort())
+  await mockRun(page); await open(page); await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await expect(page.getByTestId('earth-host')).toHaveAttribute('data-base-detail', 'full')
+  const box = (await earth(page).boundingBox())!, x = box.x + box.width / 2, y = box.y + box.height / 2
+  const input = await page.context().newCDPSession(page)
+  try {
+    await input.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] })
+    await page.waitForTimeout(350)
+    await input.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await expect(page.getByTestId('progress')).toHaveText('1 / 195') // A stationary hold is not a guess.
+    await input.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] })
+    await page.waitForTimeout(350)
+    await input.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] })
+    await page.touchscreen.tap(x, y)
+    await expect(page.getByTestId('progress')).toHaveText('2 / 195')
+    await input.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] })
+    await page.waitForTimeout(350)
+    await input.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }, { x: x + 50, y, id: 2 }] })
+    for (let n = 1; n <= 4; n++) {await input.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x - n * 5, y, id: 1 }, { x: x + 50 + n * 5, y, id: 2 }] })}
+    await input.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    const picture = () => earth(page).screenshot({ style: '.mission-panel, .answer-cue { visibility: hidden !important; }' })
+    const beforeDrag = await picture()
+    await input.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] })
+    for (let n = 1; n <= 6; n++) {await input.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + n * 12, y, id: 1 }] })}
+    await input.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    expect(beforeDrag.equals(await picture())).toBe(false)
+    await expect(page.getByTestId('progress')).toHaveText('2 / 195')
+  } finally {await input.detach()}
+})
+
+test('real touch dragging and pinch zoom do not answer countries', async ({ page }) => {
+  await page.route('https://gibs.earthdata.nasa.gov/**', route => route.abort())
+  await mockRun(page); await open(page); await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await expect(page.getByTestId('earth-host')).toHaveAttribute('data-base-detail', 'full')
   await earth(page).scrollIntoViewIfNeeded()
   const box = (await earth(page).boundingBox())!, x = box.x + box.width / 2, y = box.y + box.height / 2
-  const before = await earth(page).screenshot()
+  const picture = () => earth(page).screenshot({ style: '.mission-panel, .answer-cue { visibility: hidden !important; }' })
+  const before = await picture()
   if (test.info().project.use.isMobile) {
     const input = await page.context().newCDPSession(page)
     await input.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] })
-    for (let i = 1; i <= 10; i++) {await input.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + i * 7, y, id: 1 }] })}
+    for (let i = 1; i <= 6; i++) {await input.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + i * 12, y, id: 1 }] })}
     await input.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    const rotated = await picture()
+    expect(before.equals(rotated)).toBe(false)
     await input.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x - 25, y, id: 1 }, { x: x + 25, y, id: 2 }] })
-    for (let i = 1; i <= 8; i++) {await input.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x - 25 - i * 4, y, id: 1 }, { x: x + 25 + i * 4, y, id: 2 }] })}
+    for (let i = 1; i <= 4; i++) {await input.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x - 25 - i * 8, y, id: 1 }, { x: x + 25 + i * 8, y, id: 2 }] })}
     await input.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    expect(rotated.equals(await picture())).toBe(false)
     await input.detach()
   } else {
     await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x + 90, y + 20, { steps: 12 }); await page.mouse.up()
     await earth(page).press('+')
   }
-  expect(before.equals(await earth(page).screenshot())).toBe(false)
+  expect(before.equals(await picture())).toBe(false)
   await expect(page.getByTestId('progress')).toHaveText('1 / 195')
   await expect(page.locator('.globe-tools')).toHaveCount(0)
 })
@@ -543,6 +614,28 @@ test('stops rendering when the full globe is idle', async ({ page }) => {
   expect(await page.evaluate(() => Reflect.get(window, 'atlasFrames'))).toBe(before)
 })
 
+
+test('hover stays visible while rotation damping settles after a drag', async ({ page }) => {
+  test.skip(!!test.info().project.use.isMobile, 'Hover requires a mouse')
+  await page.route('https://gibs.earthdata.nasa.gov/**', route => route.abort())
+  await mockRun(page); await open(page)
+  await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await expect(page.locator('#target-name')).toHaveText('Chad')
+  const box = (await earth(page).boundingBox())!, x = box.x + box.width / 2, y = box.y + box.height / 2
+  await page.mouse.move(x, y); await page.mouse.down()
+  await page.mouse.move(x + 12, y, { steps: 3 }); await page.mouse.up()
+  const samples = await earth(page).evaluate(async (canvas, point) => {
+    const values: (string | undefined)[] = []
+    for (let n = 0; n < 32; n++) {
+      if (n < 16) {canvas.dispatchEvent(new PointerEvent('pointermove', { pointerType: 'mouse', clientX: point.x, clientY: point.y }))}
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+      values.push(canvas.parentElement!.dataset.hover)
+    }
+    return values
+  }, { x: x + 12, y })
+  expect(samples).toEqual(Array(32).fill('TCD'))
+  await expect(page.getByTestId('progress')).toHaveText('1 / 195')
+})
 
 test('cross-country hover reuses its GPU mask and coalesces pointer bursts', async ({ page }) => {
   test.skip(!!test.info().project.use.isMobile, 'Hover requires a mouse')

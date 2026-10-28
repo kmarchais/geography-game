@@ -82,6 +82,8 @@ let frame = 0
 let disposed = false
 let observer: ResizeObserver | undefined
 let pointerStart: { x: number; y: number } | undefined
+let holdTimer: ReturnType<typeof setTimeout> | undefined
+let touchZoom: { id: number; x: number; y: number; lastY: number } | undefined
 let mousePosition: [number, number] | undefined
 let dragged = false
 const pointers = new Set<number>()
@@ -156,6 +158,7 @@ function render() {
     invalidate()
     scheduleDetail()
   }
+  if (mousePosition && !pointers.size && !props.disabled && !flight) {hoverCountry(countryAt(...mousePosition))}
   const focalLength = host.value!.clientHeight / (2 * Math.tan(21 * Math.PI / 180))
   const distance = camera.position.length()
   borderMesh.visible = props.borders && distance >= 1.4
@@ -316,7 +319,9 @@ defineExpose({ focus, zoom, reset, showFeedback, revealCountry, pullBack })
 function countryAt(x: number, y: number): Country | undefined {
   if (!canvas.value || !controls) {return}
   const bounds = canvas.value.getBoundingClientRect()
+  if (x < bounds.left || x > bounds.right || y < bounds.top || y > bounds.bottom) {return}
   mouse.set((x - bounds.left) / bounds.width * 2 - 1, -(y - bounds.top) / bounds.height * 2 + 1)
+  camera.updateMatrixWorld()
   raycaster.setFromCamera(mouse, camera)
   if (!raycaster.ray.intersectSphere(pickingSphere, hitPoint)) {return}
   // Markers use a fixed screen-space hit area so tiny islands remain tappable.
@@ -403,11 +408,30 @@ function onPointerLeave() {mousePosition = undefined; clearHover()}
 
 function onPointerDown(event: PointerEvent) {
   clearHover()
+  if (event.pointerType !== 'mouse') {mousePosition = undefined}
+  if (flight || props.reveal) {return}
+  cancelTouchZoom()
   pointers.add(event.pointerId)
   if (pointers.size > 1) {dragged = true}
-  else { dragged = false; pointerStart = { x: event.clientX, y: event.clientY } }
+  else {
+    dragged = false; pointerStart = { x: event.clientX, y: event.clientY }
+    if (event.pointerType === 'touch') {
+      holdTimer = setTimeout(() => {
+        holdTimer = undefined
+        if (!controls || flight || props.reveal || pointers.size !== 1 || dragged) {return}
+        touchZoom = { id: event.pointerId, x: event.clientX, y: event.clientY, lastY: event.clientY }
+        controls.enableRotate = false; dragged = true
+      }, 300)
+    }
+  }
 }
 function onPointerMove(event: PointerEvent) {
+  if (touchZoom?.id === event.pointerId) {
+    const delta = touchZoom.lastY - event.clientY
+    touchZoom.lastY = event.clientY
+    if (delta) {zoomFromPoint(touchZoom.x, touchZoom.y, Math.exp(delta * .006))}
+    return
+  }
   if (event.pointerType === 'mouse') {
     mousePosition = [event.clientX, event.clientY]
     if (!pointers.size && !props.disabled && !flight && !hoverFrame) {
@@ -417,28 +441,27 @@ function onPointerMove(event: PointerEvent) {
       })
     }
   }
-  if (pointerStart && Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) > 6) {dragged = true}
+  if (pointerStart && Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) > 6) {dragged = true; clearTimeout(holdTimer)}
   if (pointers.size) {invalidate()}
 }
 function onPointerUp(event: PointerEvent) {
   if (!pointers.has(event.pointerId)) {return}
+  cancelTouchZoom()
   pointers.delete(event.pointerId)
   if (pointerStart && !dragged && pointers.size === 0) {selectAt(event.clientX, event.clientY)}
   if (!pointers.size) {pointerStart = undefined}
 }
-function cancelPointer() { clearHover(); pointers.clear(); pointerStart = undefined; mousePosition = undefined; dragged = true }
+function cancelTouchZoom() {
+  clearTimeout(holdTimer); holdTimer = undefined; touchZoom = undefined
+  if (controls) {controls.enableRotate = true}
+}
+function cancelPointer() { cancelTouchZoom(); clearHover(); pointers.clear(); pointerStart = undefined; mousePosition = undefined; dragged = true }
 
-function onWheel(event: WheelEvent) {
-  if (flight || props.reveal) {event.preventDefault(); return}
-  clearHover()
-  if (!controls || !canvas.value) {return}
-  event.preventDefault()
-  event.stopImmediatePropagation()
+function zoomFromPoint(x: number, y: number, factor: number) {
+  if (!controls || !canvas.value || flight || props.reveal) {return}
   const bounds = canvas.value.getBoundingClientRect()
-  const [x, y] = wheelPointer([event.clientX, event.clientY], mousePosition)
   mouse.set((x - bounds.left) / bounds.width * 2 - 1, -(y - bounds.top) / bounds.height * 2 + 1)
-  const pixels = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? bounds.height : 1)
-  const distance = THREE.MathUtils.clamp(1 + (camera.position.length() - 1) * Math.exp(THREE.MathUtils.clamp(pixels, -500, 500) * .002), controls.minDistance, controls.maxDistance)
+  const distance = THREE.MathUtils.clamp(1 + (camera.position.length() - 1) * factor, controls.minDistance, controls.maxDistance)
   controls.enableDamping = false
   controls.update()
   zoomAtPointer(camera, mouse, distance)
@@ -446,6 +469,17 @@ function onWheel(event: WheelEvent) {
   controls.enableDamping = true
   scheduleDetail()
   invalidate()
+}
+
+function onWheel(event: WheelEvent) {
+  if (flight || props.reveal) {event.preventDefault(); return}
+  clearHover()
+  if (!controls || !canvas.value) {return}
+  event.preventDefault()
+  event.stopImmediatePropagation()
+  const [x, y] = wheelPointer([event.clientX, event.clientY], mousePosition)
+  const pixels = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? canvas.value.clientHeight : 1)
+  zoomFromPoint(x, y, Math.exp(THREE.MathUtils.clamp(pixels, -500, 500) * .002))
 }
 
 function onKey(event: KeyboardEvent) {
@@ -467,7 +501,7 @@ function onKey(event: KeyboardEvent) {
 }
 
 function onVisibility() {
-  if (document.hidden) { cancelAnimationFrame(frame); frame = 0 }
+  if (document.hidden) { cancelPointer(); cancelAnimationFrame(frame); frame = 0 }
   else {invalidate()}
 }
 function onContextLost(event: Event) { event.preventDefault(); emit('error', 'graphicsLost') }
@@ -488,7 +522,7 @@ onMounted(async () => {
     controls.minDistance = 1.002
     controls.maxDistance = 5
     canvas.value!.addEventListener('wheel', onWheel, { capture: true, passive: false })
-    controls.addEventListener('change', () => { clearHover(); invalidate(); scheduleDetail() })
+    controls.addEventListener('change', () => { invalidate(); scheduleDetail() })
     controls.addEventListener('start', () => { dragged = pointers.size > 1 || dragged })
     const geometry = new THREE.SphereGeometry(1, 96, 64)
     baseGeometry = geometry
@@ -544,7 +578,7 @@ onMounted(async () => {
       invalidate()
     })
     observer.observe(host.value!)
-    canvas.value!.addEventListener('pointerdown', onPointerDown)
+    canvas.value!.addEventListener('pointerdown', onPointerDown, { capture: true })
     canvas.value!.addEventListener('pointermove', onPointerMove)
     canvas.value!.addEventListener('pointerup', onPointerUp)
     canvas.value!.addEventListener('pointercancel', cancelPointer)
@@ -586,12 +620,13 @@ onMounted(async () => {
   }
 })
 
-watch(() => props.disabled, disabled => {if (disabled) {clearHover()}})
+watch(() => props.disabled, disabled => {if (disabled) {cancelPointer()}})
 watch(() => props.borders, visible => { if (borderMesh) { borderMesh.visible = visible; invalidate() } })
 watch(() => props.countries, configureCountries)
 watch([() => props.answers.length ? props.answers : undefined, () => props.paintFound, () => props.markers, () => props.reveal], updateHighlights)
 onBeforeUnmount(() => {
   disposed = true
+  cancelTouchZoom()
   cancelFlight()
   cancelAnimationFrame(frame)
   cancelAnimationFrame(hoverFrame)
@@ -603,7 +638,7 @@ onBeforeUnmount(() => {
   observer?.disconnect()
   controls?.dispose()
   document.removeEventListener('visibilitychange', onVisibility)
-  canvas.value?.removeEventListener('pointerdown', onPointerDown)
+  canvas.value?.removeEventListener('pointerdown', onPointerDown, { capture: true })
   canvas.value?.removeEventListener('pointermove', onPointerMove)
   canvas.value?.removeEventListener('pointerup', onPointerUp)
   canvas.value?.removeEventListener('pointercancel', cancelPointer)
