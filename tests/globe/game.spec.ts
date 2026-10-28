@@ -481,6 +481,7 @@ test('touch tap timing excludes the double-tap recognition delay', async ({ page
 })
 
 test('real touch dragging and pinch zoom do not answer countries', async ({ page }) => {
+  test.setTimeout(90000) // Native touch injection plus separate WebGL screenshots is slower on software-rendered tablets.
   await page.route('https://gibs.earthdata.nasa.gov/**', route => route.abort())
   await mockRun(page); await open(page); await page.getByRole('button', { name: 'Play', exact: true }).click()
   await expect(page.getByTestId('earth-host')).toHaveAttribute('data-base-detail', 'full')
@@ -793,11 +794,14 @@ test('UN-associated territory clicks identify the quiz country and consume an at
   page.on('request', request => {if (request.url().endsWith('/answers')) {requests.push(request.postDataJSON())}})
   await open(page); await page.getByRole('button', { name: 'Play', exact: true }).click()
   await expect(page.locator('#target-name')).toHaveText('Chad')
+  for (let n = 0; n < 3; n++) {await earth(page).press('ArrowRight')}
   const box = (await earth(page).boundingBox())!, camera = new PerspectiveCamera(42, box.width / box.height, .01, 100)
-  camera.position.fromArray(coordinateToVector([18, 16])).multiplyScalar(3.1)
+  camera.position.fromArray(coordinateToVector([30.6, 16])).multiplyScalar(3.1)
   camera.lookAt(0, 0, 0); camera.updateMatrixWorld()
   const point = new Vector3(...coordinateToVector([46, 9])).multiplyScalar(1.0003).project(camera)
   const x = box.x + (point.x + 1) * box.width / 2, y = box.y + (1 - point.y) * box.height / 2
+  expect(x).toBeGreaterThan(box.x); expect(x).toBeLessThan(box.x + box.width)
+  expect(y).toBeGreaterThan(box.y); expect(y).toBeLessThan(box.y + box.height)
   if (test.info().project.use.isMobile) {await page.touchscreen.tap(x, y)} else {
     await page.mouse.move(x, y)
     await expect(page.getByTestId('earth-host')).toHaveAttribute('data-hover', 'SOM')
