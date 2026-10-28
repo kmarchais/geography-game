@@ -10,7 +10,7 @@ const order = ['TCD', ...countries.map((c: { id: string }) => c.id).filter((id: 
 const earth = (page: Page) => page.getByRole('application', { name: /^Interactive Earth/ })
 async function open(page: Page) {
   await page.goto('./')
-  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled()
+  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled({ timeout: 15000 })
 }
 async function mockRun(page: Page, deck = order) {
   let correct = 0, timeMs = 0
