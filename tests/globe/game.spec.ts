@@ -73,6 +73,90 @@ test('minimal start, desktop ranking, and globe edges fill the viewport below th
   }
 })
 
+test('starting a run keeps the unchanged globe idle', async ({ page }) => {
+  await page.route('https://gibs.earthdata.nasa.gov/**', route => route.abort())
+  await mockRun(page); await open(page)
+  await expect(page.getByTestId('earth-host')).toHaveAttribute('data-base-detail', 'full')
+  // Finish the idle geometry deadline and its frame before isolating Play.
+  await page.waitForTimeout(2100)
+  await page.evaluate(() => {
+    const state = window as unknown as { playDraws: number }
+    state.playDraws = 0
+    const draw = WebGL2RenderingContext.prototype.drawElements
+    WebGL2RenderingContext.prototype.drawElements = function(...args) {state.playDraws++; return draw.apply(this, args)}
+  })
+  let release!: () => void
+  const pending = new Promise<void>(resolve => {release = resolve})
+  await page.route('**/atlas-api/runs?*', async route => {await pending; await route.fulfill({ json: { id: '11111111-1111-4111-8111-111111111111', deck: order } })})
+  try {
+    await page.getByRole('button', { name: 'Play', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Starting…', exact: true })).toHaveAttribute('aria-busy', 'true')
+    await expect(page.locator('.play-label')).toHaveText('Starting…')
+    await page.evaluate(async () => {for (let n = 0; n < 8; n++) {await new Promise(resolve => requestAnimationFrame(resolve))}})
+    await expect(page.getByRole('button', { name: 'Starting…', exact: true })).toBeDisabled()
+  } finally {release()}
+  await expect(page.locator('#target-name')).toHaveText('Chad')
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+  expect(await page.evaluate(() => (window as unknown as { playDraws: number }).playDraws)).toBe(0)
+})
+
+test('Play restores a changed home view before accepting the first guess', async ({ page }) => {
+  await mockRun(page); await open(page)
+  for (let n = 0; n < 6; n++) {await earth(page).press('ArrowLeft')}
+  await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await expect(page.locator('#target-name')).toHaveText('Chad')
+  await earth(page).press('Enter')
+  await expect(page.getByTestId('progress')).toHaveText('2 / 195')
+})
+
+test('Stop confirmation preserves the run or returns home without saving a partial score', async ({ page }) => {
+  await mockRun(page); await open(page)
+  await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await expect(page.locator('#target-name')).toHaveText('Chad')
+  await earth(page).press('Enter')
+  await expect(page.getByTestId('progress')).toHaveText('2 / 195')
+  const stop = page.getByRole('button', { name: 'Stop run', exact: true })
+  const box = (await stop.boundingBox())!
+  expect(box.height).toBeGreaterThanOrEqual(44)
+  expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width)
+  await stop.click()
+  const dialog = page.getByRole('dialog', { name: 'Stop run', exact: true })
+  await expect(dialog.getByRole('heading')).toHaveText('Stop this run?')
+  await dialog.getByRole('button', { name: 'Continue', exact: true }).click()
+  await expect(dialog).not.toBeVisible()
+  await expect(page.getByTestId('progress')).toHaveText('2 / 195')
+  await stop.click(); await page.keyboard.press('Escape')
+  await expect(dialog).not.toBeVisible()
+  await expect(page.getByTestId('progress')).toHaveText('2 / 195')
+  await stop.click()
+  await page.screenshot({ path: test.info().outputPath('stop-confirmation.png') })
+  await dialog.getByRole('button', { name: 'Stop run', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled()
+  await expect(stop).toHaveCount(0)
+  await expect(page.locator('#target-name')).toHaveCount(0)
+  expect(await page.evaluate(() => localStorage.getItem('atlas-runs-v4'))).toBeNull()
+  await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await expect(page.getByTestId('progress')).toHaveText('1 / 195')
+  await expect(page.getByTestId('accuracy')).toHaveText('0.0%')
+})
+
+test('Stop cancels a reveal without advancing a subsequent run', async ({ page }) => {
+  await page.route('https://gibs.earthdata.nasa.gov/**', route => route.abort())
+  await mockRun(page); await open(page)
+  await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await expect(page.locator('#target-name')).toHaveText('Chad')
+  for (let n = 0; n < 6; n++) {await earth(page).press('ArrowLeft')}
+  for (let n = 0; n < 3; n++) {await earth(page).press('Enter')}
+  await expect(page.getByTestId('earth-host')).toHaveAttribute('data-reveal', 'TCD')
+  await page.getByRole('button', { name: 'Stop run', exact: true }).click()
+  await page.getByRole('dialog', { name: 'Stop run', exact: true }).getByRole('button', { name: 'Stop run', exact: true }).click()
+  await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await expect(page.locator('#target-name')).toHaveText('Chad')
+  await page.waitForTimeout(1100) // The cancelled reveal's asynchronous continuation must stay cancelled.
+  await expect(page.getByTestId('progress')).toHaveText('1 / 195')
+  await expect(page.getByTestId('earth-host')).not.toHaveAttribute('data-reveal')
+})
+
 test('close-zoom dragging redraws even below the controls change threshold', async ({ page }) => {
   await page.route('https://gibs.earthdata.nasa.gov/**', route => route.abort())
   await page.addInitScript(() => {
@@ -210,7 +294,7 @@ test('a real country tap scores and advances instantly without Next', async ({ p
   await expect(page.getByRole('button', { name: 'Skip' })).toBeDisabled()
   await page.clock.runFor(400)
   await expect(page.getByTestId('timer')).toHaveText(paused!)
-  await page.clock.runFor(700)
+  await page.clock.runFor(300)
   const screenshot = test.info().outputPath('atlas-country-reveal.png')
   await page.screenshot({ path: screenshot })
   await test.info().attach('Correct territory revealed in red', { path: screenshot, contentType: 'image/png' })
@@ -226,10 +310,10 @@ test('a real country tap scores and advances instantly without Next', async ({ p
   }, `data:image/png;base64,${painted.toString('base64')}`)
   const revealedRed = await redPixels(painted)
   expect(revealedRed).toBeGreaterThan(50)
-  await page.clock.runFor(750)
+  await page.clock.runFor(300)
   await expect(page.getByTestId('timer')).toHaveText(paused!)
   await expect(page.getByRole('button', { name: 'Skip' })).toBeDisabled()
-  await page.clock.runFor(450)
+  await page.clock.runFor(400)
   await expect(page.getByTestId('progress')).toHaveText('3 / 195')
   await expect(page.getByTestId('accuracy')).toHaveText('0.5%')
   await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled()

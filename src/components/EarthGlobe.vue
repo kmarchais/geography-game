@@ -43,7 +43,7 @@ import { coordinateToVector, createCountryPicker, unwrapRing, vectorToCoordinate
 import type { Answer } from '@/globe/game'
 import { answerColor, countryAngularSize, islandBlend, rotationSpeed, revealDistance } from '@/globe/detail'
 import { countryOutlines, countrySurface, outlineBatches, outlineHorizon, GlobeImagery } from '@/globe/terrain'
-import { wheelPointer, zoomAtPointer } from '@/globe/navigation'
+import { wheelPointer, zoomAtPointer, orbitPosition } from '@/globe/navigation'
 import { t, language, formatCoordinate, type MessageKey } from '@/globe/i18n'
 
 const props = defineProps<{ countries: Country[]; borders: boolean; paintFound: boolean; markers: boolean; answers: Answer[]; reveal?: string; disabled: boolean }>()
@@ -101,7 +101,7 @@ let fillCanvas: HTMLCanvasElement
 let fillTexture: THREE.CanvasTexture
 let fillCountries: Country[] | undefined
 const paintedFills = new Map<string, string>()
-let flight: { start: THREE.Vector3; turn: THREE.Quaternion; startDistance: number; endDistance: number; lift: number; started: number; duration: number; resolve: () => void } | undefined
+let flight: { start: THREE.Vector3; turn: THREE.Quaternion; endDistance: number; started: number; duration: number; resolve: () => void } | undefined
 function cancelFlight() {
   const current = flight
   flight = undefined
@@ -112,17 +112,15 @@ function flyTo(coordinate: Coordinate, distance: number, duration: number): Prom
   cancelFlight()
   if (!controls) {return Promise.resolve()}
   controls.enableDamping = false; controls.update(); controls.enabled = false
-  const start = camera.position.clone().normalize(), end = new THREE.Vector3(...coordinateToVector(coordinate))
-  const startDistance = camera.position.length()
+  const start = camera.position.clone(), end = new THREE.Vector3(...coordinateToVector(coordinate))
   return new Promise(resolve => {
-    flight = { start, turn: new THREE.Quaternion().setFromUnitVectors(start, end), startDistance, endDistance: distance,
-      lift: start.angleTo(end) > Math.PI / 12 ? Math.max(2.4, startDistance, distance) : 0,
+    flight = { start, turn: new THREE.Quaternion().setFromUnitVectors(start.clone().normalize(), end), endDistance: distance,
       started: performance.now(), duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : duration, resolve }
     invalidate()
   })
 }
-function revealCountry(country: Country) {return flyTo(country.center, revealDistance(country, camera.aspect), 900)}
-function pullBack() {return flyTo(vectorToCoordinate(camera.position), 3.1, 600)}
+function revealCountry(country: Country) {return flyTo(country.center, revealDistance(country, camera.aspect), 650)}
+function pullBack() {return flyTo(vectorToCoordinate(camera.position), 3.1, 450)}
 
 function invalidate() {
   if (!frame && !disposed && !document.hidden) {frame = requestAnimationFrame(render)}
@@ -133,10 +131,7 @@ function render() {
   if (disposed || !renderer) {return}
   if (flight) {
     const current = flight, progress = Math.min(1, (performance.now() - current.started) / current.duration)
-    const ease = (n: number) => {const t = THREE.MathUtils.clamp(n, 0, 1); return t * t * (3 - 2 * t)}
-    const turn = ease(current.lift ? (progress - .18) / .55 : progress)
-    const distance = current.lift ? progress < .18 ? THREE.MathUtils.lerp(current.startDistance, current.lift, ease(progress / .18)) : THREE.MathUtils.lerp(current.lift, current.endDistance, ease((progress - .73) / .27)) : THREE.MathUtils.lerp(current.startDistance, current.endDistance, ease(progress))
-    camera.position.copy(current.start).applyQuaternion(new THREE.Quaternion().slerp(current.turn, turn)).multiplyScalar(distance)
+    camera.position.copy(orbitPosition(current.start, current.turn, current.endDistance, progress))
     camera.lookAt(0, 0, 0)
     if (progress === 1) {positionCoordinates.value = vectorToCoordinate(camera.position); cancelFlight()} else {invalidate()}
   }
@@ -296,10 +291,12 @@ function updateHighlights() {
 function focus(coordinate: Coordinate, distance = 2.8) {
   cancelFlight()
   if (!controls) {return}
+  const position = new THREE.Vector3(...coordinateToVector(coordinate)).multiplyScalar(distance)
+  if (!frame && camera.position.distanceToSquared(position) < 1e-18) {return}
   // Flush residual drag damping before a hint or reset changes the camera.
   controls.enableDamping = false
   controls.update()
-  camera.position.fromArray(coordinateToVector(coordinate)).multiplyScalar(distance)
+  camera.position.copy(position)
   camera.lookAt(0, 0, 0)
   controls.update()
   controls.enableDamping = true
@@ -592,7 +589,7 @@ onMounted(async () => {
 watch(() => props.disabled, disabled => {if (disabled) {clearHover()}})
 watch(() => props.borders, visible => { if (borderMesh) { borderMesh.visible = visible; invalidate() } })
 watch(() => props.countries, configureCountries)
-watch(() => [props.answers, props.paintFound, props.markers, props.reveal], updateHighlights)
+watch([() => props.answers.length ? props.answers : undefined, () => props.paintFound, () => props.markers, () => props.reveal], updateHighlights)
 onBeforeUnmount(() => {
   disposed = true
   cancelFlight()

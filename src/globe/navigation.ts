@@ -1,4 +1,10 @@
-import { PerspectiveCamera, Vector2, Vector3, Raycaster, Sphere, Quaternion } from 'three'
+import { PerspectiveCamera, Vector2, Vector3, Raycaster, Sphere, Quaternion, MathUtils } from 'three'
+
+/** Rotate along the shortest arc and zoom on the same smooth timeline. */
+export function orbitPosition(start: Vector3, turn: Quaternion, distance: number, progress: number): Vector3 {
+  const eased = MathUtils.smootherstep(progress, 0, 1)
+  return start.clone().normalize().applyQuaternion(new Quaternion().slerp(turn, eased)).multiplyScalar(MathUtils.lerp(start.length(), distance, eased))
+}
 
 /** Chrome rounds wheel coordinates, while pointer events retain subpixel precision. */
 export function wheelPointer(event: [number, number], pointer?: [number, number]): [number, number] {

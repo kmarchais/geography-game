@@ -1,7 +1,29 @@
 import { expect, it } from 'vitest'
-import { PerspectiveCamera, Raycaster, Sphere, Vector2, Vector3 } from 'three'
+import { PerspectiveCamera, Raycaster, Sphere, Vector2, Vector3, Quaternion } from 'three'
 import { coordinateToVector } from './geography'
-import { wheelPointer, zoomAtPointer } from './navigation'
+import { wheelPointer, zoomAtPointer, orbitPosition } from './navigation'
+
+it('rotates and zooms together without a staged pause or zoom overshoot', () => {
+  for (const [from, to] of [[3.1, 1.2], [1.002, 1.2], [1.2, 3.1]] as const) {
+    const start = new Vector3(from, 0, 0), direction = new Vector3(0, 0, -1)
+    const turn = new Quaternion().setFromUnitVectors(start.clone().normalize(), direction)
+    expect(orbitPosition(start, turn, to, 0).distanceTo(start)).toBeLessThan(1e-10)
+    expect(orbitPosition(start, turn, to, 1).distanceTo(direction.clone().multiplyScalar(to))).toBeLessThan(1e-10)
+    let previous = 0
+    for (const progress of [.05, .1, .25, .5, .75, .9, .95]) {
+      const position = orbitPosition(start, turn, to, progress)
+      const rotated = start.angleTo(position) / (Math.PI / 2)
+      const zoomed = (position.length() - from) / (to - from)
+      expect(rotated).toBeGreaterThan(previous)
+      expect(rotated).toBeLessThan(1)
+      expect(zoomed).toBeCloseTo(rotated, 10)
+      expect(position.length()).toBeGreaterThan(Math.min(from, to))
+      expect(position.length()).toBeLessThan(Math.max(from, to))
+      previous = rotated
+    }
+    expect(start.toArray()).toEqual([from, 0, 0])
+  }
+})
 
 it('keeps fractional pointer precision for rounded wheel events without reusing a stale pointer', () => {
   expect(wheelPointer([803, 360], [803.1268, 360.7336])).toEqual([803.1268, 360.7336])

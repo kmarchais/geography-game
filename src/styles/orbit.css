@@ -25,6 +25,7 @@ body { margin: 0; background: #090f13; }
 .header-actions { position: relative; display: flex; gap: 18px; align-items: center; }
 .quiet-button, .icon-button { color: #b6c5cb; background: none; border: 0; min-height: 44px; padding: 10px; }
 .quiet-button:hover, .icon-button:hover { color: var(--mint); }
+.stop-run-button { border: 1px solid var(--line); border-radius: 8px; padding-inline: 14px; }
 .icon-button { width: 44px; border: 1px solid var(--line); border-radius: 50%; font-size: 18px !important; }
 .orbit-workspace { position: relative; display: grid; grid-template-columns: 1fr; flex: 1 1 0; min-height: 0; }
 .mission-panel { position: absolute; z-index: 2; left: calc(50% + var(--sidebar) / 2); top: 50%; transform: translate(-50%, -50%); padding: 0; width: min(340px, calc(100% - 32px)); max-height: calc(100% - 32px); overflow: auto; pointer-events: none; }

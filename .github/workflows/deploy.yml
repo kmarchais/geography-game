@@ -88,7 +88,7 @@ jobs:
         if: github.event.inputs.target == 'interface'
         run: |
           bun run build-only
-          bunx playwright test --config playwright.globe.config.ts --grep 'minimal start|Google entry|guest avatar|profile picture|guest results|connected play prefills|empty nickname|leaving the result|both shared and local|menu reports|failed report|data errors retry|French system language|cross-country hover|mouse hover|Andorra is unpainted|UN-associated'
+          bunx playwright test --config playwright.globe.config.ts --grep 'minimal start|Google entry|guest avatar|profile picture|guest results|connected play prefills|empty nickname|leaving the result|both shared and local|menu reports|failed report|data errors retry|French system language|cross-country hover|mouse hover|Andorra is unpainted|UN-associated|starting a run keeps|changed home view|Stop confirmation|Stop cancels|a real country tap'
       - name: Gameplay regressions across browser profiles
         if: github.event.inputs.target == 'gameplay'
         timeout-minutes: 10

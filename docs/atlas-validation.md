@@ -2,6 +2,16 @@
 
 The Atlas challenge replaces Orbit's expedition settings. Historical Orbit results in `validation.md` do not verify the new mode or ranking service.
 
+## Play, Stop, and reveal transitions, 28 October 2026
+
+Play was invalidating an unchanged globe through both its camera reset and the new empty answer array. The regression recorded 18 unnecessary WebGL draw calls. The local headless reproduction recorded a 134 ms long task and a 133 ms frame gap with an instant run API. Removing those invalidations left zero globe draw calls, no recorded long task, and a maximum frame gap of about 17 ms. A simulated 500 ms API delay also left frames responsive; the button displays the translated starting state while waiting. These are controlled local measurements, not a physical-device frame-rate claim. Evidence is `.local/play-baseline.json`, `.local/play-traced-baseline.json`, `.local/play-fixed.json`, `.local/play-slow-api-fixed.json`, `.local/play-regression-red.log`, and `.local/play-regression-green.log`.
+
+The existing confirmation dialog now serves a visible header Stop button and the menu action. Continue or Escape leaves the current run intact; confirming returns home without saving a partial personal score. The generation guard and flight cancellation prevent an old reveal from advancing a new run. Stop labels, confirmation, and starting feedback use the English and French catalogs.
+
+Reveal motion previously separated zoom-out, rotation, and zoom-in into distinct stages. Rotation and distance now use the same smooth interpolation, without the temporary zoom-out. The reveal takes 650 ms, holds the red country for 250 ms, and pulls back over 450 ms, about 1.35 seconds total instead of 2.05. Reduced-motion handling remains supported. The real browser test verifies red territory, paused timing, pullback, and advancement within the shorter sequence. The initial shortened-deadline regression failed against the old motion. A geometry test checks simultaneous angular/radial progress, bounded zoom, and exact endpoints from both whole-globe and close-up views.
+
+Local checks passed: type-checking, scoped lint, 654 unit tests with 26 legacy skips, six desktop interaction checks, and the separate starting/French confirmation checks. Evidence is `.local/play-stop-types.log`, `.local/play-stop-lint.log`, `.local/play-stop-unit.log`, `.local/play-stop-reveal-browser.log`, `.local/play-stop-final-focused.log`, and `.local/reveal-smooth-red.log`. Production builds, cross-profile browser checks, and publication remain pending. The phone has not been used for this revision.
+
 ## Hover performance, 28 October 2026
 
 The desktop reproduction crossed Chad, Nigeria, Niger, Libya, Sudan, and South Sudan twice. The previous implementation uploaded twelve 4096 × 2048 RGBA canvases, 384 MiB in total, and rebuilt 16,014 canvas path segments. Disabling those uploads alone reduced the local headless sweep from about 2.85 to 2.18 seconds. These are local comparison timings, not a physical-device frame-rate claim.

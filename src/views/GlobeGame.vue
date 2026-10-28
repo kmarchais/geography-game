@@ -12,6 +12,14 @@
         alt=""
       >Atlas</a>
       <div class="header-actions">
+        <button
+          v-if="playing"
+          class="quiet-button stop-run-button"
+          :aria-label="t('stopRun')"
+          @click="stopDialog?.showModal()"
+        >
+          {{ t('stop') }}
+        </button>
         <GoogleLoginButton
           ref="login"
           :disabled="playing || starting || saving || savingResult"
@@ -110,9 +118,9 @@
           <button
             v-if="playing"
             role="menuitem"
-            @click="menu?.hidePopover(); restart?.showModal()"
+            @click="menu?.hidePopover(); stopDialog?.showModal()"
           >
-            {{ t('restart') }}
+            {{ t('stopRun') }}
           </button>
           <button
             role="menuitem"
@@ -256,6 +264,7 @@
           <button
             class="primary-button play-button"
             :aria-label="starting ? t('starting') : canPlay ? t('play') : t('loadingEarth')"
+            :aria-busy="starting"
             :disabled="!canPlay || starting || authBusy"
             @click="start"
           >
@@ -272,7 +281,7 @@
               class="play-spinner"
               aria-hidden="true"
             />
-            <span class="play-label">{{ t('play') }}</span>
+            <span class="play-label">{{ starting ? t('starting') : t('play') }}</span>
           </button>
         </section>
         <section
@@ -472,21 +481,22 @@
       </p>
     </dialog>
     <dialog
-      ref="restart"
-      :aria-label="t('restartDialog')"
+      ref="stopDialog"
+      :aria-label="t('stopDialog')"
       class="orbit-dialog"
     >
-      <h2>{{ t('restartConfirm') }}</h2><p>{{ t('restartNotice') }}</p><div class="dialog-actions">
+      <h2>{{ t('stopConfirm') }}</h2><p>{{ t('stopNotice') }}</p><div class="dialog-actions">
         <button
           class="secondary-button"
-          @click="restart?.close()"
+          autofocus
+          @click="stopDialog?.close()"
         >
           {{ t('continue') }}
         </button><button
           class="primary-button"
           @click="reset"
         >
-          {{ t('restart') }}
+          {{ t('stopRun') }}
         </button>
       </div>
     </dialog>
@@ -514,7 +524,7 @@ const scoresDialog = ref<InstanceType<typeof ScoresDialog>>()
 const statisticsDialog = ref<InstanceType<typeof StatisticsDialog>>()
 const countries = shallowRef<Country[]>([]), session = shallowRef<Session>()
 const quizCountries = computed(() => countries.value.filter(country => country.playable).sort((a, b) => countryName(a).localeCompare(countryName(b), language.value)))
-const globe = ref<InstanceType<typeof EarthGlobe>>(), help = ref<HTMLDialogElement>(), restart = ref<HTMLDialogElement>()
+const globe = ref<InstanceType<typeof EarthGlobe>>(), help = ref<HTMLDialogElement>(), stopDialog = ref<HTMLDialogElement>()
 const countryCount = ref<HTMLElement>()
 const menu = ref<HTMLElement>(), bugReport = ref<InstanceType<typeof BugReportDialog>>()
 const login = ref<InstanceType<typeof GoogleLoginButton>>()
@@ -715,7 +725,7 @@ async function answer(country: Country | null | undefined) {
     revealing.value = true; revealCountryId.value = previous.id
     await nextTick()
     await globe.value?.revealCountry(previous)
-    await new Promise(resolve => setTimeout(resolve, matchMedia('(prefers-reduced-motion: reduce)').matches ? 100 : 550))
+    await new Promise(resolve => setTimeout(resolve, matchMedia('(prefers-reduced-motion: reduce)').matches ? 100 : 250))
     if (!mounted || current !== generation) {return}
     await globe.value?.pullBack()
     if (!mounted || current !== generation) {return}
@@ -734,7 +744,7 @@ function viewportChanged() {
     if (bounds.right > innerWidth || bounds.bottom > innerHeight) {countryCount.value.hidePopover()}
   }
 }
-function reset() {savingResult.value = false; generation++; runId = undefined; pendingClaim.value = undefined; claimMessage.value = ''; session.value = undefined; starting.value = false; saving.value = false; feedbackKind.value = ''; revealing.value = false; revealCountryId.value = undefined; restart.value?.close(); globe.value?.reset()}
+function reset() {savingResult.value = false; generation++; runId = undefined; pendingClaim.value = undefined; claimMessage.value = ''; session.value = undefined; starting.value = false; saving.value = false; feedbackKind.value = ''; revealing.value = false; revealCountryId.value = undefined; stopDialog.value?.close(); globe.value?.reset()}
 onMounted(() => {
   try {
     const saved = localStorage.getItem('atlas-player-id')
