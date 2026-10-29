@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises'
+import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { gzipSync } from 'node:zlib'
 import { createCountryPicker } from '../src/globe/geography.ts'
@@ -83,6 +83,8 @@ const json=JSON.stringify(expanded)
 await writeFile('public/data/globe/regions.json',json)
 await writeFile('public/data/globe/regions.json.gz',gzipSync(json,{level:9}))
 await writeFile('public/data/globe/regions-sources.json',JSON.stringify({source:'https://data-gis.unep-wcmc.org/server/rest/services/Hosted/UN_Boundaries/MapServer/5',sourceSha256:createHash('sha256').update(rawBytes).digest('hex'),base:'countries.json',method:'Existing country polygons split by separated-territory bounds and explicit island bounds. Missing territories use simplified separated UN polygons.',customSplits:custom,attribution:'Boundaries and names do not imply UN endorsement or acceptance.'},null,2)+'\n')
+await mkdir('server/data', {recursive:true})
+await writeFile('server/data/regional-catalog.json', JSON.stringify({dataset:createHash('sha256').update(json).digest('hex'),countries:expanded.map(({id,small,playable,regions})=>({id,small,playable,regions}))})+'\n')
 console.log(expanded.length,Buffer.byteLength(json),Object.fromEntries(['americas','europe','africa','asia','oceania'].map(r=>[r,expanded.filter(c=>c.regions.includes(r)).length])))
 
 

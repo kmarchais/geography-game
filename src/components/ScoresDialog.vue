@@ -6,7 +6,7 @@
     :aria-label="t('scores')"
   >
     <div class="profile-heading">
-      <h2>{{ t('scores') }}</h2>
+      <h2>{{ t('scores') }}<span v-if="mode !== 'world'"> · {{ t(mode) }}</span></h2>
       <button
         class="quiet-button"
         :aria-label="t('close')"
@@ -166,9 +166,12 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref, watch } from 'vue'
 import { account } from '@/globe/auth'
-import { readPersonalScores, percentage, compareScores, type RankedScore } from '@/globe/game'
+import { readPersonalScores, personalScoreKey, percentage, compareScores, type RankedScore } from '@/globe/game'
 import { rankingRequest, validRanking } from '@/globe/ranking'
 import { t, formatPercent, formatScoreTime, formatPoints, formatFinishedAt } from '@/globe/i18n'
+import type { GameMode } from '@/globe/regions'
+const props = withDefaults(defineProps<{mode?: GameMode; total?: number}>(), {mode: 'world', total: 195})
+const modeQuery = () => props.mode === 'world' ? '' : `&mode=${props.mode}`
 const dialog = ref<HTMLDialogElement>(), personal = ref(false), rows = ref<RankedScore[]>([]), loading = ref(false), failed = ref(false)
 const more = ref(false)
 let generation = 0
@@ -179,20 +182,20 @@ async function load(append = false) {
   try {
     let values: RankedScore[]
     if (personal.value) {
-      const key = account.value ? `atlas-runs-v4:${account.value.id}` : 'atlas-runs-v4'
+      const key = personalScoreKey(props.mode, account.value?.id)
       if (account.value) {
         try {
-          values = validRanking(await rankingRequest(`/scores/me?rules=4&offset=${offset}`, undefined, 1))
+          values = validRanking(await rankingRequest(`/scores/me?rules=4&offset=${offset}${modeQuery()}`, undefined, 1), props.total)
           if (current === generation) {more.value = values.length === 20}
         }
-        catch (error) {if (append) {throw error} values = readPersonalScores(localStorage, key)}
-      } else {values = readPersonalScores(localStorage, key)}
-    } else {values = validRanking(await rankingRequest('/leaderboard?rules=4', undefined, 1))}
+        catch (error) {if (append) {throw error} values = readPersonalScores(localStorage, key, props.total)}
+      } else {values = readPersonalScores(localStorage, key, props.total)}
+    } else {values = validRanking(await rankingRequest(`/leaderboard?rules=4${modeQuery()}`, undefined, 1), props.total)}
     if (current === generation) {rows.value = (append ? [...rows.value, ...values] : values).sort(compareScores)}
   } catch {if (current === generation) {failed.value = true; more.value = append}}
   finally {if (current === generation) {loading.value = false}}
 }
-watch([personal, () => account.value?.id], () => {if (dialog.value?.open) {load()}})
+watch([personal, () => account.value?.id, () => props.mode], () => {if (dialog.value?.open) {load()}})
 defineExpose({ open: () => {dialog.value?.showModal(); load()} })
 onBeforeUnmount(() => {generation++})
 </script>

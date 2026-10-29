@@ -2,8 +2,9 @@ import flags from './flag-codes.json'
 import type { Country } from './geography'
 export const REGION_MODES = ['americas', 'europe', 'africa', 'asia', 'oceania'] as const
 export type RegionMode = typeof REGION_MODES[number]
-export type GameMode = 'world' | 'explore' | RegionMode
+export type GameMode = 'world' | RegionMode
 export interface RegionalCountry extends Country { regions: RegionMode[]; nameFr?: string; flag?: string }
+export const MODE_CENTERS: Record<GameMode, [number, number]> = {world: [18, 16], americas: [-85, 10], europe: [25, 52], africa: [20, 0], asia: [95, 35], oceania: [170, -15]}
 const codes: Record<string, string> = flags
 export function flagCode(country: Country | undefined): string | undefined {return country ? (country as RegionalCountry).flag || codes[country.id] : undefined}
 export function regionalCountries(countries: RegionalCountry[], mode: RegionMode): Country[] {

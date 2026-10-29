@@ -23,7 +23,7 @@
         <GoogleLoginButton
           ref="login"
           :disabled="playing || starting || saving || savingResult"
-          :show-sign-in="(!practice && session?.phase === 'complete') || (authMenuOpen && !playing && !starting)"
+          :show-sign-in="session?.phase === 'complete' || (authMenuOpen && !playing && !starting)"
           :button-target="session?.phase === 'complete' ? '#result-google-entry' : '#menu-google-entry'"
           @busy="authBusy = $event"
           @connected="connected"
@@ -174,7 +174,6 @@
           </div>
         </div>
         <section
-          v-if="!practice"
           class="ranking-panel"
           aria-labelledby="ranking-title"
         >
@@ -237,7 +236,7 @@
             :disabled="(!playing && !exploring) || revealing || loadingModes"
             @select="answer"
             @tap-pending="setTapPending"
-            @ready="ready = true"
+            @ready="ready = true; orientRegion()"
             @error="error = $event"
             @warning="warning = $event"
           />
@@ -272,7 +271,7 @@
           aria-labelledby="explore-name"
         >
           <div class="mission-topline">
-            {{ t('explore') }}
+            {{ t('explore') }} · {{ modeLabel }}
           </div>
           <h1
             id="explore-name"
@@ -291,9 +290,9 @@
           </p>
           <button
             class="quiet-button"
-            @click="modesDialog?.showModal()"
+            @click="endExplore"
           >
-            {{ t('gameModes') }}
+            {{ t('backToStart') }}
           </button>
         </section>
         <section
@@ -326,11 +325,18 @@
             <span class="play-label">{{ starting ? t('starting') : t('play') }}</span>
           </button>
           <button
+            class="secondary-button explore-start-button"
+            :disabled="!canPlay || starting || authBusy"
+            @click="beginExplore"
+          >
+            {{ t('explore') }}
+          </button>
+          <button
             v-if="practice"
             class="quiet-button selected-mode"
             @click="modesDialog?.showModal()"
           >
-            {{ modeLabel }} · {{ t('practiceMode') }}
+            {{ modeLabel }}
           </button>
         </section>
         <section
@@ -420,14 +426,7 @@
           >
             {{ revealing ? t('revealingCountry') : feedback }}
           </p>
-          <button
-            v-if="!playing && practice"
-            class="primary-button"
-            @click="reset"
-          >
-            {{ t('done') }}
-          </button>
-          <template v-else-if="!playing">
+          <template v-if="!playing">
             <div
               id="result-google-entry"
               class="result-google-entry"
@@ -478,7 +477,7 @@
             </p>
           </template>
           <p
-            v-if="unranked && !practice"
+            v-if="unranked"
             class="service-note"
             role="status"
           >
@@ -524,14 +523,6 @@
           {{ t(region) }}
         </button>
       </div>
-      <button
-        class="secondary-button explore-mode-option"
-        :disabled="loadingModes"
-        :aria-pressed="exploring"
-        @click="chooseMode('explore')"
-      >
-        {{ t('explore') }}
-      </button>
       <details v-if="practice">
         <summary>{{ t('territoryList') }} · {{ quizCountries.length }}</summary><ul class="country-list">
           <li
@@ -555,10 +546,14 @@
         {{ t('regionsLoadFailed') }}
       </p>
     </dialog>
-    <ScoresDialog ref="scoresDialog" />
+    <ScoresDialog
+      ref="scoresDialog"
+      :mode="mode"
+      :total="modeTotal"
+    />
     <StatisticsDialog
       ref="statisticsDialog"
-      :countries="countries"
+      :countries="worldCountries"
     />
     <BugReportDialog
       ref="bugReport"
@@ -637,7 +632,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
-import { REGION_MODES, flagCode, fetchRegionalCountries, regionalCountries, regionalDeck, type GameMode, type RegionalCountry } from '@/globe/regions'
+import { MODE_CENTERS, REGION_MODES, flagCode, fetchRegionalCountries, regionalCountries, regionalDeck, type GameMode, type RegionalCountry } from '@/globe/regions'
 import EarthGlobe from '@/components/EarthGlobe.vue'
 import GoogleLoginButton from '@/components/auth/GoogleLoginButton.vue'
 import ProfileAvatar from '@/components/auth/ProfileAvatar.vue'
@@ -646,7 +641,7 @@ import StatisticsDialog from '@/components/StatisticsDialog.vue'
 import ScoresDialog from '@/components/ScoresDialog.vue'
 import { account, refreshAccount, type AtlasUser } from '@/globe/auth'
 import { fetchCountries, type Country } from '@/globe/geography'
-import { answerCountry, compareScores, correctCount, sessionScore, outcomeCounts, createSession, isGuestId, percentage, readPersonalScores, readCountryStats, recordCountryStat, ORDER_POLICY, type Answer, type RankedScore, type Session } from '@/globe/game'
+import { answerCountry, compareScores, correctCount, sessionScore, outcomeCounts, createSession, isGuestId, percentage, readPersonalScores, personalScoreKey, readCountryStats, recordCountryStat, ORDER_POLICY, type Answer, type RankedScore, type Session } from '@/globe/game'
 import { rankingRequest, validRanking, runSource } from '@/globe/ranking'
 import { saveRecording, type RunRecording, type AnswerRecording, type NetworkIssue, type RequestIssue } from '@/globe/recording'
 import { t, language, countryName, formatPercent, formatTime, formatScoreTime, formatPoints, type MessageKey } from '@/globe/i18n'
@@ -658,9 +653,15 @@ const scoresDialog = ref<InstanceType<typeof ScoresDialog>>()
 const statisticsDialog = ref<InstanceType<typeof StatisticsDialog>>()
 const worldCountries = shallowRef<Country[]>([]), regionalData = shallowRef<RegionalCountry[]>([])
 const mode = ref<GameMode>('world'), modesDialog = ref<HTMLDialogElement>(), loadingModes = ref(false), modesError = ref(false)
-const exploring = computed(() => mode.value === 'explore')
+const exploring = ref(false)
 const exploredCountry = shallowRef<Country>()
-const countries = computed(() => mode.value === 'world' ? worldCountries.value : mode.value === 'explore' ? regionalData.value : regionalCountries(regionalData.value, mode.value))
+const countries = computed(() => mode.value === 'world' ? worldCountries.value : regionalCountries(regionalData.value, mode.value))
+const deckCountries = computed(() => mode.value === 'world' ? countries.value : regionalDeck(countries.value))
+const modeTotal = computed(() => deckCountries.value.length || 195)
+const modeQuery = computed(() => mode.value === 'world' ? '' : `&mode=${mode.value}`)
+function orientRegion() {globe.value?.focus(MODE_CENTERS[mode.value], 3.1)}
+function beginExplore() {if (!canPlay.value || starting.value) {return} globe.value?.cancelInput(); exploring.value = true; exploredCountry.value = undefined; orientRegion()}
+function endExplore() {globe.value?.cancelInput(); exploring.value = false; exploredCountry.value = undefined; orientRegion()}
 const practice = computed(() => mode.value !== 'world')
 const modeLabel = computed(() => mode.value === 'world' ? t('worldMode') : t(mode.value))
 async function chooseMode(next: GameMode) {
@@ -671,12 +672,12 @@ async function chooseMode(next: GameMode) {
       regionalData.value = await fetchRegionalCountries(base, new AbortController().signal)
       regionalDataset = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(regionalData.value))))].map(n => n.toString(16).padStart(2, '0')).join('')
     }
-    reset(); exploredCountry.value = undefined; mode.value = next; modesDialog.value?.close()
+    reset(); mode.value = next; modesDialog.value?.close(); rankings.value = []; await nextTick(); orientRegion(); void refreshRanking()
   } catch {modesError.value = true}
   finally {loadingModes.value = false}
 }
 const session = shallowRef<Session>()
-const quizCountries = computed(() => (practice.value && !exploring.value ? regionalDeck(countries.value) : countries.value).filter(country => country.playable).sort((a, b) => countryName(a).localeCompare(countryName(b), language.value)))
+const quizCountries = computed(() => deckCountries.value.filter(country => country.playable).sort((a, b) => countryName(a).localeCompare(countryName(b), language.value)))
 const globe = ref<InstanceType<typeof EarthGlobe>>(), help = ref<HTMLDialogElement>(), stopDialog = ref<HTMLDialogElement>()
 const countryCount = ref<HTMLElement>()
 const menu = ref<HTMLElement>(), bugReport = ref<InstanceType<typeof BugReportDialog>>()
@@ -822,8 +823,9 @@ async function flushRecording(entry = recording) {
 
 async function refreshRanking() {
   if (native) {return}
-  try { const rows = validRanking(await rankingRequest<unknown>('/leaderboard?rules=4')); if (mounted) {rankings.value = rows; rankingError.value = ''} }
-  catch { if (mounted) {rankingError.value = 'rankingUnavailable'} }
+  const selectedMode = mode.value, total = modeTotal.value
+  try { const rows = validRanking(await rankingRequest<unknown>(`/leaderboard?rules=4${modeQuery.value}`), total); if (mounted && mode.value === selectedMode) {rankings.value = rows; rankingError.value = ''} }
+  catch { if (mounted && mode.value === selectedMode) {rankingError.value = 'rankingUnavailable'} }
 }
 async function load() {
   controller?.abort(); controller = new AbortController()
@@ -844,24 +846,22 @@ async function start() {
   pendingClaim.value = undefined; claimMessage.value = ''; published.value = false; revealing.value = false; revealCountryId.value = undefined
   runId = undefined; verifiedTime.value = undefined; feedbackKind.value = ''; unranked.value = false; saving.value = false; locallySaved.value = false; uploadUnconfirmed.value = false
   let next: Session
-  const entry: RecordingSession = { key: account.value ? `atlas-recordings-v1:${account.value.id}` : 'atlas-recordings-v1', data: { id: crypto.randomUUID(), mode: mode.value === 'world' || mode.value === 'explore' ? 'world-countries' : mode.value, rules: 4, dataset: practice.value ? regionalDataset : dataset, orderPolicy: ORDER_POLICY, build: import.meta.env.VITE_ATLAS_BUILD || 'dev', source: runSource(), authAtStart: account.value ? 'google' : 'guest', startedAt: Date.now(), status: 'active', attempts: [], networkIssues: [] } }
+  const entry: RecordingSession = { key: account.value ? `atlas-recordings-v1:${account.value.id}` : 'atlas-recordings-v1', data: { id: crypto.randomUUID(), mode: mode.value === 'world' ? 'world-countries' : mode.value, rules: 4, dataset: practice.value ? regionalDataset : dataset, orderPolicy: ORDER_POLICY, build: import.meta.env.VITE_ATLAS_BUILD || 'dev', source: runSource(), authAtStart: account.value ? 'google' : 'guest', startedAt: Date.now(), status: 'active', attempts: [], networkIssues: [] } }
   recording = entry; persistRecording(entry)
-  if (practice.value) {
-    next = createSession(regionalDeck(countries.value))
-  } else {try {
+  try {
     if (!navigator.onLine) {issuesFor('start', entry)({ kind: 'network', status: 0, attempt: 0 }); throw new Error('Offline')}
-    const result = await rankingRequest<{ id: string; deck: string[]; claimToken?: string; orderPolicy?: string }>('/runs?rules=4', { source: entry.data.source, build: entry.data.build, dataset, ignoreAnswered: true }, 0, issuesFor('start', entry))
+    const result = await rankingRequest<{ id: string; deck: string[]; claimToken?: string; orderPolicy?: string }>(`/runs?rules=4${modeQuery.value}`, { source: entry.data.source, build: entry.data.build, dataset: entry.data.dataset, ignoreAnswered: true }, 0, issuesFor('start', entry))
     if (!isGuestId(result.id) || !Array.isArray(result.deck)) {throw new Error('Invalid run')}
-    next = createSession(countries.value, result.deck)
+    next = createSession(deckCountries.value, result.deck)
     runId = result.id; rankingError.value = ''
     entry.data.serverId = result.id; entry.data.orderPolicy = result.orderPolicy || 'random-v1'; entry.claimToken = result.claimToken
     if (isGuestId(result.claimToken)) {pendingClaim.value = { id: result.id, claimToken: result.claimToken }}
-  } catch { next = createSession(countries.value); unranked.value = true }}
+  } catch { next = createSession(deckCountries.value); unranked.value = true }
   persistRecording(entry)
   if (!mounted || current !== generation) {return}
   session.value = next; elapsed.value = 0; startedAt = Date.now(); starting.value = false
   upload = Promise.resolve()
-  globe.value?.reset()
+  orientRegion()
 }
 function tick() { if (playing.value && !revealing.value && !waitingForTap.value) {elapsed.value = Math.max(elapsed.value, Date.now() - startedAt)} }
 function setTapPending(pending: boolean) {if (pending) {tick()} waitingForTap.value = pending}
@@ -878,11 +878,10 @@ function skipAnswer(event: MouseEvent) {
   answer(null, 0, view ? { ...view, coordinate: null, hit: 'skip', input, priorResolved: null } : undefined)
 }
 function saveLocal(finishedAt: number) {
-  if (practice.value) {return}
   try {
-    const key = account.value ? `atlas-runs-v4:${account.value.id}` : 'atlas-runs-v4'
-    const rows = readPersonalScores(localStorage, key)
-    rows.push({ id: crypto.randomUUID(), name: account.value?.name || playerName.value.trim(), correct: found.value, score: sessionScore(session.value!), ...outcomeCounts(session.value!.answers), skipped: session.value!.answers.filter(answer => answer.outcome === 'skipped').length, total: 195, timeMs: session.value!.lastCorrectMs, finishedAt })
+    const key = personalScoreKey(mode.value, account.value?.id)
+    const rows = readPersonalScores(localStorage, key, modeTotal.value)
+    rows.push({ id: crypto.randomUUID(), name: account.value?.name || playerName.value.trim(), correct: found.value, score: sessionScore(session.value!), ...outcomeCounts(session.value!.answers), skipped: session.value!.answers.filter(answer => answer.outcome === 'skipped').length, total: session.value!.deck.length, timeMs: session.value!.lastCorrectMs, finishedAt })
     rows.sort(compareScores)
     localStorage.setItem(key, JSON.stringify(rows.slice(0, 20)))
     locallySaved.value = true
@@ -897,7 +896,7 @@ function sendAnswer(index: number, attempt: number, guess: string | null, elapse
     if (result.complete) {await flushRecording(entry)}
     if (!mounted || current !== generation) {return}
     if (result.complete) {
-      if (result.correct !== correctCount(next) || result.total !== 195 || result.timeMs !== next.lastCorrectMs || result.score !== sessionScore(next) || Object.entries(outcomeCounts(next.answers)).some(([key, value]) => Reflect.get(result, key) !== value)) {throw new Error('Invalid result')}
+      if (result.correct !== correctCount(next) || result.total !== next.deck.length || result.timeMs !== next.lastCorrectMs || result.score !== sessionScore(next) || Object.entries(outcomeCounts(next.answers)).some(([key, value]) => Reflect.get(result, key) !== value)) {throw new Error('Invalid result')}
       verifiedTime.value = result.timeMs; saving.value = false
       await refreshRanking()
       if (account.value) {await refreshAccount()}
@@ -954,7 +953,7 @@ function viewportChanged() {
     if (bounds.right > innerWidth || bounds.bottom > innerHeight) {countryCount.value.hidePopover()}
   }
 }
-function reset() {recording = undefined; savingResult.value = false; generation++; runId = undefined; pendingClaim.value = undefined; claimMessage.value = ''; session.value = undefined; starting.value = false; saving.value = false; feedbackKind.value = ''; revealing.value = false; revealCountryId.value = undefined; stopDialog.value?.close(); globe.value?.reset()}
+function reset() {exploring.value = false; exploredCountry.value = undefined; recording = undefined; savingResult.value = false; generation++; runId = undefined; pendingClaim.value = undefined; claimMessage.value = ''; session.value = undefined; starting.value = false; saving.value = false; feedbackKind.value = ''; revealing.value = false; revealCountryId.value = undefined; stopDialog.value?.close(); orientRegion()}
 onMounted(() => {
   try {
     const saved = localStorage.getItem('atlas-player-id')

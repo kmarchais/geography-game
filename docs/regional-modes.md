@@ -1,12 +1,12 @@
-# Regional practice
+# Regional game modes
 
-The home screen still opens the 195-country world challenge. Menu / Game modes selects Americas, Europe, Africa, Asia or Oceania / Pacific. The same globe, scoring, three attempts, skips and reveal behavior apply. Regional results use their actual deck size. Regional runs are practice only, retained in the last ten device recordings, separate from world scores and aggregate statistics. They do not yet have a personal or public ranking.
+The home screen still opens the 195-country world challenge. Menu / Game modes selects Americas, Europe, Africa, Asia or Oceania / Pacific. The same globe, scoring, three attempts, skips and reveal behavior apply. Regional results use their actual deck size. Each mode has its own public ranking with one best run per player and its own personal history. Regional runs use the shared online start, ordered answers, result verification, optional Google claim and guest publication flow. Offline runs remain local. The last ten device recordings are retained separately from scores. World country statistics remain separate from regional runs.
 
 ## First territory list
 
 There are 257 distinct selectable features. Americas has 59 targets, Europe 66, Africa 60, Asia 52 and Oceania / Pacific 29. The current list appears under Help and in the mode menu after selecting a region. This is a first list of countries, dependencies and selected detached islands, rather than every island worldwide.
 
-Russia, Turkey, Armenia, Azerbaijan, Georgia and Cyprus appear in both Europe and Asia. Greenland appears in Europe and the Americas. The Canary Islands and Madeira appear in Europe and Africa. The Azores appear in Europe. Regional practice keeps the whole globe selectable, so a country outside the chosen region is still a wrong guess.
+Russia, Turkey, Armenia, Azerbaijan, Georgia and Cyprus appear in both Europe and Asia. Greenland appears in Europe and the Americas. The Canary Islands and Madeira appear in Europe and Africa. The Azores appear in Europe. Regional games keep the whole globe selectable, so a country outside the chosen region is still a wrong guess.
 
 Separate island prompts include Alaska, Hawaii, Galápagos, Easter Island, Juan Fernández, the Canaries, Madeira, the Azores, Corsica, Sardinia, Sicily, the Balearics, Crete and Jan Mayen. The UN separated-territory list adds Caribbean dependencies, French Guiana, Saint Pierre and Miquelon, the Falklands, Greenland, the Faroes, Åland, the Channel Islands, Isle of Man, Gibraltar, Svalbard, Réunion, Mayotte, Saint Helena, Pacific dependencies and Asian territories. Antarctica and southern uninhabited territories except South Georgia are excluded from this first version. Sovereignty is not inferred from quiz membership.
 
@@ -28,4 +28,12 @@ Validation passed: 666 unit tests, with 26 legacy skips; 34 API tests, with one 
 
 Open [the standalone territory review](regional-territory-review.html) to check every region and its actual game flag artwork. Checkboxes, notes, language selection and search work offline. Review choices are saved in browser storage and can be exported as JSON. They do not edit the game automatically. Regenerate with `node scripts/build-regional-review.mjs`; it uses the current regional snapshot and renders the game SVG flags to embedded 64 by 48 pixel thumbnails. Bermuda is already in the Americas with its own BM flag.
 
-Explore in the mode menu uses all 257 selectable territories. Mouse, touch, island markers and keyboard selection show a name and its bundled flag. There is no timed run, scoring, score storage or gameplay API write.
+Explore is below Play in every mode, and is absent from the mode menu. It uses the selected mode map. Mouse, touch, island markers and keyboard selection show a name and its bundled flag. Back to start returns to the same mode. There is no timed run, scoring, score storage or gameplay API write. Selecting a region and entering Play or Explore centers the globe on that region.
+
+## Ranking API and compatibility
+
+The shared API accepts `mode=americas`, `europe`, `africa`, `asia` or `oceania` with rules 4 on run creation, the public leaderboard and personal history. Missing mode retains the world challenge. Existing stored runs without a mode remain world runs. Mode and server deck are retained in run state, so no schema change or data rewrite is required. Claims and publication use the same ownership checks across modes. Score totals use the selected deck. World statistics are not updated by regional runs or claims. A compact server catalog records IDs, sizes, regional membership and the full regional dataset hash, avoiding a second geometry snapshot in the Free Worker bundle.
+
+Deploy the updated API before the regional ranking client. Preserve current database and Google/CORS bindings; no database migration is needed. Earlier device-only regional recordings cannot be retroactively added to public rankings, because their answers were never validated by the server.
+
+Current change validation: 666 unit passes with 26 legacy skips; mode-specific Node API checks include all five regional decks, public deduplication, account claims and personal history; two isolated Cloudflare runtime cases passed. Browser checks exercised regional completion/publication, personal history, Explore and camera coordinates on desktop, phone and tablet. Existing world history, full 195-answer publication, idle rendering and start layout also passed. Types, scoped lint, web build and Worker dry-run passed. The Worker bundle remains under the Free size limit. This change is not deployed. Initial test runs caught an Explore pointer-event issue and a mobile dialog focus race in the test fixture; both were corrected before the successful checks.

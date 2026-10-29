@@ -47,3 +47,28 @@ test('Cloudflare runtime persists ordered answers, retries, rankings and profile
   assert.ok(statistics.every(row => row.green + row.yellow + row.orange + row.red === row.played))
   assert.deepEqual(statistics.reduce((a, row) => a.map((n, i) => n + row[['green','yellow','orange','red'][i]]), [0,0,0,0]), [1,1,1,192])
 })
+
+
+test('Cloudflare runtime keeps regional decks and published scores separate from World', { skip: !base }, async () => {
+  assert.equal(new URL(base).hostname, '127.0.0.1', 'Never write synthetic runs to production')
+  const post = (path, body) => fetch(`${base}/atlas-api${path}`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)})
+  const before = await (await fetch(`${base}/atlas-api/stats?rules=4`)).json()
+  const created = await post('/runs?rules=4&mode=oceania', {ignoreAnswered: true})
+  assert.equal(created.status, 201)
+  const run = await created.json()
+  assert.equal(run.deck.length, 29)
+  assert.ok(run.deck.includes('USA-HI'))
+  for (let index = 0; index < run.deck.length; index++) {
+    const response = await post(`/runs/${run.id}/answers`, {index, attempt: 0, guess: run.deck[index], elapsedMs: 0})
+    assert.equal(response.status, 200)
+    const result = await response.json()
+    assert.equal(result.total, 29)
+    assert.equal(result.complete, index === 28)
+  }
+  assert.equal((await post(`/runs/${run.id}/publish`, {claimToken: run.claimToken, playerId: randomUUID(), name: 'Regional worker'})).status, 200)
+  const regional = await (await fetch(`${base}/atlas-api/leaderboard?rules=4&mode=oceania`)).json()
+  assert.ok(regional.some(row => row.id === run.id && row.score === 29 && row.total === 29))
+  const world = await (await fetch(`${base}/atlas-api/leaderboard?rules=4`)).json()
+  assert.ok(!world.some(row => row.id === run.id))
+  assert.deepEqual(await (await fetch(`${base}/atlas-api/stats?rules=4`)).json(), before)
+})

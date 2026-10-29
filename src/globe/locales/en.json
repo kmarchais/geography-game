@@ -174,11 +174,12 @@
   "africa": "Africa",
   "asia": "Asia",
   "oceania": "Oceania / Pacific",
-  "regionalIntro": "Practice countries, islands and territories. Regions can overlap. These runs stay on this device and do not enter the world ranking.",
+  "regionalIntro": "Choose a region to play. Each mode has its own public ranking and personal run history. Explore is available below Play in every mode.",
   "loadingRegions": "Loading regional geography…",
   "regionsLoadFailed": "Regional geography could not be loaded. Try again.",
   "territoryList": "Included countries and territories",
   "explore": "Explore",
   "explorePrompt": "Click a country or territory",
-  "exploreHelp": "Discover all 257 places. Click land or a small-island marker to see its name and flag. No timer or score."
+  "exploreHelp": "Click land or a small-island marker to discover names and flags. No timer or score.",
+  "backToStart": "Back to start"
 }

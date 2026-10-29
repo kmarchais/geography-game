@@ -37,11 +37,12 @@ export function validScoreOutcomes(value: RankedScore): boolean {
   return [green, yellow, orange, red].every(n => Number.isSafeInteger(n) && n! >= 0) && green! + yellow! + orange! + red! === value.total && green! + yellow! + orange! === value.correct && value.score === weightedScore({ green: green!, yellow: yellow!, orange: orange!, red: red! })
 }
 export function isGuestId(value: unknown): value is string { return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value) }
-export function readPersonalScores(storage: Pick<Storage, 'getItem'>, key = 'atlas-runs-v4'): RankedScore[] {
+export function personalScoreKey(mode = 'world', userId?: string): string {return ['atlas-runs-v4', ...(mode === 'world' ? [] : [mode]), ...(userId ? [userId] : [])].join(':')}
+export function readPersonalScores(storage: Pick<Storage, 'getItem'>, key = 'atlas-runs-v4', total = 195): RankedScore[] {
   try {
     const rows = JSON.parse(storage.getItem(key) || '[]')
     if (!Array.isArray(rows)) {return []}
-    return rows.filter(s => s && typeof s.name === 'string' && s.name.length <= 24 && s.total === 195 && Number.isInteger(s.correct) && s.correct >= 0 && s.correct <= 195 && Number.isFinite(s.timeMs) && s.timeMs >= 0 && s.timeMs <= 86400000 && validScoreOutcomes(s) && (key.includes('v3') || s.score !== undefined)).map((s, i) => ({ ...s, id: typeof s.id === 'string' ? s.id : `local-${i}` })).sort(compareScores).slice(0, 20)
+    return rows.filter(s => s && typeof s.name === 'string' && s.name.length <= 24 && s.total === total && Number.isInteger(s.correct) && s.correct >= 0 && s.correct <= total && Number.isFinite(s.timeMs) && s.timeMs >= 0 && s.timeMs <= 86400000 && validScoreOutcomes(s) && (key.includes('v3') || s.score !== undefined)).map((s, i) => ({ ...s, id: typeof s.id === 'string' ? s.id : `local-${i}` })).sort(compareScores).slice(0, 20)
   } catch {return []}
 }
 

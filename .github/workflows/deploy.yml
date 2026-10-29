@@ -104,7 +104,7 @@ jobs:
         if: github.event.inputs.target == 'web'
         run: |
           bun run build-only
-          bunx playwright test --config playwright.globe.config.ts --grep 'exploration mode'
+          bunx playwright test --config playwright.globe.config.ts --grep 'exploration mode|regional rankings|region selection orients'
       - name: Upload browser report
         if: always()
         uses: actions/upload-artifact@v4

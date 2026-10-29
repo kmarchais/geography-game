@@ -174,11 +174,12 @@
   "africa": "Afrique",
   "asia": "Asie",
   "oceania": "Océanie / Pacifique",
-  "regionalIntro": "Entraînez-vous sur les pays, îles et territoires. Certaines régions se chevauchent. Ces parties restent sur cet appareil et ne comptent pas au classement mondial.",
+  "regionalIntro": "Choisissez une région. Chaque mode a son classement public et son historique personnel. Explorer est disponible sous Jouer dans chaque mode.",
   "loadingRegions": "Chargement des régions…",
   "regionsLoadFailed": "Impossible de charger les régions. Réessayez.",
   "territoryList": "Pays et territoires inclus",
   "explore": "Explorer",
   "explorePrompt": "Cliquez sur un pays ou un territoire",
-  "exploreHelp": "Découvrez les 257 lieux. Cliquez sur la terre ou le repère d’une petite île pour afficher son nom et son drapeau. Sans chronomètre ni score."
+  "exploreHelp": "Cliquez sur la terre ou le repère d’une petite île pour découvrir son nom et son drapeau. Sans chronomètre ni score.",
+  "backToStart": "Retour au départ"
 }

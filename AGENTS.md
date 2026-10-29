@@ -27,7 +27,7 @@
 - `src/globe/geography.ts`, `detail.ts`, and `terrain.ts`: geography, picking, and imagery.
 - `src/components/EarthGlobe.vue`: Three.js rendering and input.
 - `public/atlas.svg`: editable icon source. Run `bun run icons` to regenerate web and Android images. Keep the themed Android vector consistent.
-- Regional practice lives under Menu / Game modes using the separate regions.json snapshot. Keep the default world challenge and public ranking unchanged. Regional recordings stay on device and never submit to the world API or country statistics. Allow documented region overlaps and bundle local SVG flags for offline prompts.
+- Regional game modes live under Menu / Game modes using the separate regions.json snapshot. Keep world scores and regional scores in separate public rankings and personal history. Each public ranking shows one best run per player. Regional runs use the shared ownership, server deck and scoring checks; keep world country statistics separate. Explore is an unscored activity below Play for every selected mode, never an entry in the mode menu. Orient the globe to the selected region before Play and Explore. Allow documented region overlaps and bundle local SVG flags for offline prompts.
 - Retired game modes remain in source. Do not expose them or rewrite them as part of an unrelated fix.
 
 ## Account and data integrity
