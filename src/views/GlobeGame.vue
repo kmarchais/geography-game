@@ -23,7 +23,7 @@
         <GoogleLoginButton
           ref="login"
           :disabled="playing || starting || saving || savingResult"
-          :show-sign-in="session?.phase === 'complete' || (authMenuOpen && !playing && !starting)"
+          :show-sign-in="(!practice && session?.phase === 'complete') || (authMenuOpen && !playing && !starting)"
           :button-target="session?.phase === 'complete' ? '#result-google-entry' : '#menu-google-entry'"
           @busy="authBusy = $event"
           @connected="connected"
@@ -103,6 +103,13 @@
           </button>
           <button
             role="menuitem"
+            :disabled="playing || starting || saving || savingResult"
+            @click="menu?.hidePopover(); modesDialog?.showModal()"
+          >
+            {{ t('gameModes') }}
+          </button>
+          <button
+            role="menuitem"
             :disabled="playing || starting"
             @click="menu?.hidePopover(); scoresDialog?.open()"
           >
@@ -144,8 +151,9 @@
         :aria-label="t('sharedRanking')"
       >
         <div class="challenge-heading">
-          <h1>{{ t('countriesTitle') }}</h1>
+          <h1>{{ practice ? modeLabel : t('countriesTitle') }}</h1>
           <button
+            v-if="!practice"
             class="count-info-button"
             :aria-label="t('whyCountries')"
             aria-describedby="country-count-info"
@@ -166,6 +174,7 @@
           </div>
         </div>
         <section
+          v-if="!practice"
           class="ranking-panel"
           aria-labelledby="ranking-title"
         >
@@ -225,7 +234,7 @@
             :markers="true"
             :answers="session?.answers ?? noAnswers"
             :reveal="revealCountryId"
-            :disabled="!playing || revealing"
+            :disabled="(!playing && !exploring) || revealing || loadingModes"
             @select="answer"
             @tap-pending="setTapPending"
             @ready="ready = true"
@@ -255,10 +264,40 @@
       </section>
       <div
         class="mission-panel"
-        :class="{ 'is-playing': playing, 'is-revealing': revealing }"
+        :class="{ 'is-playing': playing || exploring, 'is-revealing': revealing }"
       >
         <section
-          v-if="!session && !error"
+          v-if="exploring && !error"
+          class="mission-card exploration-card"
+          aria-labelledby="explore-name"
+        >
+          <div class="mission-topline">
+            {{ t('explore') }}
+          </div>
+          <h1
+            id="explore-name"
+            aria-live="polite"
+          >
+            <img
+              v-if="flagCode(exploredCountry)"
+              class="target-flag"
+              :src="`${base}data/globe/flags/${flagCode(exploredCountry)}.svg`"
+              alt=""
+              aria-hidden="true"
+            >{{ exploredCountry ? countryName(exploredCountry) : t('explorePrompt') }}
+          </h1>
+          <p class="muted small">
+            {{ t('exploreHelp') }}
+          </p>
+          <button
+            class="quiet-button"
+            @click="modesDialog?.showModal()"
+          >
+            {{ t('gameModes') }}
+          </button>
+        </section>
+        <section
+          v-else-if="!session && !error"
           class="start-card"
         >
           <h1 class="sr-only">
@@ -286,6 +325,13 @@
             />
             <span class="play-label">{{ starting ? t('starting') : t('play') }}</span>
           </button>
+          <button
+            v-if="practice"
+            class="quiet-button selected-mode"
+            @click="modesDialog?.showModal()"
+          >
+            {{ modeLabel }} · {{ t('practiceMode') }}
+          </button>
         </section>
         <section
           v-else-if="session"
@@ -298,7 +344,13 @@
               <span>{{ t('find') }}</span><span data-testid="progress">{{ session.answers.length + 1 }} / {{ session.deck.length }}</span>
             </div>
             <h1 id="target-name">
-              {{ countryName(target) }}
+              <img
+                v-if="flagCode(target)"
+                class="target-flag"
+                :src="`${base}data/globe/flags/${flagCode(target)}.svg`"
+                alt=""
+                aria-hidden="true"
+              >{{ countryName(target) }}
             </h1>
             <p
               class="attempts-left"
@@ -333,7 +385,7 @@
             v-else
             class="result-metrics"
           >
-            <strong data-testid="correct-total">{{ formatPoints(session ? sessionScore(session) : 0) }}/195</strong>
+            <strong data-testid="correct-total">{{ formatPoints(session ? sessionScore(session) : 0) }}/{{ session?.deck.length }}</strong>
             <strong data-testid="accuracy">{{ formatPercent(accuracy) }}</strong>
             <strong
               data-testid="timer"
@@ -368,7 +420,14 @@
           >
             {{ revealing ? t('revealingCountry') : feedback }}
           </p>
-          <template v-else>
+          <button
+            v-if="!playing && practice"
+            class="primary-button"
+            @click="reset"
+          >
+            {{ t('done') }}
+          </button>
+          <template v-else-if="!playing">
             <div
               id="result-google-entry"
               class="result-google-entry"
@@ -419,7 +478,7 @@
             </p>
           </template>
           <p
-            v-if="unranked"
+            v-if="unranked && !practice"
             class="service-note"
             role="status"
           >
@@ -428,6 +487,74 @@
         </section>
       </div>
     </main>
+    <dialog
+      ref="modesDialog"
+      class="orbit-dialog modes-dialog"
+      :aria-label="t('gameModes')"
+    >
+      <form method="dialog">
+        <button
+          class="dialog-close"
+          :aria-label="t('close')"
+        >
+          ×
+        </button>
+      </form>
+      <h2>{{ t('gameModes') }}</h2>
+      <p class="muted">
+        {{ t('regionalIntro') }}
+      </p>
+      <div class="mode-options">
+        <button
+          class="secondary-button"
+          :disabled="loadingModes"
+          :aria-pressed="mode === 'world'"
+          @click="chooseMode('world')"
+        >
+          {{ t('worldMode') }}
+        </button>
+        <button
+          v-for="region in REGION_MODES"
+          :key="region"
+          class="secondary-button"
+          :disabled="loadingModes"
+          :aria-pressed="mode === region"
+          @click="chooseMode(region)"
+        >
+          {{ t(region) }}
+        </button>
+      </div>
+      <button
+        class="secondary-button explore-mode-option"
+        :disabled="loadingModes"
+        :aria-pressed="exploring"
+        @click="chooseMode('explore')"
+      >
+        {{ t('explore') }}
+      </button>
+      <details v-if="practice">
+        <summary>{{ t('territoryList') }} · {{ quizCountries.length }}</summary><ul class="country-list">
+          <li
+            v-for="country in quizCountries"
+            :key="country.id"
+          >
+            {{ countryName(country) }}
+          </li>
+        </ul>
+      </details>
+      <p
+        v-if="loadingModes"
+        role="status"
+      >
+        {{ t('loadingRegions') }}
+      </p>
+      <p
+        v-if="modesError"
+        role="alert"
+      >
+        {{ t('regionsLoadFailed') }}
+      </p>
+    </dialog>
     <ScoresDialog ref="scoresDialog" />
     <StatisticsDialog
       ref="statisticsDialog"
@@ -450,11 +577,11 @@
           ×
         </button>
       </form>
-      <h2>{{ t('findAll') }}</h2>
+      <h2>{{ practice ? modeLabel : t('findAll') }}</h2>
       <details>
-        <summary>{{ t('whyList') }}</summary>
-        <p>{{ t('membership') }}</p>
-        <p>
+        <summary>{{ practice ? t('territoryList') : t('whyList') }}</summary>
+        <p>{{ practice ? t('regionalIntro') : t('membership') }}</p>
+        <p v-if="!practice">
           <a
             href="https://www.un.org/about-us/member-states"
             target="_blank"
@@ -475,7 +602,9 @@
         </ul>
       </details>
       <p>{{ t('instructions') }}</p>
-      <p>{{ t('rankingInstructions') }}</p>
+      <p v-if="!practice">
+        {{ t('rankingInstructions') }}
+      </p>
       <p class="muted small">
         {{ t('keyboardInstructions') }}
       </p>
@@ -508,6 +637,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
+import { REGION_MODES, flagCode, fetchRegionalCountries, regionalCountries, regionalDeck, type GameMode, type RegionalCountry } from '@/globe/regions'
 import EarthGlobe from '@/components/EarthGlobe.vue'
 import GoogleLoginButton from '@/components/auth/GoogleLoginButton.vue'
 import ProfileAvatar from '@/components/auth/ProfileAvatar.vue'
@@ -526,8 +656,27 @@ const native = import.meta.env.VITE_NATIVE === 'true'
 const authMenuOpen = ref(false)
 const scoresDialog = ref<InstanceType<typeof ScoresDialog>>()
 const statisticsDialog = ref<InstanceType<typeof StatisticsDialog>>()
-const countries = shallowRef<Country[]>([]), session = shallowRef<Session>()
-const quizCountries = computed(() => countries.value.filter(country => country.playable).sort((a, b) => countryName(a).localeCompare(countryName(b), language.value)))
+const worldCountries = shallowRef<Country[]>([]), regionalData = shallowRef<RegionalCountry[]>([])
+const mode = ref<GameMode>('world'), modesDialog = ref<HTMLDialogElement>(), loadingModes = ref(false), modesError = ref(false)
+const exploring = computed(() => mode.value === 'explore')
+const exploredCountry = shallowRef<Country>()
+const countries = computed(() => mode.value === 'world' ? worldCountries.value : mode.value === 'explore' ? regionalData.value : regionalCountries(regionalData.value, mode.value))
+const practice = computed(() => mode.value !== 'world')
+const modeLabel = computed(() => mode.value === 'world' ? t('worldMode') : t(mode.value))
+async function chooseMode(next: GameMode) {
+  if (playing.value || starting.value || loadingModes.value) {return}
+  loadingModes.value = true; modesError.value = false
+  try {
+    if (next !== 'world' && !regionalData.value.length) {
+      regionalData.value = await fetchRegionalCountries(base, new AbortController().signal)
+      regionalDataset = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(regionalData.value))))].map(n => n.toString(16).padStart(2, '0')).join('')
+    }
+    reset(); exploredCountry.value = undefined; mode.value = next; modesDialog.value?.close()
+  } catch {modesError.value = true}
+  finally {loadingModes.value = false}
+}
+const session = shallowRef<Session>()
+const quizCountries = computed(() => (practice.value && !exploring.value ? regionalDeck(countries.value) : countries.value).filter(country => country.playable).sort((a, b) => countryName(a).localeCompare(countryName(b), language.value)))
 const globe = ref<InstanceType<typeof EarthGlobe>>(), help = ref<HTMLDialogElement>(), stopDialog = ref<HTMLDialogElement>()
 const countryCount = ref<HTMLElement>()
 const menu = ref<HTMLElement>(), bugReport = ref<InstanceType<typeof BugReportDialog>>()
@@ -653,7 +802,7 @@ let controller: AbortController | undefined, timer: ReturnType<typeof setInterva
 let rankingTimer: ReturnType<typeof setInterval> | undefined
 let upload: Promise<void> = Promise.resolve(), mounted = true
 let playerId: string = crypto.randomUUID()
-let dataset = 'unknown'
+let dataset = 'unknown', regionalDataset = 'unknown'
 let recording: { data: RunRecording; key: string; claimToken?: string } | undefined
 type RecordingSession = NonNullable<typeof recording>
 function persistRecording(entry = recording) {
@@ -683,21 +832,23 @@ async function load() {
   try {
     const data = await fetchCountries(base, controller.signal)
     try {dataset = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(data))))].map(n => n.toString(16).padStart(2, '0')).join('')} catch {dataset = 'unknown'}
-    if (mounted) {countries.value = data}
+    if (mounted) {worldCountries.value = data}
   }
   catch (e) {if (mounted && !(e instanceof DOMException && e.name === 'AbortError')) {const status = e instanceof Error ? /HTTP (\d+)/.exec(e.message)?.[1] : undefined; errorStatus.value = status || ''; error.value = status ? 'countryLoadHttp' : 'countryLoadFail'}}
 }
 async function start() {
-  if (!canPlay.value || starting.value || authBusy.value) {return}
+  if (exploring.value || !canPlay.value || starting.value || authBusy.value) {return}
   globe.value?.cancelInput()
   starting.value = true
   const current = ++generation
   pendingClaim.value = undefined; claimMessage.value = ''; published.value = false; revealing.value = false; revealCountryId.value = undefined
   runId = undefined; verifiedTime.value = undefined; feedbackKind.value = ''; unranked.value = false; saving.value = false; locallySaved.value = false; uploadUnconfirmed.value = false
   let next: Session
-  const entry: RecordingSession = { key: account.value ? `atlas-recordings-v1:${account.value.id}` : 'atlas-recordings-v1', data: { id: crypto.randomUUID(), mode: 'world-countries', rules: 4, dataset, orderPolicy: ORDER_POLICY, build: import.meta.env.VITE_ATLAS_BUILD || 'dev', source: runSource(), authAtStart: account.value ? 'google' : 'guest', startedAt: Date.now(), status: 'active', attempts: [], networkIssues: [] } }
+  const entry: RecordingSession = { key: account.value ? `atlas-recordings-v1:${account.value.id}` : 'atlas-recordings-v1', data: { id: crypto.randomUUID(), mode: mode.value === 'world' || mode.value === 'explore' ? 'world-countries' : mode.value, rules: 4, dataset: practice.value ? regionalDataset : dataset, orderPolicy: ORDER_POLICY, build: import.meta.env.VITE_ATLAS_BUILD || 'dev', source: runSource(), authAtStart: account.value ? 'google' : 'guest', startedAt: Date.now(), status: 'active', attempts: [], networkIssues: [] } }
   recording = entry; persistRecording(entry)
-  try {
+  if (practice.value) {
+    next = createSession(regionalDeck(countries.value))
+  } else {try {
     if (!navigator.onLine) {issuesFor('start', entry)({ kind: 'network', status: 0, attempt: 0 }); throw new Error('Offline')}
     const result = await rankingRequest<{ id: string; deck: string[]; claimToken?: string; orderPolicy?: string }>('/runs?rules=4', { source: entry.data.source, build: entry.data.build, dataset, ignoreAnswered: true }, 0, issuesFor('start', entry))
     if (!isGuestId(result.id) || !Array.isArray(result.deck)) {throw new Error('Invalid run')}
@@ -705,7 +856,7 @@ async function start() {
     runId = result.id; rankingError.value = ''
     entry.data.serverId = result.id; entry.data.orderPolicy = result.orderPolicy || 'random-v1'; entry.claimToken = result.claimToken
     if (isGuestId(result.claimToken)) {pendingClaim.value = { id: result.id, claimToken: result.claimToken }}
-  } catch { next = createSession(countries.value); unranked.value = true }
+  } catch { next = createSession(countries.value); unranked.value = true }}
   persistRecording(entry)
   if (!mounted || current !== generation) {return}
   session.value = next; elapsed.value = 0; startedAt = Date.now(); starting.value = false
@@ -727,6 +878,7 @@ function skipAnswer(event: MouseEvent) {
   answer(null, 0, view ? { ...view, coordinate: null, hit: 'skip', input, priorResolved: null } : undefined)
 }
 function saveLocal(finishedAt: number) {
+  if (practice.value) {return}
   try {
     const key = account.value ? `atlas-runs-v4:${account.value.id}` : 'atlas-runs-v4'
     const rows = readPersonalScores(localStorage, key)
@@ -753,6 +905,7 @@ function sendAnswer(index: number, attempt: number, guess: string | null, elapse
   }).catch(() => { if (mounted && current === generation) {unranked.value = true; uploadUnconfirmed.value = true; runId = undefined; pendingClaim.value = undefined; saving.value = false} })
 }
 async function answer(country: Country | null | undefined, deferredMs = 0, answerRecording?: AnswerRecording) {
+  if (exploring.value) {exploredCountry.value = country || undefined; return}
   if (!session.value || !playing.value || revealing.value) {return}
   globe.value?.cancelInput()
   if (country === undefined) {feedbackKind.value = 'land'; return}
@@ -764,7 +917,7 @@ async function answer(country: Country | null | undefined, deferredMs = 0, answe
   if (next === session.value) {return}
   if (country) {globe.value?.showFeedback(correct)}
   const finishedAt = Date.now()
-  if (answerRecording && !account.value) {
+  if (answerRecording && !practice.value && !account.value) {
     try {answerRecording.priorResolved = readCountryStats(localStorage).find(row => row.id === previous.id)?.played ?? 0} catch {answerRecording.priorResolved = null}
   }
   if (recording) {
@@ -774,7 +927,7 @@ async function answer(country: Country | null | undefined, deferredMs = 0, answe
     persistRecording()
   }
   sendAnswer(index, attempt, country?.id ?? null, answeredAt, next, answerRecording)
-  if (!account.value && next.answers.length > index) {
+  if (!practice.value && !account.value && next.answers.length > index) {
     try {localStorage.setItem('atlas-country-stats-v4', JSON.stringify(recordCountryStat(readCountryStats(localStorage), next.answers.at(-1)!)))} catch { /* Global statistics remain available when local storage is blocked. */ }
   }
   if (country && !correct && next.answers.length > index) {

@@ -165,5 +165,20 @@
   "runDuration": "Duration",
   "unknownValue": "—",
   "personalRankingNote": "Ranked by points, then duration. Correct includes first, second and third attempts. Red includes skipped countries.",
-  "loadMoreRuns": "Load more runs"
+  "loadMoreRuns": "Load more runs",
+  "gameModes": "Game modes",
+  "worldMode": "World · 195 countries",
+  "practiceMode": "Practice",
+  "americas": "Americas",
+  "europe": "Europe",
+  "africa": "Africa",
+  "asia": "Asia",
+  "oceania": "Oceania / Pacific",
+  "regionalIntro": "Practice countries, islands and territories. Regions can overlap. These runs stay on this device and do not enter the world ranking.",
+  "loadingRegions": "Loading regional geography…",
+  "regionsLoadFailed": "Regional geography could not be loaded. Try again.",
+  "territoryList": "Included countries and territories",
+  "explore": "Explore",
+  "explorePrompt": "Click a country or territory",
+  "exploreHelp": "Discover all 257 places. Click land or a small-island marker to see its name and flag. No timer or score."
 }

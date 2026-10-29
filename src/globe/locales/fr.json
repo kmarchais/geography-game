@@ -165,5 +165,20 @@
   "runDuration": "Durée",
   "unknownValue": "—",
   "personalRankingNote": "Classement par points, puis par durée. Le total correct inclut les premier, deuxième et troisième essais. Le rouge inclut les pays passés.",
-  "loadMoreRuns": "Charger plus de parties"
+  "loadMoreRuns": "Charger plus de parties",
+  "gameModes": "Modes de jeu",
+  "worldMode": "Monde · 195 pays",
+  "practiceMode": "Entraînement",
+  "americas": "Amériques",
+  "europe": "Europe",
+  "africa": "Afrique",
+  "asia": "Asie",
+  "oceania": "Océanie / Pacifique",
+  "regionalIntro": "Entraînez-vous sur les pays, îles et territoires. Certaines régions se chevauchent. Ces parties restent sur cet appareil et ne comptent pas au classement mondial.",
+  "loadingRegions": "Chargement des régions…",
+  "regionsLoadFailed": "Impossible de charger les régions. Réessayez.",
+  "territoryList": "Pays et territoires inclus",
+  "explore": "Explorer",
+  "explorePrompt": "Cliquez sur un pays ou un territoire",
+  "exploreHelp": "Découvrez les 257 lieux. Cliquez sur la terre ou le repère d’une petite île pour afficher son nom et son drapeau. Sans chronomètre ni score."
 }

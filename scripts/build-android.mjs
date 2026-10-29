@@ -8,5 +8,5 @@ const env = { ...process.env, BASE_URL: '/', VITE_NATIVE: 'true' }
 execFileSync(process.execPath, [resolve('node_modules/vite/bin/vite.js'), 'build', '--outDir', '.local/android-web'], { stdio: 'inherit', env })
 // Android treats foo.json and foo.json.gz as the same asset. APK compression
 // already compresses the plain snapshot, which the native build loads directly.
-rmSync(resolve('.local/android-web/data/globe/countries.json.gz'))
+for (const file of ['countries', 'regions']) {rmSync(resolve(`.local/android-web/data/globe/${file}.json.gz`))}
 execFileSync(process.execPath, [resolve('node_modules/@capacitor/cli/bin/capacitor'), 'sync', 'android'], { stdio: 'inherit', env })

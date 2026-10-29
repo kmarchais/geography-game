@@ -220,3 +220,14 @@ body { margin: 0; background: #090f13; }
 .outcome-counts .yellow { color: #f4d35e; }
 .outcome-counts .orange { color: #f49b42; }
 .outcome-counts .red { color: #ff4c58; }
+
+.target-flag { width: 1.25em; height: .94em; object-fit: contain; vertical-align: -.06em; margin-right: .4em; }
+.selected-mode { display: block; margin: 12px auto 0; }
+.mode-options { display: grid; gap: 10px; }
+.mode-options [aria-pressed="true"] { border-color: var(--mint, #48e7b0); }
+
+.start-card:has(.selected-mode) { flex-direction: column; align-items: center; }
+
+.exploration-card { pointer-events: auto; }
+.explore-mode-option { width: 100%; margin-top: 10px; }
+.is-playing .exploration-card { display: block; }

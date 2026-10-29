@@ -10,7 +10,7 @@ on:
       target:
         description: Verification scope
         type: choice
-        options: [all, hosting, focused, input, interface, gameplay]
+        options: [all, web, hosting, focused, input, interface, gameplay]
         default: all
 
 permissions:
@@ -26,7 +26,7 @@ env:
 jobs:
   browser:
     name: browser (${{ matrix.profile }})
-    if: github.event.inputs.target != 'hosting' && github.event.inputs.target != 'focused' && github.event.inputs.target != 'input' && github.event.inputs.target != 'interface' && github.event.inputs.target != 'gameplay'
+    if: github.event.inputs.target != 'web' && github.event.inputs.target != 'hosting' && github.event.inputs.target != 'focused' && github.event.inputs.target != 'input' && github.event.inputs.target != 'interface' && github.event.inputs.target != 'gameplay'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -100,6 +100,11 @@ jobs:
         run: |
           bun run build-only
           bunx playwright test --config playwright.globe.config.ts --grep 'completed countries|a real country tap|all 195 answers|Andorra is unpainted|translates the game|UN-associated|mouse hover|cross-country hover'
+      - name: Website mode checks
+        if: github.event.inputs.target == 'web'
+        run: |
+          bun run build-only
+          bunx playwright test --config playwright.globe.config.ts --grep 'exploration mode'
       - name: Upload browser report
         if: always()
         uses: actions/upload-artifact@v4
@@ -140,7 +145,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   android:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.target != 'hosting' && github.event.inputs.target != 'focused'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.target != 'web' && github.event.inputs.target != 'hosting' && github.event.inputs.target != 'focused'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

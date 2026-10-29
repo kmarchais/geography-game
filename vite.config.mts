@@ -2,7 +2,7 @@ import Vue from '@vitejs/plugin-vue'
 import Components from 'unplugin-vue-components/vite'
 import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import { fileURLToPath, URL } from 'node:url'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { defineConfig, type Manifest } from 'vite'
 
@@ -21,6 +21,9 @@ export default defineConfig({
       closeBundle() {
         const manifest: Manifest = JSON.parse(readFileSync(`${outputDirectory}/.vite/manifest.json`, 'utf8'))
         const files = new Set(['./', 'index.html', 'manifest.webmanifest', 'manifest.fr.webmanifest', 'atlas.svg', 'atlas-192.png', 'atlas-512.png', 'apple-touch-icon.png', 'data/globe/countries.json', 'data/globe/countries.json.gz', 'data/globe/earth-preview.jpg', 'data/globe/earth.jpg', 'fonts/dm-sans.woff2', 'fonts/manrope.woff2'])
+        files.add('data/globe/regions.json')
+        files.add('data/globe/regions.json.gz')
+        for (const file of readdirSync(`${outputDirectory}/data/globe/flags`)) {if (file.endsWith('.svg')) {files.add(`data/globe/flags/${file}`)}}
         const visited = new Set<string>()
         function include(key: string) {
           if (visited.has(key)) {return}

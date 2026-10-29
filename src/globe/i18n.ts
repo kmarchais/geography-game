@@ -13,7 +13,7 @@ export const language = ref<Language>(detectLanguage())
 const percent = { en: new Intl.NumberFormat('en', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 }), fr: new Intl.NumberFormat('fr', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 }) }
 const decimal = { en: new Intl.NumberFormat('en', { minimumFractionDigits: 1, maximumFractionDigits: 1 }), fr: new Intl.NumberFormat('fr', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }
 export function t(key: MessageKey, values: Record<string, string | number> = {}): string {return messages[language.value][key].replace(/\{(\w+)\}/g, (match, name) => values[name] === undefined ? match : String(values[name]))}
-export function countryName(country: { id: string; name: string } | undefined): string {return country ? (language.value === 'fr' ? names[country.id] || country.name : country.name) : ''}
+export function countryName(country: { id: string; name: string; nameFr?: string } | undefined): string {return country ? (language.value === 'fr' ? country.nameFr || names[country.id] || country.name : country.name) : ''}
 export function formatPercent(value: number): string {return percent[language.value].format(value / 100)}
 export function formatTime(value: number): string {const time = gameTime(value); return language.value === 'fr' ? time.replace('.', ',') : time}
 export function formatCoordinate(value: number): string {return decimal[language.value].format(value)}

@@ -15,7 +15,7 @@ export interface RequestIssue { kind: 'network' | 'timeout' | 'http' | 'response
 export interface NetworkIssue extends RequestIssue { operation: 'start' | 'answer' | 'save' | 'recording'; at: number }
 export interface RecordedAttempt { target: string; index: number; attempt: number; guess: string | null; elapsedMs: number; responseMs: number; answeredAt: number; recording?: AnswerRecording }
 export interface RunRecording {
-  id: string; serverId?: string; mode: 'world-countries'; rules: 4; dataset: string; orderPolicy: string
+  id: string; serverId?: string; mode: 'world-countries' | 'americas' | 'europe' | 'africa' | 'asia' | 'oceania'; rules: 4; dataset: string; orderPolicy: string
   build: string; source: string; authAtStart: 'google' | 'guest'; startedAt: number; finishedAt?: number
   status: 'active' | 'complete' | 'stopped' | 'inactive'; attempts: RecordedAttempt[]; networkIssues: NetworkIssue[]
 }
