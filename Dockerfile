@@ -14,7 +14,7 @@ COPY package.json ./
 COPY --from=web /app/node_modules ./node_modules
 COPY --from=web /app/dist ./dist
 COPY server ./server
-COPY src/globe/game.ts src/globe/avatars.ts ./src/globe/
+COPY src/globe/game.ts src/globe/avatars.ts src/globe/recording.ts ./src/globe/
 COPY public/data/globe/countries.json ./public/data/globe/countries.json
 ENV NODE_ENV=production ATLAS_STATIC_DIR=/app/dist ATLAS_DB=/data/atlas.sqlite ATLAS_HOST=0.0.0.0
 CMD ["node", "server/ranking.mjs"]
