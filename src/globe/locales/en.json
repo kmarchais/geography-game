@@ -155,5 +155,15 @@
   "green": "Green",
   "yellow": "Yellow",
   "orange": "Orange",
-  "red": "Red"
+  "red": "Red",
+  "finishedAt": "Finished: {date}",
+  "finishDateUnknown": "date unavailable",
+  "rank": "Rank",
+  "percentage": "%",
+  "skipped": "Skipped",
+  "finishDate": "Finished",
+  "runDuration": "Duration",
+  "unknownValue": "—",
+  "personalRankingNote": "Ranked by points, then duration. Correct includes first, second and third attempts. Red includes skipped countries.",
+  "loadMoreRuns": "Load more runs"
 }

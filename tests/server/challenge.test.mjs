@@ -119,6 +119,44 @@ test('personal scores include private completed runs only for the authenticated 
   assert.deepEqual(await (await request('/scores/me', undefined, other)).json(), [])
 })
 
+test('personal ranking includes paginated run details and skips while public ranking keeps only the best run', async t => {
+  const { request, answer, login, elapsed } = await setup(t)
+  const cookie = await login('run-history-owner')
+  const make = async () => ({ ...await (await request('/runs?rules=4', {}, cookie)).json(), offset: elapsed() })
+  const best = await make()
+  for (let i = 0; i < 3; i++) {await answer(best, i, 0, best.deck[i], cookie)}
+  const mixed = await make()
+  await answer(mixed, 0, 0, mixed.deck[1], cookie)
+  await answer(mixed, 0, 1, mixed.deck[0], cookie)
+  await answer(mixed, 1, 0, mixed.deck[0], cookie)
+  await answer(mixed, 1, 1, mixed.deck[0], cookie)
+  await answer(mixed, 1, 2, mixed.deck[1], cookie)
+  await answer(mixed, 2, 0, null, cookie)
+  for (const run of [best, mixed]) {assert.equal((await request(`/runs/${run.id}/claim`, { claimToken: run.claimToken }, cookie)).status, 200)}
+  for (let n = 0; n < 19; n++) {
+    const run = await make()
+    for (let i = 0; i < 3; i++) {await answer(run, i, 0, null, cookie)}
+  }
+  const rows = await (await request('/scores/me?rules=4', undefined, cookie)).json()
+  const next = await (await request('/scores/me?rules=4&offset=20', undefined, cookie)).json()
+  assert.equal(rows.length, 20); assert.equal(next.length, 1)
+  assert.equal(new Set([...rows, ...next].map(row => row.id)).size, 21)
+  assert.equal(rows[0].id, best.id)
+  assert.equal(rows[1].id, mixed.id)
+  assert.equal(rows[1].correct, 2)
+  assert.equal(rows[1].score, .75)
+  assert.deepEqual([rows[1].yellow, rows[1].orange, rows[1].red, rows[1].skipped], [1, 1, 1, 1])
+  assert.equal(typeof rows[1].finishedAt, 'number')
+  assert.equal(typeof rows[1].timeMs, 'number')
+  const publicRows = await (await request('/leaderboard?rules=4')).json()
+  assert.equal(publicRows.length, 1); assert.equal(publicRows[0].id, best.id)
+  assert.equal('finishedAt' in publicRows[0], false); assert.equal('skipped' in publicRows[0], false)
+  const other = await login('another-run-history-owner')
+  assert.deepEqual(await (await request('/scores/me?rules=4', undefined, other)).json(), [])
+  assert.equal((await request('/scores/me?rules=4&offset=-1', undefined, cookie)).status, 400)
+  assert.equal((await request('/scores/me?rules=4&offset=wrong', undefined, cookie)).status, 400)
+})
+
 test('weighted runs store colours, validate guesses, retry idempotently, and rank points before found count', async t => {
   const { request, answer, db, login, elapsed } = await setup(t)
   const make = async () => ({ ...await (await request('/runs?rules=4', {})).json(), offset: elapsed() })

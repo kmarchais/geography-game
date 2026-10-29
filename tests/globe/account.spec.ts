@@ -7,7 +7,7 @@ async function googleAccount(page: import('@playwright/test').Page, reject = fal
   await page.route(user.picture, route => route.fulfill({ contentType: 'image/png', body: readFileSync('public/atlas-192.png') }))
   await page.route('https://accounts.google.com/gsi/client', route => route.fulfill({ contentType: 'application/javascript', body: `window.google={accounts:{id:{initialize(config){window.atlasGoogleConfig=config},renderButton(host,options){window.atlasGoogleButtonOptions=options;const b=document.createElement('div');b.setAttribute('role','button');b.tabIndex=0;b.textContent='Sign in with Google';b.style.width=options.width+'px';b.style.height='40px';b.onclick=()=>window.atlasGoogleConfig.callback({credential:'signed-test-credential'});b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();b.click()}};host.append(b)},disableAutoSelect(){}}}}` }))
   await page.route('**/atlas-api/auth/session?*', route => route.fulfill({ json: { user: connected ? user : null, best: connected ? { id: 'best', name: user.name, correct: 100, total: 195, timeMs: 5000 } : null, googleClientId: 'test.apps.googleusercontent.com' } }))
-  await page.route('**/atlas-api/scores/me?*', route => route.fulfill({ json: connected ? [{ id: 'best', name: user.name, correct: 100, total: 195, timeMs: 5000 }] : [] }))
+  await page.route('**/atlas-api/scores/me?*', route => route.fulfill({ json: connected ? [{ id: 'best', name: user.name, correct: 100, total: 195, timeMs: 5000, finishedAt: Date.UTC(2026, 9, 29, 15, 42) }] : [] }))
   await page.route('**/atlas-api/auth/challenge', route => route.fulfill({ json: { nonce: 'a'.repeat(43) } }))
   await page.route('**/atlas-api/auth/google', route => {
     expect(route.request().postDataJSON()).toEqual({ credential: 'signed-test-credential' })
@@ -110,6 +110,8 @@ test('the profile picture opens account actions and sign-out restores the minima
   const scores = page.getByRole('dialog', { name: 'Scores', exact: true })
   await scores.getByRole('button', { name: 'Your scores', exact: true }).click()
   await expect(scores).toContainText('51.3%')
+  await expect(scores.locator('.run-finish-date')).toContainText('Oct 29, 2026')
+  await expect(scores.locator('.run-finish-date')).not.toContainText('date unavailable')
   await scores.getByRole('button', { name: 'Close', exact: true }).click()
   expect(await page.evaluate(() => Object.keys(localStorage).some(k => /session|credential|token/i.test(k)))).toBe(false)
   await page.reload()
@@ -123,6 +125,43 @@ test('the profile picture opens account actions and sign-out restores the minima
   await expect(page.getByTestId('progress')).toHaveText('1 / 195')
   await expect(page.locator('.account-panel')).toHaveCount(1)
   await expect(page.locator('.google-web-button')).toHaveCount(0)
+})
+
+test('personal ranking shows all run metrics and more runs while public ranking stays compact', async ({ page }) => {
+  await googleAccount(page)
+  const best = { id: 'best', name: 'Alex', correct: 193, total: 195, timeMs: 595019, score: 191.5, green: 190, yellow: 3, orange: 0, red: 2, skipped: 1, finishedAt: Date.UTC(2026, 9, 28, 15, 42) }
+  const latest = { id: 'latest', name: 'Alex', correct: 166, total: 195, timeMs: 723511, score: 146, green: 132, yellow: 22, orange: 12, red: 29, skipped: 22, finishedAt: Date.UTC(2026, 9, 29, 15, 42) }
+  const runs = [best, latest, ...Array.from({ length: 19 }, (_, i) => ({ ...best, id: `run-${String(i).padStart(2, '0')}`, score: 0, correct: 0, green: 0, yellow: 0, orange: 0, red: 195, skipped: 195, timeMs: 0 }))]
+  await page.route('**/atlas-api/scores/me?*', route => {
+    const offset = Number(new URL(route.request().url()).searchParams.get('offset') || 0)
+    return route.fulfill({ json: runs.slice(offset, offset + 20) })
+  })
+  await page.route('**/atlas-api/leaderboard?*', route => route.fulfill({ json: [best] }))
+  await page.goto('./'); await connectFromMenu(page)
+  await page.getByRole('button', { name: 'Menu', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Scores', exact: true }).click()
+  const scores = page.getByRole('dialog', { name: 'Scores', exact: true })
+  await expect(scores.locator('tbody tr')).toHaveCount(1)
+  await expect(scores.locator('thead th')).toHaveCount(3)
+  await expect(scores.locator('.run-finish-date')).toHaveCount(0)
+  await scores.getByRole('button', { name: 'Your scores', exact: true }).click()
+  await expect(scores.locator('tbody tr')).toHaveCount(20)
+  await expect(scores.locator('thead th')).toHaveText(['Rank', '%', 'Points', 'Correct', 'Yellow', 'Orange', 'Red', 'Skipped', 'Finished', 'Duration'])
+  await expect(scores.locator('tbody tr').first()).toContainText('191.5/195')
+  await expect(scores.locator('tbody tr').nth(1).locator('th, td')).toHaveText(['2', '74.9%', '146/195', '166', '22', '12', '29', '22', /Oct 29, 2026/, '12:03'])
+  await expect(scores).toContainText('Red includes skipped countries.')
+  const fits = await scores.evaluate(dialog => dialog.getBoundingClientRect().right <= innerWidth && dialog.getBoundingClientRect().left >= 0 && dialog.scrollWidth <= dialog.clientWidth)
+  expect(fits).toBe(true)
+  if (page.viewportSize()!.width < 880) {
+    expect(await scores.locator('.score-table-scroll').evaluate(region => region.scrollWidth > region.clientWidth)).toBe(true)
+  }
+  await scores.getByRole('button', { name: 'Load more runs', exact: true }).click()
+  await expect(scores.locator('tbody tr')).toHaveCount(21)
+  await expect(scores.locator('tbody tr').last().locator('th')).toHaveText('21')
+  await expect(scores.getByRole('button', { name: 'Load more runs', exact: true })).toHaveCount(0)
+  await scores.getByRole('button', { name: 'Shared ranking', exact: true }).click()
+  await expect(scores.locator('tbody tr')).toHaveCount(1)
+  await expect(scores.locator('thead th')).toHaveCount(3)
 })
 
 test('signed-in countries do not enter the guest statistics after sign-out', async ({ page }) => {
@@ -159,11 +198,17 @@ test('connected play prefills the editable account nickname instead of an old gu
   await page.goto('./'); await connectFromMenu(page)
   const started = page.waitForRequest(request => request.url().endsWith('/atlas-api/runs?rules=4') && request.method() === 'POST')
   await page.getByRole('button', { name: 'Play', exact: true }).click()
-  expect((await started).postDataJSON()).toEqual({})
+  expect((await started).postDataJSON()).toEqual({ source: test.info().project.use.isMobile ? 'mobile-web' : 'desktop-web', build: expect.any(String), dataset: expect.stringMatching(/^[0-9a-f]{64}$/), ignoreAnswered: true })
   await page.locator('.skip-button').evaluate(button => {for (let i = 0; i < 195; i++) {(button as HTMLButtonElement).click()}})
   await expect(page.getByRole('heading', { name: 'Score', exact: true })).toBeVisible()
   await expect(page.getByLabel('Nickname', { exact: true })).toHaveValue('Alex')
   await expect(page.getByLabel('Nickname', { exact: true })).toBeEditable()
+  const buckets = await page.evaluate(() => Object.keys(localStorage).filter(key => key.startsWith('atlas-recordings-v1')))
+  expect(buckets).toEqual(['atlas-recordings-v1:11111111-1111-4111-8111-111111111111'])
+  const recording = await page.evaluate(key => JSON.parse(localStorage.getItem(key) || '[]').at(-1), buckets[0]!)
+  expect(recording.authAtStart).toBe('google')
+  expect(recording.attempts).toHaveLength(195)
+  expect(JSON.stringify(recording)).not.toMatch(/claimToken|credential/)
 })
 
 test('profile username, preset and uploaded photo persist, while cancelling discards a draft', async ({ page }) => {

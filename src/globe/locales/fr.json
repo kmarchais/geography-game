@@ -155,5 +155,15 @@
   "green": "Vert",
   "yellow": "Jaune",
   "orange": "Orange",
-  "red": "Rouge"
+  "red": "Rouge",
+  "finishedAt": "Terminé : {date}",
+  "finishDateUnknown": "date indisponible",
+  "rank": "Rang",
+  "percentage": "%",
+  "skipped": "Passés",
+  "finishDate": "Fin de partie",
+  "runDuration": "Durée",
+  "unknownValue": "—",
+  "personalRankingNote": "Classement par points, puis par durée. Le total correct inclut les premier, deuxième et troisième essais. Le rouge inclut les pays passés.",
+  "loadMoreRuns": "Charger plus de parties"
 }

@@ -41,13 +41,14 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { coordinateToVector, createCountryPicker, unwrapRing, vectorToCoordinate, type Country, type Coordinate } from '@/globe/geography'
 import type { Answer } from '@/globe/game'
+import type { AnswerRecording } from '@/globe/recording'
 import { answerColor, countryAngularSize, islandBlend, rotationSpeed, revealDistance } from '@/globe/detail'
 import { countryOutlines, countrySurface, outlineBatches, outlineHorizon, GlobeImagery } from '@/globe/terrain'
 import { wheelPointer, zoomAtPointer, orbitPosition } from '@/globe/navigation'
 import { t, language, formatCoordinate, type MessageKey } from '@/globe/i18n'
 
 const props = defineProps<{ countries: Country[]; borders: boolean; paintFound: boolean; markers: boolean; answers: Answer[]; reveal?: string; disabled: boolean }>()
-const emit = defineEmits<{ select: [country: Country | undefined, deferredMs?: number]; tapPending: [pending: boolean]; ready: []; error: [message: MessageKey]; warning: [message: MessageKey] }>()
+const emit = defineEmits<{ select: [country: Country | undefined, deferredMs?: number, recording?: AnswerRecording]; tapPending: [pending: boolean]; ready: []; error: [message: MessageKey]; warning: [message: MessageKey] }>()
 const host = ref<HTMLElement>()
 const canvas = ref<HTMLCanvasElement>()
 const positionCoordinates = ref<Coordinate>()
@@ -83,7 +84,8 @@ let disposed = false
 let observer: ResizeObserver | undefined
 let pointerStart: { x: number; y: number } | undefined
 let tapTimer: ReturnType<typeof setTimeout> | undefined
-let pendingTap: { country: Country | undefined; x: number; y: number; started: number } | undefined
+let pendingTap: { country: Country | undefined; x: number; y: number; started: number; recording: AnswerRecording } | undefined
+let pickKind: 'land' | 'marker' | 'outside' = 'outside'
 let touchZoom: { id: number; x: number; y: number; lastY: number; moved: boolean } | undefined
 let mousePosition: [number, number] | undefined
 let dragged = false
@@ -315,9 +317,14 @@ function zoom(direction: number) {
 }
 
 function reset() { cancelPointer(); focus([18, 16], 3.1) }
-defineExpose({ focus, zoom, reset, showFeedback, revealCountry, pullBack, cancelInput: cancelPointer })
+function recordingView(): Omit<AnswerRecording, 'coordinate' | 'input' | 'hit' | 'priorResolved'> {
+  const bounds = canvas.value!.getBoundingClientRect()
+  return { cameraDistance: Number(camera.position.length().toFixed(6)), viewport: [Math.round(bounds.width), Math.round(bounds.height)], markers: props.markers, borders: props.borders, paintFound: props.paintFound }
+}
+defineExpose({ focus, zoom, reset, showFeedback, revealCountry, pullBack, recordingView, cancelInput: cancelPointer })
 
 function countryAt(x: number, y: number): Country | undefined {
+  pickKind = 'outside'
   if (!canvas.value || !controls) {return}
   const bounds = canvas.value.getBoundingClientRect()
   if (x < bounds.left || x > bounds.right || y < bounds.top || y > bounds.bottom) {return}
@@ -338,20 +345,24 @@ function countryAt(x: number, y: number): Country | undefined {
     const distance = Math.hypot(dx, dy)
     if (distance < closest) { closest = distance; markerHit = marker.country }
   }
-  return markerHit ?? pickCountry(vectorToCoordinate(hitPoint))
+  const country = markerHit ?? pickCountry(vectorToCoordinate(hitPoint))
+  if (country) {pickKind = markerHit ? 'marker' : 'land'}
+  return country
 }
 
-function selectAt(x: number, y: number, defer = false) {
+function selectAt(x: number, y: number, input: AnswerRecording['input'] = 'mouse') {
   cancelTap()
+  const defer = input === 'touch'
   if (!canvas.value || (props.disabled && !defer)) {return}
   const bounds = canvas.value.getBoundingClientRect()
   lastTap = { x: x - bounds.left, y: y - bounds.top }
   const country = countryAt(x, y)
+  const recording: AnswerRecording = { ...recordingView(), coordinate: country ? vectorToCoordinate(hitPoint).map(n => Number(n.toFixed(5))) as Coordinate : null, hit: pickKind === 'marker' ? 'marker' : 'land', input, priorResolved: null }
   if (defer) {
-    pendingTap = { country, x, y, started: Date.now() }
+    pendingTap = { country, x, y, started: Date.now(), recording }
     emit('tapPending', true)
     tapTimer = setTimeout(commitTap, 300)
-  } else {emit('select', country)}
+  } else {emit('select', country, 0, recording)}
 }
 function cancelTap() {
   clearTimeout(tapTimer); tapTimer = undefined
@@ -360,7 +371,7 @@ function cancelTap() {
 function commitTap() {
   const tap = pendingTap
   cancelTap()
-  if (tap && !props.disabled) {emit('select', tap.country, Math.max(0, Date.now() - tap.started))}
+  if (tap && !props.disabled) {emit('select', tap.country, Math.max(0, Date.now() - tap.started), tap.recording)}
 }
 function clearHover() {
   cancelAnimationFrame(hoverFrame); hoverFrame = 0
@@ -468,7 +479,7 @@ function onPointerUp(event: PointerEvent) {
   cancelTouchZoom()
   pointers.delete(event.pointerId)
   if (zoom && !zoom.moved) {zoomFromPoint(zoom.x, zoom.y, .7)}
-  if (pointerStart && !dragged && pointers.size === 0) {selectAt(event.clientX, event.clientY, event.pointerType === 'touch')}
+  if (pointerStart && !dragged && pointers.size === 0) {selectAt(event.clientX, event.clientY, event.pointerType === 'touch' ? 'touch' : event.pointerType === 'pen' ? 'pen' : 'mouse')}
   if (!pointers.size) {pointerStart = undefined}
 }
 function cancelTouchZoom() {
@@ -514,7 +525,7 @@ function onKey(event: KeyboardEvent) {
   else if (event.key === '-') {zoom(-1)}
   else if (event.key === 'Enter') {
     const bounds = canvas.value!.getBoundingClientRect()
-    selectAt(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2)
+    selectAt(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2, 'keyboard')
   } else {return}
   event.preventDefault()
   positionCoordinates.value = vectorToCoordinate(camera.position)

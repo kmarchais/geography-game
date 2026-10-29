@@ -32,3 +32,8 @@ if (typeof window !== 'undefined') {
 export function formatScoreTime(value: number): string {return formatTime(value).replace(/[.,]\d$/, '')}
 
 export function formatPoints(value: number): string {return new Intl.NumberFormat(language.value, { maximumFractionDigits: 2 }).format(value)}
+export function formatFinishedAt(value?: number | null): string {
+  return Number.isSafeInteger(value) && value! > 0 && value! <= 8640000000000000
+    ? new Intl.DateTimeFormat(language.value, { dateStyle: 'medium', timeStyle: 'short' }).format(value!)
+    : t('finishDateUnknown')
+}

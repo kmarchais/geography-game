@@ -19,6 +19,48 @@ Sources: [Workers pricing](https://developers.cloudflare.com/workers/platform/pr
 
 ## Implementation and deployment
 
+### Run metadata, pending publication
+
+New runs store `runs.client_source` as `desktop-web`, `mobile-web`, or `native-app`. Older clients and historical rows use `unknown`. The native build supplies its app flag; websites classify phones and tablets from browser device information. This is client-reported metadata, not an authenticated device identity. No raw user agent is retained.
+
+`runs.finished_at` records the server's Unix timestamp in milliseconds when it accepts the final answer. Answer retries and later score publication or Google claims preserve it. Private personal score responses include `finishedAt`; the personal ranking displays it in the player's language and local time zone. Offline personal scores use the device clock at completion.
+
+Historical finish dates remain null and display as unavailable. `time_ms` measures the last correct answer on the game clock, which excludes some pauses, so adding it to `started` cannot recover a finish timestamp. The migration preserves existing scores and owners. Take a current authenticated SQL snapshot before deploying this schema change, as described below. This change has not been deployed or installed on a physical phone.
+
+Score ownership already distinguishes account types. A `player` beginning with `google:` belongs to a Google account, `guest:` identifies a published guest, and `anonymous:` identifies an unnamed run. Legacy bare UUIDs are guests. A later Google claim changes the score owner without changing its source or finish date. Account type and device source stay in the database; public rankings do not expose them.
+
+The personal ranking lists individual completed runs by weighted points descending, then score time ascending. It displays percentage, points, correct countries, yellow/orange/red counts, skips, finish date and time, and score duration. Correct countries include all three successful attempt colours. Red includes skips; the separate skipped count is a subset, not another category to add to red. The API reconstructs skips from retained resolved answers, including historical runs. New device-local scores store skips directly; missing historical local values remain unavailable.
+
+`GET /scores/me?rules=4&offset=0` returns up to 20 authenticated account runs per page. Load more retrieves later ranks without discarding earlier runs. Guests see the personal scores retained on that device, currently the best 20. The personal table scrolls horizontally within the dialog on narrow screens. Public rankings retain one best published run per account or guest identity and omit private finish dates and skip counts. Names alone never merge different players.
+
+```sql
+SELECT name,
+  CASE WHEN player LIKE 'google:%' THEN 'google'
+       WHEN player LIKE 'anonymous:%' THEN 'anonymous'
+       ELSE 'guest' END AS account_type,
+  client_source, finished_at
+FROM runs WHERE complete = 1;
+```
+
+### Answer recordings and opening order, pending publication
+
+The first ten questions exclude countries marked `small` in the existing geography snapshot. This is the same small-target classification used by the globe, not a familiarity list or a difficulty estimate from the small existing player sample. Both online and offline decks shuffle the eligible opening targets and the remaining questions and include all 195 countries exactly once. Runs record `orderPolicy: no-small-first-10-v1`; explicit server decks and active older runs keep their existing order. Scoring remains rules 4. Small fixture datasets with fewer than ten non-small targets put all eligible targets first.
+
+Each accepted answer retains its selected country and cumulative game time. New recordings add the selected map coordinates, input method, camera distance, canvas dimensions, marker-versus-land selection, and marker/border/result-colour settings. Marker selections retain the actual map point, not the marker country's centre. Skips have null coordinates. Coordinates are map selections, not the player's physical location. Ocean clicks and gestures are not scored guesses and do not enter the answer sequence.
+
+New clients start runs with `ignoreAnswered: true`. Selecting a previously resolved country does nothing, whether its result is green, yellow, orange, or red, including skips. The shared game function returns the unchanged session before feedback, recordings, statistics, or answer uploads. Normal searching time continues; touch-recognition delay follows the existing timing rule. The server independently ignores the same selection without changing stored state or attempts. Runs from older clients retain their original policy so their local attempt counters remain compatible with the server until those clients are updated. The server records this policy per run.
+
+Each guess also stores its server receipt time and `responseMs`, the difference from the preceding accepted guess's game time. This makes first-response time, subsequent hesitation, skip timing, and question position reconstructible without counting reveal pauses as searching. Existing attempts before a skip remain in order. Retries do not add guesses or replace their first recorded context. Previous feedback follows from the attempt number; earlier answer reveals follow from the preceding resolved answers. The current game has no separate hint button.
+
+`priorResolved` counts earlier resolved encounters, with an explicit `account`, `device`, or `unknown` scope. The server uses private account counters for Google players; guests can report device-local counters. This does not count a question merely displayed and then abandoned, or identify one guest across devices. New run metadata includes mode, scoring version, the server and client geography SHA-256 digests, client build, initial authentication type, and ordering policy. Client input and timing metadata are descriptive, not proof against cheating.
+
+Up to 32 network failure records retain only an operation, error category, HTTP status, attempt number, and timestamp. They contain no request body, credential, URL, or email. The client sends these on completion, Stop, and score-save attempts through an owner-authorized recording endpoint. Recording errors do not change the score. A failed recording upload remains in local storage; automatic offline upload is not implemented.
+
+Explicit Stop records a terminal status without publishing a partial score. Incomplete runs older than 24 hours become `inactive` on the next run start, rather than being deleted. `inactiveAt` is the classification time, not evidence of when someone left. Their accepted guesses remain available for abandonment analysis. Inactive and stopped runs do not consume the active-run limit. Server history has no new automatic retention cutoff; monitor storage before introducing a deletion policy.
+
+The device keeps the last ten recordings, including offline attempts and failed requests. Google recordings use separate account-local storage buckets. Tokens remain outside these stored recordings. If storage is blocked or full, gameplay continues. Private answer context is not added to public rankings or global country-statistics responses.
+
+
 `server/api.mjs` owns the shared authentication, ownership, scoring, and report behavior. `server/ranking.mjs` supplies Node HTTP and local SQLite. `server/cloudflare.mjs` supplies Worker transport, synchronous SQLite queries, transactions, and durable report alarms. One shared ranking object keeps the initial small player pool in a single transactional database. Partition runs or move to D1 if throughput becomes a limit.
 
 Wrangler 4.153.0 is authenticated. Official Cloudflare skills and its MCP server are installed in the developer's Codex configuration, and MCP OAuth authentication is verified. Restart the agent to load newly installed MCP tools. The optional `cf` CLI was not installed.

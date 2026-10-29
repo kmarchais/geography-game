@@ -99,6 +99,49 @@ test('upgrades the previous database schema and persists an active run across se
   const rows = await (await fetch(second.url + '/leaderboard?rules=2')).json()
   assert.equal(rows[0].name, 'Persistent')
   assert.ok(rows.some(row => row.name === 'Previous score'))
+  assert.equal('finishedAt' in rows.find(row => row.name === 'Previous score'), false)
+})
+
+test('stores run source and server finish time, preserving them through retries and later publication', async t => {
+  const file = join(tmpdir(), `atlas-metadata-${randomUUID()}.sqlite`)
+  const { post, clock, url, server } = await setup(t, { databasePath: file })
+  const db = new DatabaseSync(file)
+  t.after(async () => {
+    db.close()
+    if (server.listening) {await new Promise(resolve => server.close(resolve))}
+    for (const suffix of ['', '-wal', '-shm']) rmSync(file + suffix, { force: true })
+  })
+  const read = id => db.prepare('SELECT player,finished_at,client_source FROM runs WHERE id=?').get(id)
+  for (const source of ['desktop-web', 'mobile-web', 'native-app']) {
+    const response = await post('/runs?rules=4', { source })
+    assert.equal(response.status, 201)
+    const run = await response.json()
+    assert.equal(read(run.id).client_source, source)
+    assert.equal(read(run.id).finished_at, null)
+    assert.equal(read(run.id).player, `anonymous:${run.id}`)
+    for (let index = 0; index < 3; index++) {
+      clock.time += 1000
+      assert.equal((await post(`/runs/${run.id}/answers`, { index, attempt: 0, guess: index === 0 ? run.deck[0] : null, elapsedMs: (index + 1) * 1000 })).status, 200)
+    }
+    const finishedAt = clock.time
+    assert.equal(read(run.id).finished_at, finishedAt)
+    clock.time += 5000
+    await post(`/runs/${run.id}/answers`, { index: 2, attempt: 0, guess: null, elapsedMs: 3000 })
+    const playerId = randomUUID()
+    assert.equal((await post(`/runs/${run.id}/publish`, { claimToken: run.claimToken, name: 'Same name', playerId })).status, 200)
+    assert.equal(read(run.id).player, `guest:${playerId}`)
+    assert.equal(read(run.id).finished_at, finishedAt)
+    assert.equal(read(run.id).client_source, source)
+    const rows = await (await fetch(url + '/leaderboard?rules=4')).json()
+    const score = rows.find(row => row.id === run.id)
+    assert.equal('finishedAt' in score, false)
+    assert.equal('skipped' in score, false)
+    assert.equal(score.timeMs, 1000)
+  }
+  assert.equal((await post('/runs', { source: 'forged' })).status, 400)
+  assert.equal((await post('/runs', { source: 'desktop-web', unexpected: true })).status, 400)
+  const legacy = await (await post('/runs', {})).json()
+  assert.equal(read(legacy.id).client_source, 'unknown')
 })
 
 test('Android builds reject a missing ranking endpoint before compiling', () => {

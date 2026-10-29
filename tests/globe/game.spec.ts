@@ -15,7 +15,10 @@ async function open(page: Page) {
 async function mockRun(page: Page, deck = order) {
   let correct = 0, timeMs = 0
   const counts = { green: 0, yellow: 0, orange: 0, red: 0 }
-  await page.route('**/atlas-api/runs?*', route => route.fulfill({ json: { id: '11111111-1111-4111-8111-111111111111', deck } }))
+  await page.route('**/atlas-api/runs?*', route => {
+    expect(route.request().postDataJSON()).toMatchObject({ source: test.info().project.use.isMobile ? 'mobile-web' : 'desktop-web', build: expect.any(String), dataset: expect.stringMatching(/^[0-9a-f]{64}$/) })
+    return route.fulfill({ json: { id: '11111111-1111-4111-8111-111111111111', deck } })
+  })
   await page.route('**/atlas-api/runs/*/answers', route => {
     const data = route.request().postDataJSON()
     const found = data.guess === deck[data.index], resolved = found || data.guess === null || data.attempt === 2
@@ -282,6 +285,7 @@ test('a real country tap scores and advances instantly without Next', async ({ p
   await expect(page.locator('#target-name')).toHaveText('Afghanistan')
   await expect(page.getByRole('button', { name: /Next|hint|Pause/i })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled()
+  for (let n = 0; n < 2; n++) {await earth(page).press('ArrowRight')}
   await earth(page).focus(); await page.keyboard.press('Enter')
   await expect(page.getByTestId('answer-cue')).toHaveAttribute('data-outcome', 'wrong')
   await expect(page.getByTestId('progress')).toHaveText('2 / 195')
@@ -324,6 +328,42 @@ test('a real country tap scores and advances instantly without Next', async ({ p
   await expect(page.getByTestId('progress')).toHaveText('4 / 195')
 })
 
+test('records wrong map guesses before a skip, input methods, and an explicit stop', async ({ page }) => {
+  const deck = ['FRA', 'TCD', ...order.filter(id => id !== 'FRA' && id !== 'TCD')]
+  await mockRun(page, deck)
+  const attempts: Array<Record<string, unknown>> = [], recordings: Array<Record<string, unknown>> = []
+  page.on('request', request => {if (request.url().endsWith('/answers')) {attempts.push(request.postDataJSON())}})
+  await page.route('**/atlas-api/runs/*/recording', route => {recordings.push(route.request().postDataJSON()); return route.fulfill({ json: { recorded: true } })})
+  await open(page); await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await expect(page.locator('#target-name')).toHaveText('France')
+  await tapCenter(page)
+  await expect.poll(() => attempts.length).toBe(1)
+  await earth(page).press('Enter')
+  await expect.poll(() => attempts.length).toBe(2)
+  const skip = page.getByRole('button', { name: 'Skip', exact: true })
+  if (test.info().project.use.isMobile) {await skip.tap()} else {await skip.click()}
+  await expect.poll(() => attempts.length).toBe(3)
+  await expect(page.getByTestId('progress')).toHaveText('2 / 195')
+  expect(attempts.map(a => a.guess)).toEqual(['TCD', 'TCD', null])
+  const first = attempts[0]!.recording as { coordinate: number[]; input: string; cameraDistance: number; viewport: number[] }
+  expect(first.coordinate[0]).toBeCloseTo(18, 1); expect(first.coordinate[1]).toBeCloseTo(16, 1)
+  expect(first.input).toBe(test.info().project.use.isMobile ? 'touch' : 'mouse')
+  expect(first.cameraDistance).toBeGreaterThan(1)
+  expect(first.viewport.every(n => n > 0)).toBe(true)
+  expect(attempts[1]!.recording).toMatchObject({ input: 'keyboard', markers: true, borders: true, paintFound: true })
+  expect(attempts[2]!.recording).toMatchObject({ hit: 'skip', coordinate: null })
+  await page.getByRole('button', { name: 'Stop run', exact: true }).click()
+  await page.getByRole('dialog', { name: 'Stop run', exact: true }).getByRole('button', { name: 'Stop run', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled()
+  await expect.poll(() => recordings.length).toBe(1)
+  expect(recordings[0]).toMatchObject({ status: 'stopped', networkIssues: [] })
+  const local = await page.evaluate(() => JSON.parse(localStorage.getItem('atlas-recordings-v1') || '[]').at(-1))
+  expect(local.status).toBe('stopped')
+  expect(local.attempts.map((a: { guess: string | null }) => a.guess)).toEqual(['TCD', 'TCD', null])
+  expect(local.attempts.every((a: { responseMs: number }) => a.responseMs >= 0)).toBe(true)
+  expect(local.claimToken).toBeUndefined()
+})
+
 test('completed countries stay green, yellow, orange, and red according to the result', async ({ page }) => {
   const first = ['TCD', 'SDN', 'EGY', 'LBY']
   await mockRun(page, [...first, ...order.filter(id => !first.includes(id))])
@@ -331,13 +371,17 @@ test('completed countries stay green, yellow, orange, and red according to the r
   await expect(page.locator('#target-name')).toHaveText('Chad')
   await earth(page).press('Enter') // Chad, first attempt.
   await expect(page.getByTestId('progress')).toHaveText('2 / 195')
-  await earth(page).press('Enter') // Chad is wrong for Sudan.
-  await expect(page.locator('.answer-feedback')).toHaveText('× Chad')
+  for (let i = 0; i < 3; i++) {await earth(page).press('ArrowUp')}
+  await earth(page).press('Enter') // Unanswered Libya is wrong for Sudan.
+  await expect(page.locator('.answer-feedback')).toHaveText('× Libya')
+  for (let i = 0; i < 3; i++) {await earth(page).press('ArrowDown')}
   for (let i = 0; i < 3; i++) {await earth(page).press('ArrowRight')}
   await earth(page).press('Enter') // Sudan, second attempt.
   await expect(page.getByTestId('progress')).toHaveText('3 / 195')
-  await earth(page).press('Enter'); await earth(page).press('Enter')
+  for (let i = 0; i < 3; i++) {await earth(page).press('ArrowLeft')}
   for (let i = 0; i < 3; i++) {await earth(page).press('ArrowUp')}
+  await earth(page).press('Enter'); await earth(page).press('Enter') // Libya is still unanswered.
+  for (let i = 0; i < 3; i++) {await earth(page).press('ArrowRight')}
   await earth(page).press('Enter') // Egypt, third attempt.
   await expect(page.getByTestId('progress')).toHaveText('4 / 195')
   await expect(page.getByTestId('accuracy')).toHaveText('0.9%') // 1 + .5 + .25 points.
@@ -368,6 +412,33 @@ test('completed countries stay green, yellow, orange, and red according to the r
   expect(orange![1]!).toBeGreaterThan(orange![2]! * 1.3)
   expect(red![0]!).toBeGreaterThan(red![1]! * 1.5)
   expect(red![0]!).toBeGreaterThan(red![2]! * 1.5)
+})
+
+test('completed country clicks do not consume attempts, upload guesses, or pause normal searching', async ({ page }) => {
+  test.setTimeout(90000)
+  await page.clock.install()
+  await mockRun(page); await open(page)
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000))
+  const requests: unknown[] = []
+  page.on('request', request => {if (request.url().endsWith('/answers')) {requests.push(request.postDataJSON())}})
+  await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await earth(page).press('Enter') // Complete Chad in green.
+  await expect(page.getByTestId('progress')).toHaveText('2 / 195')
+  await expect.poll(() => requests.length).toBe(1)
+  await page.clock.runFor(1000)
+  await tapCenter(page) // Select completed Chad with mouse or touch.
+  if (test.info().project.use.isMobile) {await page.clock.runFor(300)}
+  await earth(page).press('Enter') // Select it again with the keyboard.
+  await expect(page.locator('.attempts-left')).toContainText('3')
+  await expect(page.getByTestId('progress')).toHaveText('2 / 195')
+  expect(requests).toHaveLength(1)
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('atlas-recordings-v1') || '[]').at(-1).attempts.length)).toBe(1)
+  await page.clock.runFor(1000)
+  await expect(page.getByTestId('timer')).toHaveText('00:02.0')
+  for (let n = 0; n < 2; n++) {await earth(page).press('ArrowRight')}
+  await earth(page).press('Enter') // Unanswered Sudan still consumes a wrong attempt for Afghanistan.
+  await expect(page.locator('.attempts-left')).toContainText('2')
+  await expect.poll(() => requests.length).toBe(2)
 })
 
 test('one-handed double-tap zoom stays anchored and never answers a country', async ({ page }) => {
@@ -552,7 +623,10 @@ test('all 195 answers publish an accurate time despite a lost final response', a
   const runResponse = page.waitForResponse(r => r.url().endsWith('/atlas-api/runs?rules=4') && r.request().method() === 'POST')
   await page.getByRole('button', { name: 'Play', exact: true }).click()
   const run = await (await runResponse).json()
+  expect((await runResponse).request().postDataJSON()).toMatchObject({ source: test.info().project.use.isMobile ? 'mobile-web' : 'desktop-web', build: expect.any(String), dataset: expect.stringMatching(/^[0-9a-f]{64}$/) })
   for (let i = 0; i < 195; i++) {
+    // A touch answer resolves after the double-tap recognition window.
+    await expect(page.getByTestId('progress')).toHaveText(`${i + 1} / 195`)
     if (run.deck[i] === 'TCD') {await tapCenter(page)}
     else {await page.getByRole('button', { name: 'Skip' }).click()}
   }
@@ -600,9 +674,18 @@ test('all 195 answers publish an accurate time despite a lost final response', a
   await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled()
   const resetPixel = await centrePixel()
   expect(resetPixel.reduce((sum, value, index) => sum + Math.abs(value - unpainted[index]!), 0)).toBeLessThan(15)
-  if (page.viewportSize()!.width >= 1000) {await expect(page.locator('.ranking-panel table')).toContainText('Atlas test')}
+  if (page.viewportSize()!.width >= 1000) {
+    const ranking = page.locator('.ranking-panel table')
+    await expect(ranking).toContainText('Atlas test')
+    await expect(ranking.locator('.score-date, .run-finish-date')).toHaveCount(0)
+  }
   await page.reload()
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('atlas-runs-v4') || '[]')[0].correct)).toBe(1)
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('atlas-runs-v4') || '[]')[0].finishedAt)).toBeGreaterThan(0)
+  const recording = await page.evaluate(() => JSON.parse(localStorage.getItem('atlas-recordings-v1') || '[]').at(-1))
+  expect(recording.status).toBe('complete')
+  expect(recording.attempts).toHaveLength(195)
+  expect(recording.networkIssues).toContainEqual(expect.objectContaining({ operation: 'answer', kind: 'network', attempt: 0 }))
   await page.getByRole('button', { name: 'Menu', exact: true }).click()
   await page.getByRole('menuitem', { name: 'Statistics', exact: true }).click()
   await expect(page.getByRole('dialog', { name: 'Statistics', exact: true })).toContainText('Chad')
@@ -625,6 +708,12 @@ test('offline practice remains playable and is clearly unranked', async ({ page 
   await expect(page.getByText('Offline · unranked run')).toBeVisible()
   await page.getByRole('button', { name: 'Skip' }).click()
   await expect(page.getByTestId('progress')).toHaveText('2 / 195')
+  const recording = await page.evaluate(() => JSON.parse(localStorage.getItem('atlas-recordings-v1') || '[]').at(-1))
+  expect(recording.serverId).toBeUndefined()
+  expect(recording.networkIssues).toContainEqual(expect.objectContaining({ operation: 'start', kind: 'network' }))
+  expect(recording.attempts).toHaveLength(1)
+  expect(countries.find((c: { id: string }) => c.id === recording.attempts[0].target).small).toBe(false)
+  expect(recording.attempts[0].recording).toMatchObject({ hit: 'skip', coordinate: null })
 })
 
 test('data errors retry, keyboard works, and accessibility checks pass', async ({ page }) => {

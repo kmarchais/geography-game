@@ -12,11 +12,12 @@ test('Cloudflare runtime persists ordered answers, retries, rankings and profile
   assert.equal((await fetch(`${base}/atlas-api/health`)).status, 200)
   assert.equal((await post('/runs', {}, 'https://untrusted.example')).status, 403)
   assert.equal((await post('/auth/profile', { name: 'Intruder', avatar: 'google' })).status, 401)
-  const created = await post('/runs?rules=4', {})
+  const created = await post('/runs?rules=4', { source: 'mobile-web', build: 'worker-recording-test' })
   assert.equal(created.status, 201)
   const run = await created.json()
   assert.equal(run.deck.length, 195)
-  const answer = { index: 0, attempt: 0, guess: run.deck[0], elapsedMs: 0 }
+  assert.equal(run.orderPolicy, 'no-small-first-10-v1')
+  const answer = { index: 0, attempt: 0, guess: run.deck[0], elapsedMs: 0, recording: { coordinate: [10, 20], input: 'touch', hit: 'land', cameraDistance: 2.1, viewport: [412, 800], markers: true, borders: true, paintFound: true, priorResolved: 0 } }
   const first = await post(`/runs/${run.id}/answers`, answer)
   assert.equal(first.status, 200)
   const firstValue = await first.json()
@@ -37,6 +38,7 @@ test('Cloudflare runtime persists ordered answers, retries, rankings and profile
   const privateRanking = await (await fetch(`${base}/atlas-api/leaderboard?rules=4`)).json()
   assert.ok(!privateRanking.some(row => row.id === run.id))
   assert.equal((await post(`/runs/${run.id}/publish`, { claimToken: run.claimToken, playerId: randomUUID(), name: 'Worker test' })).status, 200)
+  assert.equal((await post(`/runs/${run.id}/recording`, { claimToken: run.claimToken, status: 'complete', networkIssues: [{ operation: 'answer', kind: 'network', status: 0, attempt: 0, at: Date.now() }] })).status, 200)
   const ranking = await (await fetch(`${base}/atlas-api/leaderboard?rules=4`)).json()
   assert.ok(ranking.some(row => row.id === run.id && row.correct === 3 && row.total === 195 && row.score === 1.75 && row.green === 1 && row.yellow === 1 && row.orange === 1 && row.red === 192))
   assert.equal((await fetch(`${base}/atlas-api/auth/session`)).status, 200)

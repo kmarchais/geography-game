@@ -186,7 +186,7 @@
                 <th scope="col">
                   {{ t('player') }}
                 </th><th scope="col">
-                  {{ t('points') }}
+                  {{ t('percentage') }}
                 </th><th scope="col">
                   {{ t('time') }}
                 </th>
@@ -196,7 +196,9 @@
                 v-for="(row, i) in rankings"
                 :key="row.id"
               >
-                <td><span class="rank-number">{{ i + 1 }}</span>{{ row.name }}</td><td>{{ formatPercent(percentage(row.score ?? row.correct, row.total)) }}</td><td>{{ formatTime(row.timeMs) }}</td>
+                <td>
+                  <span class="rank-number">{{ i + 1 }}</span>{{ row.name }}
+                </td><td>{{ formatPercent(percentage(row.score ?? row.correct, row.total)) }}</td><td>{{ formatTime(row.timeMs) }}</td>
               </tr>
             </tbody>
           </table>
@@ -353,7 +355,7 @@
             v-if="playing"
             class="secondary-button skip-button"
             :disabled="revealing"
-            @click="answer(null)"
+            @click="skipAnswer"
           >
             {{ t('skip') }} <span aria-hidden="true">→</span>
           </button>
@@ -495,7 +497,7 @@
           {{ t('continue') }}
         </button><button
           class="primary-button"
-          @click="reset"
+          @click="stopRun"
         >
           {{ t('stopRun') }}
         </button>
@@ -514,8 +516,9 @@ import StatisticsDialog from '@/components/StatisticsDialog.vue'
 import ScoresDialog from '@/components/ScoresDialog.vue'
 import { account, refreshAccount, type AtlasUser } from '@/globe/auth'
 import { fetchCountries, type Country } from '@/globe/geography'
-import { answerCountry, compareScores, correctCount, sessionScore, outcomeCounts, createSession, isGuestId, percentage, readPersonalScores, readCountryStats, recordCountryStat, type Answer, type RankedScore, type Session } from '@/globe/game'
-import { rankingRequest, validRanking } from '@/globe/ranking'
+import { answerCountry, compareScores, correctCount, sessionScore, outcomeCounts, createSession, isGuestId, percentage, readPersonalScores, readCountryStats, recordCountryStat, ORDER_POLICY, type Answer, type RankedScore, type Session } from '@/globe/game'
+import { rankingRequest, validRanking, runSource } from '@/globe/ranking'
+import { saveRecording, type RunRecording, type AnswerRecording, type NetworkIssue, type RequestIssue } from '@/globe/recording'
 import { t, language, countryName, formatPercent, formatTime, formatScoreTime, formatPoints, type MessageKey } from '@/globe/i18n'
 
 const base = import.meta.env.BASE_URL
@@ -574,7 +577,7 @@ async function claimScore() {
   if (!mounted || current !== generation || unranked.value) {return}
   saving.value = true; claimMessage.value = ''
   try {
-    await rankingRequest(`/runs/${claim.id}/claim`, { claimToken: claim.claimToken }, 2)
+    await rankingRequest(`/runs/${claim.id}/claim`, { claimToken: claim.claimToken }, 2, issuesFor('save'))
     if (!mounted || current !== generation) {return}
     pendingClaim.value = undefined
     published.value = true
@@ -590,7 +593,7 @@ async function publishScore() {
   if (!/^[\p{L}\p{N} ._'’-]{1,24}$/u.test(name)) {claimMessage.value = 'invalidName'; return}
   saving.value = true; claimMessage.value = ''
   try {
-    await rankingRequest(`/runs/${claim.id}/publish`, { claimToken: claim.claimToken, playerId, name }, 2)
+    await rankingRequest(`/runs/${claim.id}/publish`, { claimToken: claim.claimToken, playerId, name }, 2, issuesFor('save'))
     if (!mounted || current !== generation) {return}
     published.value = true
     try {localStorage.setItem('atlas-name', name)} catch { /* Publication does not require device storage. */ }
@@ -600,14 +603,14 @@ async function publishScore() {
 }
 async function saveResult() {
   if (saving.value || savingResult.value || authBusy.value || (unranked.value && !locallySaved.value)) {return}
-  const name = playerName.value.normalize('NFKC').trim(), current = generation
+  const name = playerName.value.normalize('NFKC').trim(), current = generation, entry = recording
   if (name && !/^[\p{L}\p{N} ._'’-]{1,24}$/u.test(name)) {claimMessage.value = 'invalidName'; return}
   savingResult.value = true; claimMessage.value = ''
   try {
     await upload
     if (!mounted || current !== generation) {return}
     if (name && account.value && account.value.name !== name) {
-      await rankingRequest('/auth/profile', { name, avatar: account.value.avatar || 'google' }, 2)
+      await rankingRequest('/auth/profile', { name, avatar: account.value.avatar || 'google' }, 2, issuesFor('save', entry))
       await refreshAccount()
       if (account.value?.name !== name) {throw new Error('Profile not confirmed')}
     }
@@ -621,7 +624,7 @@ async function saveResult() {
       reset()
     }
   } catch {if (mounted && current === generation) {claimMessage.value = 'profileSaveFailed'}}
-  finally {if (mounted && current === generation) {savingResult.value = false}}
+  finally {void flushRecording(entry); if (mounted && current === generation) {savingResult.value = false}}
 }
 watch(() => account.value?.name, (name, previous) => {
   if (name && session.value?.phase === 'complete' && name !== previous) {playerName.value = name}
@@ -650,6 +653,23 @@ let controller: AbortController | undefined, timer: ReturnType<typeof setInterva
 let rankingTimer: ReturnType<typeof setInterval> | undefined
 let upload: Promise<void> = Promise.resolve(), mounted = true
 let playerId: string = crypto.randomUUID()
+let dataset = 'unknown'
+let recording: { data: RunRecording; key: string; claimToken?: string } | undefined
+type RecordingSession = NonNullable<typeof recording>
+function persistRecording(entry = recording) {
+  if (entry) {try {saveRecording(localStorage, entry.data, entry.key)} catch { /* Storage can be blocked. */ }}
+}
+function issuesFor(operation: NetworkIssue['operation'], entry = recording) {
+  return (issue: RequestIssue) => {
+    if (entry && entry.data.networkIssues.length < 32) {entry.data.networkIssues.push({ ...issue, operation, at: Date.now() }); persistRecording(entry)}
+  }
+}
+async function flushRecording(entry = recording) {
+  if (!entry?.data.serverId || entry.data.status === 'active') {return}
+  try {
+    await rankingRequest(`/runs/${entry.data.serverId}/recording`, { claimToken: entry.claimToken, status: entry.data.status === 'complete' ? 'complete' : 'stopped', networkIssues: [...entry.data.networkIssues] }, 1, issuesFor('recording', entry))
+  } catch { /* Keep the local recording even when the service cannot be reached. */ }
+}
 
 async function refreshRanking() {
   if (native) {return}
@@ -660,7 +680,11 @@ async function load() {
   controller?.abort(); controller = new AbortController()
   if (error.value) {globeKey.value++}
   ready.value = false; error.value = ''; warning.value = ''
-  try {const data = await fetchCountries(base, controller.signal); if (mounted) {countries.value = data}}
+  try {
+    const data = await fetchCountries(base, controller.signal)
+    try {dataset = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(data))))].map(n => n.toString(16).padStart(2, '0')).join('')} catch {dataset = 'unknown'}
+    if (mounted) {countries.value = data}
+  }
   catch (e) {if (mounted && !(e instanceof DOMException && e.name === 'AbortError')) {const status = e instanceof Error ? /HTTP (\d+)/.exec(e.message)?.[1] : undefined; errorStatus.value = status || ''; error.value = status ? 'countryLoadHttp' : 'countryLoadFail'}}
 }
 async function start() {
@@ -671,14 +695,18 @@ async function start() {
   pendingClaim.value = undefined; claimMessage.value = ''; published.value = false; revealing.value = false; revealCountryId.value = undefined
   runId = undefined; verifiedTime.value = undefined; feedbackKind.value = ''; unranked.value = false; saving.value = false; locallySaved.value = false; uploadUnconfirmed.value = false
   let next: Session
+  const entry: RecordingSession = { key: account.value ? `atlas-recordings-v1:${account.value.id}` : 'atlas-recordings-v1', data: { id: crypto.randomUUID(), mode: 'world-countries', rules: 4, dataset, orderPolicy: ORDER_POLICY, build: import.meta.env.VITE_ATLAS_BUILD || 'dev', source: runSource(), authAtStart: account.value ? 'google' : 'guest', startedAt: Date.now(), status: 'active', attempts: [], networkIssues: [] } }
+  recording = entry; persistRecording(entry)
   try {
-    if (!navigator.onLine) {throw new Error('Offline')}
-    const result = await rankingRequest<{ id: string; deck: string[]; claimToken?: string }>('/runs?rules=4', {})
+    if (!navigator.onLine) {issuesFor('start', entry)({ kind: 'network', status: 0, attempt: 0 }); throw new Error('Offline')}
+    const result = await rankingRequest<{ id: string; deck: string[]; claimToken?: string; orderPolicy?: string }>('/runs?rules=4', { source: entry.data.source, build: entry.data.build, dataset, ignoreAnswered: true }, 0, issuesFor('start', entry))
     if (!isGuestId(result.id) || !Array.isArray(result.deck)) {throw new Error('Invalid run')}
     next = createSession(countries.value, result.deck)
     runId = result.id; rankingError.value = ''
+    entry.data.serverId = result.id; entry.data.orderPolicy = result.orderPolicy || 'random-v1'; entry.claimToken = result.claimToken
     if (isGuestId(result.claimToken)) {pendingClaim.value = { id: result.id, claimToken: result.claimToken }}
   } catch { next = createSession(countries.value); unranked.value = true }
+  persistRecording(entry)
   if (!mounted || current !== generation) {return}
   session.value = next; elapsed.value = 0; startedAt = Date.now(); starting.value = false
   upload = Promise.resolve()
@@ -687,23 +715,34 @@ async function start() {
 function tick() { if (playing.value && !revealing.value && !waitingForTap.value) {elapsed.value = Math.max(elapsed.value, Date.now() - startedAt)} }
 function setTapPending(pending: boolean) {if (pending) {tick()} waitingForTap.value = pending}
 function openStopDialog() {globe.value?.cancelInput(); stopDialog.value?.showModal()}
-function saveLocal() {
+function stopRun() {
+  const entry = recording, pending = upload
+  if (entry) {entry.data.status = 'stopped'; entry.data.finishedAt = Date.now(); persistRecording(entry); void pending.then(() => flushRecording(entry))}
+  reset()
+}
+function skipAnswer(event: MouseEvent) {
+  const view = globe.value?.recordingView()
+  const pointerType = 'pointerType' in event ? event.pointerType : undefined
+  const input: AnswerRecording['input'] = event.detail === 0 ? 'keyboard' : pointerType === 'touch' ? 'touch' : pointerType === 'pen' ? 'pen' : 'mouse'
+  answer(null, 0, view ? { ...view, coordinate: null, hit: 'skip', input, priorResolved: null } : undefined)
+}
+function saveLocal(finishedAt: number) {
   try {
     const key = account.value ? `atlas-runs-v4:${account.value.id}` : 'atlas-runs-v4'
     const rows = readPersonalScores(localStorage, key)
-    rows.push({ id: crypto.randomUUID(), name: account.value?.name || playerName.value.trim(), correct: found.value, score: sessionScore(session.value!), ...outcomeCounts(session.value!.answers), total: 195, timeMs: session.value!.lastCorrectMs })
+    rows.push({ id: crypto.randomUUID(), name: account.value?.name || playerName.value.trim(), correct: found.value, score: sessionScore(session.value!), ...outcomeCounts(session.value!.answers), skipped: session.value!.answers.filter(answer => answer.outcome === 'skipped').length, total: 195, timeMs: session.value!.lastCorrectMs, finishedAt })
     rows.sort(compareScores)
     localStorage.setItem(key, JSON.stringify(rows.slice(0, 20)))
     locallySaved.value = true
   } catch { if (unranked.value) {rankingError.value = 'localRunSaveFailed'} }
 }
-function sendAnswer(index: number, attempt: number, guess: string | null, elapsedMs: number, next: Session) {
-  const id = runId, current = generation
+function sendAnswer(index: number, attempt: number, guess: string | null, elapsedMs: number, next: Session, answerRecording?: AnswerRecording) {
+  const id = runId, current = generation, entry = recording
   if (!id) {return}
   saving.value = true
   upload = upload.then(async () => {
-    if (current !== generation || runId !== id) {return}
-    const result = await rankingRequest<{ complete: boolean; correct: number; total: number; timeMs: number; score: number; green: number; yellow: number; orange: number; red: number }>(`/runs/${id}/answers`, { index, attempt, guess, elapsedMs }, 2)
+    const result = await rankingRequest<{ complete: boolean; correct: number; total: number; timeMs: number; score: number; green: number; yellow: number; orange: number; red: number }>(`/runs/${id}/answers`, { index, attempt, guess, elapsedMs, ...(answerRecording ? { recording: answerRecording } : {}) }, 2, issuesFor('answer', entry))
+    if (result.complete) {await flushRecording(entry)}
     if (!mounted || current !== generation) {return}
     if (result.complete) {
       if (result.correct !== correctCount(next) || result.total !== 195 || result.timeMs !== next.lastCorrectMs || result.score !== sessionScore(next) || Object.entries(outcomeCounts(next.answers)).some(([key, value]) => Reflect.get(result, key) !== value)) {throw new Error('Invalid result')}
@@ -713,7 +752,7 @@ function sendAnswer(index: number, attempt: number, guess: string | null, elapse
     }
   }).catch(() => { if (mounted && current === generation) {unranked.value = true; uploadUnconfirmed.value = true; runId = undefined; pendingClaim.value = undefined; saving.value = false} })
 }
-async function answer(country: Country | null | undefined, deferredMs = 0) {
+async function answer(country: Country | null | undefined, deferredMs = 0, answerRecording?: AnswerRecording) {
   if (!session.value || !playing.value || revealing.value) {return}
   globe.value?.cancelInput()
   if (country === undefined) {feedbackKind.value = 'land'; return}
@@ -721,9 +760,20 @@ async function answer(country: Country | null | undefined, deferredMs = 0) {
   tick()
   const previous = target.value!, index = session.value.answers.length, attempt = session.value.attempts, correct = country?.id === previous.id
   const current = generation, answeredAt = Math.floor(elapsed.value)
-  if (country) {globe.value?.showFeedback(correct)}
   const next = answerCountry(session.value, country, elapsed.value)
-  sendAnswer(index, attempt, country?.id ?? null, answeredAt, next)
+  if (next === session.value) {return}
+  if (country) {globe.value?.showFeedback(correct)}
+  const finishedAt = Date.now()
+  if (answerRecording && !account.value) {
+    try {answerRecording.priorResolved = readCountryStats(localStorage).find(row => row.id === previous.id)?.played ?? 0} catch {answerRecording.priorResolved = null}
+  }
+  if (recording) {
+    const data = recording.data
+    data.attempts.push({ target: previous.id, index, attempt, guess: country?.id ?? null, elapsedMs: answeredAt, responseMs: answeredAt - (data.attempts.at(-1)?.elapsedMs ?? 0), answeredAt: finishedAt, ...(answerRecording ? { recording: answerRecording } : {}) })
+    if (next.phase === 'complete') {data.status = 'complete'; data.finishedAt = finishedAt}
+    persistRecording()
+  }
+  sendAnswer(index, attempt, country?.id ?? null, answeredAt, next, answerRecording)
   if (!account.value && next.answers.length > index) {
     try {localStorage.setItem('atlas-country-stats-v4', JSON.stringify(recordCountryStat(readCountryStats(localStorage), next.answers.at(-1)!)))} catch { /* Global statistics remain available when local storage is blocked. */ }
   }
@@ -742,7 +792,7 @@ async function answer(country: Country | null | undefined, deferredMs = 0) {
   session.value = next
   feedbackCountry.value = country ?? previous; feedbackKind.value = correct ? 'correct' : country === null ? 'skip' : 'wrong'
   feedbackOutcome.value = correct ? 'success' : country === null ? 'muted' : 'missed'
-  if (session.value.phase === 'complete') {if (account.value) {playerName.value = account.value.name} saveLocal()}
+  if (session.value.phase === 'complete') {if (account.value) {playerName.value = account.value.name} saveLocal(finishedAt)}
 }
 function viewportChanged() {
   if (menu.value?.matches(':popover-open')) {menu.value.hidePopover()}
@@ -751,7 +801,7 @@ function viewportChanged() {
     if (bounds.right > innerWidth || bounds.bottom > innerHeight) {countryCount.value.hidePopover()}
   }
 }
-function reset() {savingResult.value = false; generation++; runId = undefined; pendingClaim.value = undefined; claimMessage.value = ''; session.value = undefined; starting.value = false; saving.value = false; feedbackKind.value = ''; revealing.value = false; revealCountryId.value = undefined; stopDialog.value?.close(); globe.value?.reset()}
+function reset() {recording = undefined; savingResult.value = false; generation++; runId = undefined; pendingClaim.value = undefined; claimMessage.value = ''; session.value = undefined; starting.value = false; saving.value = false; feedbackKind.value = ''; revealing.value = false; revealCountryId.value = undefined; stopDialog.value?.close(); globe.value?.reset()}
 onMounted(() => {
   try {
     const saved = localStorage.getItem('atlas-player-id')

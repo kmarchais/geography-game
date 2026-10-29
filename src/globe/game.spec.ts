@@ -1,10 +1,30 @@
 import { expect, it } from 'vitest'
 import { answerCountry, compareScores, correctCount, createSession, formatTime, isGuestId, percentage, readPersonalScores, recordCountryStat, readCountryStats, outcomeCounts, sessionScore, validScoreOutcomes, type RankedScore } from './game'
 import type { Country } from './geography'
+import { readFileSync } from 'node:fs'
+import { createDeck } from './game'
 
 const country = (id: string, playable = true): Country => ({ id, name: id, playable, continent: 'Europe', center: [0, 0], small: false, polygons: [] })
 const a = country('AAA'), b = country('BBB'), c = country('CCC')
 const game = () => createSession([a, b, c, country('XXX', false)], ['AAA', 'BBB', 'CCC'])
+
+it('keeps small targets out of the first ten while preserving every country once and randomizing both parts', () => {
+  const countries: Country[] = JSON.parse(readFileSync('public/data/globe/countries.json', 'utf8'))
+  expect(countries.filter(c => !c.small).length).toBeGreaterThan(10)
+  const openings = new Set<string>()
+  for (let run = 0; run < 100; run++) {
+    const deck = createDeck(countries)
+    expect(deck).toHaveLength(195)
+    expect(new Set(deck.map(c => c.id)).size).toBe(195)
+    expect(deck.slice(0, 10).every(c => !c.small)).toBe(true)
+    expect(new Set(deck.map(c => c.id))).toEqual(new Set(countries.map(c => c.id)))
+    openings.add(deck.slice(0, 10).map(c => c.id).join(','))
+  }
+  expect(openings.size).toBeGreaterThan(1)
+  expect(createSession(countries, undefined, () => .25).deck).toEqual(createDeck(countries, () => .25))
+  const small = country('small'); small.small = true
+  expect(createDeck([small, a, b], () => .25).map(c => c.id)).toEqual(['AAA', 'BBB', 'small'])
+})
 
 it('always includes every quiz country once and excludes territories', () => {
   const input = Array.from({ length: 195 }, (_, i) => country(String(i)))
@@ -19,12 +39,12 @@ it('always includes every quiz country once and excludes territories', () => {
 it('advances after a correct guess, three wrong guesses, or a skip', () => {
   let session = answerCountry(game(), a, 1200)
   expect(session.deck[session.answers.length]!.id).toBe('BBB')
-  session = answerCountry(session, a, 2000)
+  session = answerCountry(session, c, 2000)
   expect(session.answers).toHaveLength(1)
   expect(session.attempts).toBe(1)
-  session = answerCountry(session, a, 3000)
+  session = answerCountry(session, c, 3000)
   expect(session.answers).toHaveLength(1)
-  session = answerCountry(session, a, 4000)
+  session = answerCountry(session, c, 4000)
   session = answerCountry(session, null, 6000)
   expect(session.phase).toBe('complete')
   expect(session.answers.map(a => a.outcome)).toEqual(['correct', 'missed', 'skipped'])
@@ -44,7 +64,7 @@ it('can solve on the third attempt and resets attempts for the next country', ()
 it('records the successful attempt for country feedback', () => {
   let session = answerCountry(game(), a, 100)
   expect(session.answers[0]?.attempt).toBe(1)
-  session = answerCountry(session, a, 200)
+  session = answerCountry(session, c, 200)
   session = answerCountry(session, b, 300)
   expect(session.answers[1]?.attempt).toBe(2)
   session = answerCountry(session, null, 400)
@@ -98,14 +118,25 @@ it('reads account scores from a separate bucket without exposing them to guests'
   expect(readPersonalScores(storage, 'atlas-runs-v3:account')[0]?.correct).toBe(100)
 })
 
+it('preserves known personal skip counts and rejects impossible counts without inventing historical values', () => {
+  const row: RankedScore = { id: 'run', name: '', correct: 193, total: 195, timeMs: 123000, score: 191.5, green: 190, yellow: 3, orange: 0, red: 2, skipped: 1 }
+  expect(readPersonalScores({ getItem: () => JSON.stringify([row]) })[0]?.skipped).toBe(1)
+  expect(validScoreOutcomes({ ...row, skipped: 3 })).toBe(false)
+  expect(validScoreOutcomes({ ...row, skipped: -1 })).toBe(false)
+  expect(validScoreOutcomes({ ...row, skipped: null })).toBe(true)
+  expect(readPersonalScores({ getItem: () => JSON.stringify([{ ...row, skipped: undefined }]) })[0]?.skipped).toBeUndefined()
+})
+
 it('weights all four outcomes and keeps their counts independently of the score', () => {
-  let session = answerCountry(game(), a, 100)
-  session = answerCountry(session, a, 200)
+  const d = country('DDD')
+  let session = answerCountry(createSession([a, b, c, d], ['AAA', 'BBB', 'CCC', 'DDD']), a, 100)
+  session = answerCountry(session, c, 200)
   session = answerCountry(session, b, 300)
-  session = answerCountry(session, a, 400)
-  session = answerCountry(session, b, 500)
+  session = answerCountry(session, d, 400)
+  session = answerCountry(session, d, 500)
   session = answerCountry(session, c, 600)
-  expect(outcomeCounts(session.answers)).toEqual({ green: 1, yellow: 1, orange: 1, red: 0 })
+  session = answerCountry(session, null, 700)
+  expect(outcomeCounts(session.answers)).toEqual({ green: 1, yellow: 1, orange: 1, red: 1 })
   expect(sessionScore(session)).toBe(1.75)
   const skipped = answerCountry(answerCountry(game(), b, 10), null, 20)
   expect(sessionScore(skipped)).toBe(0)
@@ -119,4 +150,19 @@ it('weights all four outcomes and keeps their counts independently of the score'
   expect(validScoreOutcomes({ ...rows[0]!, score: 195 })).toBe(false)
   expect(readPersonalScores({ getItem: () => JSON.stringify(rows) })).toEqual(rows)
   expect(readPersonalScores({ getItem: () => JSON.stringify([{ ...rows[0], score: 195 }]) })).toEqual([])
+})
+
+it('ignores every answered country regardless of colour, including after a wrong attempt on the next target', () => {
+  for (const outcome of ['green', 'yellow', 'orange', 'missed', 'skipped']) {
+    let session = game()
+    const wrong = outcome === 'yellow' ? 1 : outcome === 'orange' ? 2 : outcome === 'missed' ? 3 : 0
+    for (let n = 0; n < wrong; n++) {session = answerCountry(session, b, 100 + n * 100)}
+    if (outcome !== 'missed') {session = answerCountry(session, outcome === 'skipped' ? null : a, 500)}
+    expect(session.answers).toHaveLength(1)
+    expect(answerCountry(session, a, 1000)).toBe(session)
+    session = answerCountry(session, c, 1500)
+    expect(session.attempts).toBe(1)
+    expect(answerCountry(session, a, 2000)).toBe(session)
+    expect(session.attempts).toBe(1)
+  }
 })

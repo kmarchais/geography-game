@@ -3,9 +3,17 @@ import { readFileSync } from 'node:fs'
 import en from './locales/en.json'
 import fr from './locales/fr.json'
 import names from '../../public/data/globe/names.fr.json'
-import { countryName, detectLanguage, formatPercent, formatTime, formatScoreTime, language, t } from './i18n'
+import { countryName, detectLanguage, formatPercent, formatTime, formatScoreTime, formatFinishedAt, language, t } from './i18n'
 
 afterEach(() => {language.value = 'en'})
+test('formats finish dates in the selected language and leaves historical dates unknown', () => {
+  const timestamp = Date.UTC(2026, 9, 29, 15, 42)
+  for (const locale of ['en', 'fr'] as const) {
+    language.value = locale
+    expect(formatFinishedAt(timestamp)).toBe(new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(timestamp))
+    for (const missing of [undefined, null, NaN, -1, 1e20]) {expect(formatFinishedAt(missing)).toBe(t('finishDateUnknown'))}
+  }
+})
 test('uses French only when the primary language is French, otherwise English', () => {
   for (const tag of ['fr', 'fr-FR', 'fr-CA', 'FR-be']) {expect(detectLanguage(tag)).toBe('fr')}
   for (const tag of ['en-US', 'de-DE', 'es', 'en-FR', '']) {expect(detectLanguage(tag)).toBe('en')}
