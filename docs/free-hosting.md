@@ -19,13 +19,13 @@ Sources: [Workers pricing](https://developers.cloudflare.com/workers/platform/pr
 
 ## Implementation and deployment
 
-### Run metadata, pending publication
+### Run metadata
 
 New runs store `runs.client_source` as `desktop-web`, `mobile-web`, or `native-app`. Older clients and historical rows use `unknown`. The native build supplies its app flag; websites classify phones and tablets from browser device information. This is client-reported metadata, not an authenticated device identity. No raw user agent is retained.
 
 `runs.finished_at` records the server's Unix timestamp in milliseconds when it accepts the final answer. Answer retries and later score publication or Google claims preserve it. Private personal score responses include `finishedAt`; the personal ranking displays it in the player's language and local time zone. Offline personal scores use the device clock at completion.
 
-Historical finish dates remain null and display as unavailable. `time_ms` measures the last correct answer on the game clock, which excludes some pauses, so adding it to `started` cannot recover a finish timestamp. The migration preserves existing scores and owners. Take a current authenticated SQL snapshot before deploying this schema change, as described below. This change has not been deployed or installed on a physical phone.
+Historical finish dates remain null and display as unavailable. `time_ms` measures the last correct answer on the game clock, which excludes some pauses, so adding it to `started` cannot recover a finish timestamp. The migration preserves existing scores and owners. Take a current authenticated SQL snapshot before deploying this schema change, as described below. The release and physical-device verification are recorded at the end of this document.
 
 Score ownership already distinguishes account types. A `player` beginning with `google:` belongs to a Google account, `guest:` identifies a published guest, and `anonymous:` identifies an unnamed run. Legacy bare UUIDs are guests. A later Google claim changes the score owner without changing its source or finish date. Account type and device source stay in the database; public rankings do not expose them.
 
@@ -42,7 +42,7 @@ SELECT name,
 FROM runs WHERE complete = 1;
 ```
 
-### Answer recordings and opening order, pending publication
+### Answer recordings and opening order
 
 The first ten questions exclude countries marked `small` in the existing geography snapshot. This is the same small-target classification used by the globe, not a familiarity list or a difficulty estimate from the small existing player sample. Both online and offline decks shuffle the eligible opening targets and the remaining questions and include all 195 countries exactly once. Runs record `orderPolicy: no-small-first-10-v1`; explicit server decks and active older runs keep their existing order. Scoring remains rules 4. Small fixture datasets with fewer than ten non-small targets put all eligible targets first.
 
@@ -136,3 +136,17 @@ Source `6e15e13` now serves all three websites after verification 40662876245 an
 Source `d311cbf` serves all three websites after verification 40703496332 and Atlas publication 40705287073. Cloudflare version `dff6db23-8133-4d9d-9b8d-e60fb7bccbe0` uses the verified root artifact with `--keep-vars`. API code, database schema, country boundaries, configured bindings, and Google/CORS settings are unchanged. Production input checks passed 34 cases with 11 capability-specific skips; all ten Atlas prefix/offline cases passed without retries. Served files and build IDs match the artifacts, and the temporary Pages feature-branch permission is removed.
 
 The Pixel was updated with signed runtime source `6dbf60d` and tested using native touch events. Published `d311cbf` differs only in a browser fixture and the decision trail. Physical zoom, ordinary answering, and Stop passed without creating production test runs. Storage and the confirmed profile were preserved, and test hooks were removed. [Atlas validation](atlas-validation.md) records the failed initial CI, corrected fixture, source manifests, installed APK hash, physical evidence, and verification limits. Static rollback can continue using the unchanged API and current database.
+
+## Run history and recording release, 29 October 2026
+
+Source `1b17f2cdaa94b26b5bdba7c6cc0fa47b5c00a9b5` serves all three websites after [verification 40894570371](https://github.com/kmarchais/geography-game/actions/runs/40894570371) and [Atlas publication 40897499829](https://github.com/kmarchais/atlas/actions/runs/40897499829). Desktop, phone, tablet, build, hosting, Android, and both Pages deployments passed. CI recorded 663 unit passes with 26 legacy skips, 34 Node API passes, and a separate isolated Cloudflare runtime pass. All ten Atlas prefix/offline checks passed. The superseded verification caught the recording module missing from the Node image; the Dockerfile now copies it, and the corrected production-image checks passed.
+
+In the full browser matrix, 137 tests passed immediately and two tablet tests passed on retry; 11 cases were skipped for platform capabilities. The retried cases concerned the profile picture and cancelling a reveal. Both initially exceeded a five-second element/attribute expectation. Their retries passed, as did the new ranking and answered-country cases. The workflow retains the initial failure traces; these results do not establish that the two tests are deterministic.
+
+The API deployed first with the existing verified website assets in Worker version `3b07c1db-4f4b-4998-a832-5541bc1d0f21`. Final Worker version `cd958fc1-9005-484d-b817-470e5537031a` serves the verified root web artifact. Both updates used `--keep-vars`. Google/CORS settings, the GitHub secret binding, and the existing SQLite Durable Object binding were preserved. A consistent pre-deployment SQL archive was verified before the schema change and retained on both computers. The post-deployment archive matches every original field of all 11 runs and all rows in the seven other tables. Historical finish dates and device sources remain unknown. Twelve served Cloudflare files match the artifact; all websites report the release build and retain the same country-data hash.
+
+The Pixel 10 Pro XL runs the matching APK, signed with its existing certificate. Installed bytes match the signed artifact, SHA-256 `35844f27588ba4bc8d42a1a9b37997b266b44fe040ac899f154da7186cf5b7b1`. The actual native WebView loaded the release assets and restored its confirmed Google session and original local storage. Its personal ranking displayed both account runs with counts matching the authenticated API, and horizontal table scrolling stayed inside the dialog. Native touch completed a country once and ignored a later selection of that answered country. The run request reported the native source and new answer policy; Stop was recorded. These gameplay checks blocked production mutations. Local test data was restored and temporary hooks were removed. This verifies session restoration, not a fresh Google chooser login.
+
+The original Pages feature-branch publishing permission was removed; only its `main` and `gh-pages` policies remain. No paid service was activated. Keep the current API when rolling static assets back: updated clients send recording metadata and the per-run answer policy that older APIs do not accept. A code rollback does not restore SQLite. Preserve current cloud data and keep the original local migration checkpoint frozen.
+
+Evidence is retained in ignored `.local/analytics-release-predeploy-proof.json`, `.local/analytics-release-migration-proof.json`, `.local/analytics-release-api-proof.json`, `.local/analytics-release-web-proof.json`, `.local/analytics-release-public-proof.json`, `.local/analytics-release-native-install-proof.json`, and `.local/analytics-release-native-ui-proof.json`. The source and Atlas workflow logs record full verification and publication results.
